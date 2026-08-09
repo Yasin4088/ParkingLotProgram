@@ -1,28 +1,6 @@
 <view wx:if="{{isAdmin}}" class="page">
-    <!-- 头部 -->
-    <view class="header">
-        <view class="title">司机管理</view>
-        <view class="desc">添加司机账号，司机凭用户名和密码登录</view>
-        <view class="back" bindtap="bindBackTap">返回叫号</view>
-    </view>
-
-    <!-- 添加司机表单 -->
-    <view class="add-card">
-        <view class="card-title">添加司机</view>
-        <view class="form-row">
-            <input placeholder="用户名（必填）" value="{{username}}" bindinput="bindUsernameInput" maxlength="20" />
-        </view>
-        <view class="form-row">
-            <input placeholder="密码（必填）" type="password" value="{{password}}" bindinput="bindPasswordInput" maxlength="20" />
-        </view>
-        <view class="form-row">
-            <input placeholder="手机号（选填）" type="number" value="{{phone}}" bindinput="bindPhoneInput" maxlength="11" />
-        </view>
-        <button class="add-btn" loading="{{submitting}}" bindtap="bindAddTap">确认添加</button>
-    </view>
-
-    <!-- 司机列表 -->
-    <cmpt-comm-list id="driverList" type="admin-meet" route="admin/user_list" topBottom="50" placeholder="搜索司机" bind:list="bindCommListCmpt">
+<!-- 司机列表 -->
+    <cmpt-comm-list id="driverList" type="admin-driver" route="admin/user_list" topBottom="50" placeholder="搜索司机" bind:list="bindCommListCmpt">
         <view slot="list">
             <view wx:if="{{dataList && dataList.total}}" class="load text-grey">共 {{dataList.total}} 名司机</view>
 
@@ -37,9 +15,16 @@
                     <text>注册：{{item.USER_ADD_TIME}}</text>
                 </view>
                 <view class="bottom-row">
+                    <view class="edit-btn" bindtap="bindEditTap" data-id="{{item._id}}">编辑</view>
                     <view class="del-btn" bindtap="bindDelTap" data-id="{{item._id}}">删除</view>
                 </view>
             </view>
+            <view wx:if="{{dataList && dataList.total === 0}}" class="load text-grey">暂无司机数据，请先添加司机账号</view>
         </view>
     </cmpt-comm-list>
+
+    <!-- 底部添加按钮 -->
+    <view class="bottom-btn">
+        <view class="add-driver-btn" bindtap="bindAddTap">添加司机账号</view>
+    </view>
 </view>

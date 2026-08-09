@@ -3,6 +3,6 @@
 		"cmpt-foot": "../../../../cmpts/biz/foot/foot_cmpt"
 	},
 	"disableScroll": true,
-	"navigationBarBackgroundColor": "#ffffff",
-	"navigationBarTextStyle": "black"
+	"navigationBarBackgroundColor": "#009F72",
+	"navigationBarTextStyle": "white"
 }

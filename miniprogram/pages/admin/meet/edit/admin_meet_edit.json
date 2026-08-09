@@ -4,7 +4,7 @@
 		"cmpt-picker-time": "../../../../cmpts/public/picker_time/picker_time_cmpt",
 		"cmpt-picker-multi": "../../../../cmpts/public/picker_multi/picker_multi_cmpt"
 	},
-	"navigationBarBackgroundColor": "#2499f2",
+	"navigationBarBackgroundColor": "#009F72",
 	"navigationBarTextStyle": "white",
 	"enablePullDownRefresh": true, 
 	"navigationBarTitleText": "后台-活动/预约添加"

@@ -2,8 +2,8 @@
 	"usingComponents": { 
 		"cmpt-picker-multi": "../../../picker_multi/picker_multi_cmpt"
 	},
-	"navigationBarBackgroundColor": "#ffffff",
-	"navigationBarTextStyle": "black",
+	"navigationBarBackgroundColor": "#009F72",
+	"navigationBarTextStyle": "white",
 	"enablePullDownRefresh": true,
 	"backgroundTextStyle": "dark",
 	"navigationBarTitleText": "后台-字段添加"

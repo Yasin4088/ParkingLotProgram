@@ -19,6 +19,8 @@ module.exports = {
 	'admin/queue_finish': 'admin/admin_queue_controller@finish',
 
 	'admin/user_list': 'admin/admin_user_controller@getUserList',
+	'admin/user_detail': 'admin/admin_user_controller@getUserDetailById',
 	'admin/user_insert': 'admin/admin_user_controller@insertUser',
+	'admin/user_edit': 'admin/admin_user_controller@editUser',
 	'admin/user_del': 'admin/admin_user_controller@delUser',
 }

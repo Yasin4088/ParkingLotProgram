@@ -2,7 +2,7 @@
     <view class="login-card shadow">
         <view class="logo">
             <view class="icon-park">P</view>
-            <view class="title">停车场装卸排队</view>
+            <view class="title">停车场装卸</view>
         </view>
 
         <!-- 标签切换 -->
@@ -23,6 +23,6 @@
             <button class="login-btn" loading="{{loading}}" bindtap="bindLoginTap">登 录</button>
         </view>
 
-        <view class="hint">{{tab === 'admin' ? '默认管理员：Yasin / 4088' : '司机账号由管理员在后台分配，请使用分配的账号登录'}}</view>
+        <!-- <view class="hint">{{tab === 'admin' ? '默认管理员：Yasin / 4088' : '司机账号由管理员在后台分配，请使用分配的账号登录'}}</view> -->
     </view>
 </view>

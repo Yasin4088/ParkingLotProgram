@@ -4,13 +4,14 @@
 		"driver/home",
 		"driver/queue",
 		"admin/queue",
-		"pages/admin/driver/list"
+		"pages/admin/driver/list",
+    "pages/admin/driver/edit"
 	],
 	"window": {
 		"backgroundColor": "#f1f1f1",
 		"backgroundTextStyle": "dark",
 		"navigationBarBackgroundColor": "#009F72",
-		"navigationBarTitleText": "停车场装卸排队",
+		"navigationBarTitleText": "停车场装卸",
 		"navigationBarTextStyle": "white"
 	},
 	"permission": {

@@ -2,7 +2,7 @@
 	"usingComponents": {
 	 
 	},
-	"navigationBarBackgroundColor": "#2499f2",
+	"navigationBarBackgroundColor": "#009F72",
 	"navigationBarTextStyle": "white", 
 	"enablePullDownRefresh": true,  
 	"navigationBarTitleText": "小程序码"

@@ -2,7 +2,7 @@
 	"usingComponents": { 
 		"cmpt-picker-time": "../../../../cmpts/public/picker_time/picker_time_cmpt"
 	},
-	"navigationBarBackgroundColor": "#2499f2",
+	"navigationBarBackgroundColor": "#009F72",
 	"navigationBarTextStyle": "white",
 	"enablePullDownRefresh": true, 
 	"navigationBarTitleText": "预约名单统计"

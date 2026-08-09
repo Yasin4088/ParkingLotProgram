@@ -120,6 +120,51 @@ class AdminUserController extends BaseAdminController {
 
 		return { id };
 	}
+
+	/** 通过_id获取用户详情（用于编辑页加载） */
+	async getUserDetailById() {
+		await this.isAdmin();
+
+		let rules = {
+			id: 'required|id',
+		};
+
+		let input = this.validateData(rules);
+
+		let service = new AdminUserService();
+		let user = await service.getUserDetailById(input.id);
+
+		if (user) {
+			user.USER_ADD_TIME = timeUtil.timestamp2Time(user.USER_ADD_TIME);
+		}
+
+		return user;
+	}
+
+	/** 编辑司机 */
+	async editUser() {
+		await this.isAdmin();
+
+		let rules = {
+			id: 'required|id',
+			username: 'must|string|min:2|max:30|name=用户名',
+			password: 'string|min:4|max:30|name=密码',
+			phone: 'string|max:20|name=手机号',
+		};
+
+		let input = this.validateData(rules);
+
+		let service = new AdminUserService();
+		await service.editUser(input.id, {
+			username: input.username,
+			password: input.password || '',
+			phone: input.phone || '',
+		});
+
+		this.log('编辑了司机「' + input.username + '」', LogModel.TYPE.USER);
+
+		return {};
+	}
 }
 
 module.exports = AdminUserController;
