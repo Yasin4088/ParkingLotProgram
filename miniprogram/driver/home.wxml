@@ -1,7 +1,7 @@
 <view class="page">
 	<view class="header">
 		<view class="title">司机预约</view>
-		<view class="desc">选择停车场、装卸类型，拍照上传单证后进入排队流程</view>
+		<view class="desc">选择停车场、装卸类型，填写信息后进入排队流程</view>
 	</view>
 
 	<view class="card">
@@ -30,10 +30,10 @@
 		</view>
 
 		<view class="form-item">
-			<view class="label">单证照片</view>
+			<view class="label">单证照片（可选）</view>
 			<view class="upload" bindtap="bindChooseProof">
 				<image wx:if="{{proofLocal}}" src="{{proofLocal}}" mode="aspectFill"></image>
-				<view wx:else class="upload-empty">拍照/上传单证</view>
+				<view wx:else class="upload-empty">拍照/上传单证（选填）</view>
 			</view>
 		</view>
 

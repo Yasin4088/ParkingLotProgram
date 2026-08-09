@@ -60,9 +60,10 @@ Page({
 	bindSubscribeTap: async function () {
 		if (!this.data.item) return;
 		try {
-			if (setting.QUEUE_CALL_TEMPLATE_ID) {
+			let tmplIds = [setting.QUEUE_CALL_TEMPLATE_ID, setting.QUEUE_CANCEL_TEMPLATE_ID].filter(id => !!id);
+			if (tmplIds.length) {
 				await wx.requestSubscribeMessage({
-					tmplIds: [setting.QUEUE_CALL_TEMPLATE_ID]
+					tmplIds
 				});
 			}
 			await cloudHelper.callCloudSumbit('queue/subscribe', { id: this.data.item._id }, { title: '订阅中' });

@@ -8,6 +8,7 @@ const UserModel = require('../model/user_model.js');
 const config = require('../../config/config.js');
 const timeUtil = require('../../framework/utils/time_util.js');
 const md5Lib = require('../../framework/lib/md5_lib.js');
+const miniLib = require('../../framework/lib/mini_lib.js');
 
 const PARKING_LOTS = [
 	{ id: 'A', name: '一号停车场', address: '园区东门装卸区' },
@@ -38,11 +39,6 @@ class QueueService extends BaseService {
 			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED]]
 		}, 'QUEUE_ID,QUEUE_STATUS,QUEUE_LOT_NAME,QUEUE_ACTION_NAME');
 		if (active) this.AppError('您已有未完成的预约或排队记录，请完成后再提交');
-
-		await UserModel.edit(userId, {
-			USER_MOBILE: phone,
-			USER_NAME: phone || plate || '微信司机'
-		});
 
 		return await QueueModel.insert({
 			QUEUE_USER_ID: userId,
@@ -112,20 +108,100 @@ class QueueService extends BaseService {
 	}
 
 	async list(lotId) {
+		await this.cancelExpiredBookings();
+
 		let where = {
-			QUEUE_STATUS: ['in', [QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED]]
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED]]
 		};
 		if (lotId) where.QUEUE_LOT_ID = lotId;
 
 		let list = await QueueModel.getAll(where, '*', {
 			QUEUE_STATUS: 'desc',
-			QUEUE_CHECKIN_TIME: 'asc'
+			QUEUE_CHECKIN_TIME: 'asc',
+			QUEUE_ADD_TIME: 'asc'
 		}, 200);
 
 		return {
 			lots: PARKING_LOTS,
 			list: list.map(item => this._formatQueueItem(item))
 		};
+	}
+
+	async cancelExpiredBookings() {
+		let expiredTime = timeUtil.time() - 24 * 60 * 60 * 1000;
+		let list = await QueueModel.getAll({
+			QUEUE_STATUS: QueueModel.STATUS.BOOKED,
+			QUEUE_ADD_TIME: ['<', expiredTime]
+		}, '_id', { QUEUE_ADD_TIME: 'asc' }, 200);
+
+		if (!list.length) return 0;
+
+		let now = timeUtil.time();
+		let reason = '超过一天未签到，预约已自动取消，请重新预约';
+		for (let item of list) {
+			await QueueModel.edit(item._id, {
+				QUEUE_STATUS: QueueModel.STATUS.CANCEL,
+				QUEUE_CANCEL_TIME: now,
+				QUEUE_CANCEL_REASON: reason,
+				QUEUE_CANCEL_OPERATOR: '系统自动清理'
+			});
+		}
+
+		return list.length;
+	}
+
+	async detail(id) {
+		let item = await QueueModel.getOne({ _id: id });
+		if (!item) this.AppError('未找到排队记录');
+
+		return this._formatQueueItem(item);
+	}
+
+	async edit(id, data) {
+		let item = await QueueModel.getOne({
+			_id: id,
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED]]
+		});
+		if (!item) this.AppError('仅可编辑当前队列中的记录');
+
+		let lot = this._getLot(data.lotId);
+		if (!ACTIONS[data.action]) this.AppError('请选择装货或卸货');
+
+		let phone = (data.phone || '').trim();
+		let plate = (data.plate || '').trim();
+		if (!plate) this.AppError('请输入车牌号');
+		if (!phone) this.AppError('请输入手机号');
+
+		await QueueModel.edit(item._id, {
+			QUEUE_PHONE: phone,
+			QUEUE_PLATE: plate,
+			QUEUE_LOT_ID: lot.id,
+			QUEUE_LOT_NAME: lot.name,
+			QUEUE_ACTION: data.action,
+			QUEUE_ACTION_NAME: ACTIONS[data.action],
+		});
+
+		return await this.detail(id);
+	}
+
+	async cancel(id, reason, operator = '管理员') {
+		let item = await QueueModel.getOne({
+			_id: id,
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED]]
+		});
+		if (!item) this.AppError('仅可取消当前队列中的记录');
+
+		reason = (reason || '').trim();
+		if (!reason) this.AppError('请输入取消原因');
+
+		await QueueModel.edit(item._id, {
+			QUEUE_STATUS: QueueModel.STATUS.CANCEL,
+			QUEUE_CANCEL_TIME: timeUtil.time(),
+			QUEUE_CANCEL_REASON: reason,
+			QUEUE_CANCEL_OPERATOR: operator
+		});
+
+		await this._sendCancelNotice(item, reason);
 	}
 
 	async callNext(lotId) {
@@ -156,6 +232,22 @@ class QueueService extends BaseService {
 			QUEUE_STATUS: QueueModel.STATUS.DONE,
 			QUEUE_FINISH_TIME: timeUtil.time()
 		});
+	}
+
+	async _sendCancelNotice(item, reason) {
+		if (!config.QUEUE_CANCEL_TEMPLATE_ID || !item.QUEUE_OPENID) return;
+
+		await miniLib.sendMiniOnceTempMsg({
+			touser: item.QUEUE_OPENID,
+			template_id: config.QUEUE_CANCEL_TEMPLATE_ID,
+			page: '/driver/home',
+			data: {
+				thing1: { value: miniLib.fmtThing('预约已取消，请重新预约') },
+				thing2: { value: miniLib.fmtThing(reason) },
+				thing3: { value: miniLib.fmtThing(item.QUEUE_PLATE || '') },
+				thing4: { value: miniLib.fmtThing(item.QUEUE_LOT_NAME || '') },
+			}
+		}, 'queue_cancel');
 	}
 
 	_getLot(lotId) {
@@ -213,6 +305,8 @@ class QueueService extends BaseService {
 		item.ahead = ahead;
 		item.checkinTimeText = item.QUEUE_CHECKIN_TIME ? timeUtil.timestamp2Time(item.QUEUE_CHECKIN_TIME) : '';
 		item.callTimeText = item.QUEUE_CALL_TIME ? timeUtil.timestamp2Time(item.QUEUE_CALL_TIME) : '';
+		item.cancelTimeText = item.QUEUE_CANCEL_TIME ? timeUtil.timestamp2Time(item.QUEUE_CANCEL_TIME) : '';
+		item.addTimeText = item.QUEUE_ADD_TIME ? timeUtil.timestamp2Time(item.QUEUE_ADD_TIME) : '';
 		return item;
 	}
 }

@@ -32,6 +32,9 @@ QueueModel.DB_STRUCTURE = {
 	QUEUE_CHECKIN_TIME: 'int|true|default=0|comment=签到时间',
 	QUEUE_CALL_TIME: 'int|true|default=0|comment=叫号时间',
 	QUEUE_FINISH_TIME: 'int|true|default=0|comment=完成时间',
+	QUEUE_CANCEL_TIME: 'int|true|default=0|comment=取消时间',
+	QUEUE_CANCEL_REASON: 'string|false|comment=取消原因',
+	QUEUE_CANCEL_OPERATOR: 'string|false|comment=取消操作人',
 
 	QUEUE_ADD_TIME: 'int|true',
 	QUEUE_EDIT_TIME: 'int|true',

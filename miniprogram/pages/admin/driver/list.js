@@ -1,6 +1,7 @@
 const AdminBiz = require('../../../biz/admin_biz.js');
 const cloudHelper = require('../../../helper/cloud_helper.js');
 const pageHelper = require('../../../helper/page_helper.js');
+const bizHelper = require('../../../biz/biz_helper.js');
 
 Page({
 
@@ -15,9 +16,17 @@ Page({
 	},
 
 	onShow: function () {
-		// 刷新列表
+		// 刷新列表 - 先尝试组件 reload，若组件未就绪则延迟重试
 		let cmpt = this.selectComponent('#driverList');
-		if (cmpt) cmpt.reload();
+		if (cmpt) {
+			cmpt.reload();
+		} else {
+			// 组件尚未挂载，稍后重试
+			setTimeout(() => {
+				let retryCmpt = this.selectComponent('#driverList');
+				if (retryCmpt) retryCmpt.reload();
+			}, 300);
+		}
 	},
 
 	bindDelTap: async function (e) {
@@ -28,6 +37,8 @@ Page({
 			try {
 				await cloudHelper.callCloudSumbit('admin/user_del', { id }, { title: '删除中' });
 				wx.showToast({ title: '删除成功', icon: 'success' });
+				// 清除缓存后刷新
+				bizHelper.removeCacheList('admin-driver');
 				let cmpt = this.selectComponent('#driverList');
 				if (cmpt) cmpt.reload();
 			} catch (err) {

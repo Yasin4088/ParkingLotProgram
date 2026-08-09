@@ -42,5 +42,6 @@
 
 	// #### 装卸排队相关
 	QUEUE_CALL_TEMPLATE_ID: '', // 叫号订阅消息模板ID，配置后司机可订阅微信通知
+	QUEUE_CANCEL_TEMPLATE_ID: '', // 预约取消订阅消息模板ID，配置后司机可订阅取消通知
 
  }

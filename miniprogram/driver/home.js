@@ -82,8 +82,6 @@ Page({
 		if (!action) return wx.showToast({ title: '请选择装货或卸货', icon: 'none' });
 		if (!this.data.plate || this.data.plate.length < 3) return wx.showToast({ title: '请输入车牌号', icon: 'none' });
 		if (!/^1\d{10}$/.test(this.data.phone)) return wx.showToast({ title: '请输入正确手机号', icon: 'none' });
-		if (!this.data.proof) return wx.showToast({ title: '请上传单证照片', icon: 'none' });
-
 		this.setData({ submitting: true });
 		try {
 			await cloudHelper.callCloudSumbit('queue/create', {

@@ -1,6 +1,7 @@
 const AdminBiz = require('../../../biz/admin_biz.js');
 const pageHelper = require('../../../helper/page_helper.js');
 const cloudHelper = require('../../../helper/cloud_helper.js');
+const bizHelper = require('../../../biz/biz_helper.js');
 
 Page({
 
@@ -87,6 +88,9 @@ Page({
 				}, { title: '保存中' });
 				wx.showToast({ title: '添加成功', icon: 'success', duration: 1500 });
 			}
+
+			// 清除司机列表缓存，确保返回后刷新
+			bizHelper.removeCacheList('admin-driver');
 
 			setTimeout(() => {
 				wx.navigateBack();

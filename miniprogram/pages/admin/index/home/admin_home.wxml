@@ -41,6 +41,11 @@
 		</view>
 	</view>
 
+	<view class="comm-list grid col-3">
+		<view class="item" bindtap="url" data-url="../../driver/list"> <text class="icon-peoplefill text-orange"></text> <text class="text-black">司机管理</text>
+		</view>
+	</view>
+
 
 	<!-- BOTTOM begin -->
 	<view class="comm-list menu  margin-top">

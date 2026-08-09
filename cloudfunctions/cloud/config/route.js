@@ -16,6 +16,9 @@ module.exports = {
 	'admin/login': 'admin/admin_home_controller@adminLogin',
 	'admin/queue_list': 'admin/admin_queue_controller@list',
 	'admin/queue_call_next': 'admin/admin_queue_controller@callNext',
+	'admin/queue_detail': 'admin/admin_queue_controller@detail',
+	'admin/queue_edit': 'admin/admin_queue_controller@edit',
+	'admin/queue_cancel': 'admin/admin_queue_controller@cancel',
 	'admin/queue_finish': 'admin/admin_queue_controller@finish',
 
 	'admin/user_list': 'admin/admin_user_controller@getUserList',

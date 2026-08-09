@@ -17,22 +17,111 @@
         <button class="call-btn" loading="{{loading}}" bindtap="bindCallTap">叫号</button>
     </view>
 
-    <view class="summary">当前队列 {{list.length}} 辆</view>
+    <view class="summary">当前预约/队列 {{list.length}} 辆</view>
 
     <view wx:if="{{list.length}}">
-        <view wx:for="{{list}}" wx:key="_id" class="queue-card {{item.QUEUE_STATUS === 2 ? 'called' : ''}}">
+        <view wx:for="{{list}}" wx:key="_id" data-id="{{item._id}}" bindtap="bindItemTap" class="queue-card {{item.QUEUE_STATUS === 2 ? 'called' : ''}} {{item.QUEUE_STATUS === 0 ? 'booked' : ''}}">
             <view class="top">
-                <view class="no">{{item.QUEUE_NO}}</view>
+                <view class="no">{{item.QUEUE_NO || '未签到'}}</view>
                 <view class="status">{{item.statusDesc}}</view>
             </view>
             <view class="plate">{{item.QUEUE_PLATE}}</view>
             <view class="meta">{{item.QUEUE_ACTION_NAME}} · {{item.QUEUE_PHONE}}</view>
-            <view class="meta">签到时间：{{item.checkinTimeText || '--'}}</view>
-            <button wx:if="{{item.QUEUE_STATUS === 2}}" class="finish-btn" data-id="{{item._id}}" bindtap="bindFinishTap">完成装卸</button>
+            <view wx:if="{{item.checkinTimeText}}" class="meta">签到时间：{{item.checkinTimeText}}</view>
+            <view wx:else class="meta">预约时间：{{item.addTimeText || '--'}}</view>
+            <button wx:if="{{item.QUEUE_STATUS === 2}}" class="finish-btn" data-id="{{item._id}}" catchtap="bindFinishTap">完成装卸</button>
         </view>
     </view>
 
-    <view wx:else class="empty">当前停车场暂无排队车辆</view>
+    <view wx:else class="empty">当前停车场暂无预约或排队车辆</view>
 
     <view class="refresh" bindtap="bindRefreshTap">刷新列表</view>
+
+    <view wx:if="{{showDetail}}" class="detail-mask" bindtap="bindCloseDetailTap">
+        <view class="detail-panel" catchtap="bindNoop">
+            <view class="detail-head">
+                <view>
+                    <view class="detail-title">{{editMode ? '编辑预约' : '预约详情'}}</view>
+                    <view class="detail-sub">{{selectedItem.QUEUE_NO || '未签到'}} · {{selectedItem.statusDesc}}</view>
+                </view>
+                <view class="detail-close" bindtap="bindCloseDetailTap">关闭</view>
+            </view>
+
+            <view wx:if="{{!editMode}}">
+                <view class="detail-grid">
+                    <view class="detail-row">
+                        <view class="detail-label">车牌号</view>
+                        <view class="detail-value">{{selectedItem.QUEUE_PLATE || '--'}}</view>
+                    </view>
+                    <view class="detail-row">
+                        <view class="detail-label">手机号</view>
+                        <view class="detail-value">{{selectedItem.QUEUE_PHONE || '--'}}</view>
+                    </view>
+                    <view class="detail-row">
+                        <view class="detail-label">停车场</view>
+                        <view class="detail-value">{{selectedItem.QUEUE_LOT_NAME || '--'}}</view>
+                    </view>
+                    <view class="detail-row">
+                        <view class="detail-label">业务类型</view>
+                        <view class="detail-value">{{selectedItem.QUEUE_ACTION_NAME || '--'}}</view>
+                    </view>
+                    <view class="detail-row">
+                        <view class="detail-label">预约时间</view>
+                        <view class="detail-value">{{selectedItem.addTimeText || '--'}}</view>
+                    </view>
+                    <view class="detail-row">
+                        <view class="detail-label">签到时间</view>
+                        <view class="detail-value">{{selectedItem.checkinTimeText || '--'}}</view>
+                    </view>
+                    <view class="detail-row">
+                        <view class="detail-label">叫号时间</view>
+                        <view class="detail-value">{{selectedItem.callTimeText || '--'}}</view>
+                    </view>
+                    <view class="detail-row">
+                        <view class="detail-label">装卸凭证</view>
+                        <view wx:if="{{selectedItem.QUEUE_PROOF}}" class="detail-link" bindtap="bindPreviewProofTap">点击查看</view>
+                        <view wx:else class="detail-value">--</view>
+                    </view>
+                </view>
+
+                <view class="detail-actions">
+                    <view class="detail-btn primary" bindtap="bindEditTap">编辑成员</view>
+                </view>
+            </view>
+
+            <view wx:else class="edit-form">
+                <view class="form-group">
+                    <view class="form-label">车牌号</view>
+                    <input class="edit-input" value="{{editForm.plate}}" bindinput="bindPlateInput" maxlength="20" placeholder="请输入车牌号" />
+                </view>
+                <view class="form-group">
+                    <view class="form-label">手机号</view>
+                    <input class="edit-input" value="{{editForm.phone}}" bindinput="bindPhoneInput" type="number" maxlength="11" placeholder="请输入手机号" />
+                </view>
+                <view class="form-group">
+                    <view class="form-label">停车场</view>
+                    <picker mode="selector" range="{{lots}}" range-key="name" value="{{lotEditIndex}}" bindchange="bindEditLotChange">
+                        <view class="edit-input">{{lots.length ? lots[lotEditIndex].name : '请选择停车场'}}</view>
+                    </picker>
+                </view>
+                <view class="form-group">
+                    <view class="form-label">业务类型</view>
+                    <picker mode="selector" range="{{actions}}" range-key="name" value="{{actionEditIndex}}" bindchange="bindEditActionChange">
+                        <view class="edit-input">{{actions[actionEditIndex].name}}</view>
+                    </picker>
+                </view>
+
+                <view class="detail-actions two">
+                    <view class="detail-btn ghost" bindtap="bindCancelEditTap">取消编辑</view>
+                    <view class="detail-btn primary" bindtap="bindSaveEditTap">{{submitting ? '保存中...' : '保存修改'}}</view>
+                </view>
+            </view>
+
+            <view class="cancel-box">
+                <view class="form-label">删除/取消原因</view>
+                <textarea class="reason-input" value="{{cancelReason}}" bindinput="bindCancelReasonInput" maxlength="80" placeholder="请输入原因，将用于通知司机重新预约" />
+                <view class="danger-btn" bindtap="bindCancelQueueTap">{{submitting ? '处理中...' : '删除并取消预约'}}</view>
+            </view>
+        </view>
+    </view>
 </view>

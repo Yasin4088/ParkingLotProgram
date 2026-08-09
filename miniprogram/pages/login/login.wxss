@@ -52,12 +52,14 @@
     overflow: hidden;
     margin-bottom: 30rpx;
     border: 2rpx solid #009F72;
+    box-sizing: border-box;
 }
 
 .tab {
     flex: 1;
     text-align: center;
     font-size: 30rpx;
+    height: 72rpx;
     line-height: 72rpx;
     color: #009F72;
     background: #fff;

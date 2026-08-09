@@ -14,6 +14,7 @@ module.exports = {
 	NEWS_CATE: '1=预约规则',
 	MEET_TYPE: '1=小型车预约,2=大型车预约',
 	QUEUE_ADMIN_OPENIDS: '', // 管理员微信openid，多个用英文逗号分隔；也可在ax_user中设置USER_ROLE=admin
+	QUEUE_CANCEL_TEMPLATE_ID: '', // 队列取消订阅消息模板ID，配置后可通知司机重新预约
 	// ##################################################################
 	// #### 调试相关
 	TEST_MODE: false,
