@@ -1,0 +1,38 @@
+<view class="page">
+    <view class="header">
+        <view>
+            <view class="title">管理员叫号</view>
+            <view class="desc">选择停车场，查看排队列表并按顺序叫号</view>
+        </view>
+        <view class="header-actions">
+            <view class="driver-mgr" bindtap="bindDriverMgrTap">司机管理</view>
+            <view class="logout" bindtap="bindLogoutTap">退出</view>
+        </view>
+    </view>
+
+    <view class="toolbar">
+        <picker mode="selector" range="{{lots}}" range-key="name" value="{{lotIndex}}" bindchange="bindLotChange">
+            <view class="picker">{{lots.length ? lots[lotIndex].name : '选择停车场'}}</view>
+        </picker>
+        <button class="call-btn" loading="{{loading}}" bindtap="bindCallTap">叫号</button>
+    </view>
+
+    <view class="summary">当前队列 {{list.length}} 辆</view>
+
+    <view wx:if="{{list.length}}">
+        <view wx:for="{{list}}" wx:key="_id" class="queue-card {{item.QUEUE_STATUS === 2 ? 'called' : ''}}">
+            <view class="top">
+                <view class="no">{{item.QUEUE_NO}}</view>
+                <view class="status">{{item.statusDesc}}</view>
+            </view>
+            <view class="plate">{{item.QUEUE_PLATE}}</view>
+            <view class="meta">{{item.QUEUE_ACTION_NAME}} · {{item.QUEUE_PHONE}}</view>
+            <view class="meta">签到时间：{{item.checkinTimeText || '--'}}</view>
+            <button wx:if="{{item.QUEUE_STATUS === 2}}" class="finish-btn" data-id="{{item._id}}" bindtap="bindFinishTap">完成装卸</button>
+        </view>
+    </view>
+
+    <view wx:else class="empty">当前停车场暂无排队车辆</view>
+
+    <view class="refresh" bindtap="bindRefreshTap">刷新列表</view>
+</view>

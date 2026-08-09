@@ -1,0 +1,30 @@
+{
+	"pages": [
+		"pages/login/login",
+		"driver/home",
+		"driver/queue",
+		"admin/queue",
+		"pages/admin/driver/list"
+	],
+	"window": {
+		"backgroundColor": "#f1f1f1",
+		"backgroundTextStyle": "dark",
+		"navigationBarBackgroundColor": "#009F72",
+		"navigationBarTitleText": "停车场装卸排队",
+		"navigationBarTextStyle": "white"
+	},
+	"permission": {
+		"scope.userLocation": {
+			"desc": "用于司机到达停车场后完成GPS签到"
+		}
+	},
+	"useExtendedLib": {
+		"weui": true
+	},
+	"usingComponents": {
+		"cmpt-comm-list": "/cmpts/public/list/comm_list_cmpt",
+		"cmpt-picker": "/cmpts/public/picker/picker_cmpt",
+		"cmpt-modal": "/cmpts/public/modal/modal_cmpt"
+	},
+	"sitemapLocation": "sitemap.json"
+}

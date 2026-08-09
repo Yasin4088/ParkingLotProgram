@@ -1,0 +1,48 @@
+<view class="page">
+	<view class="header">
+		<view class="title">我的排队</view>
+		<view class="desc">到达停车场后请先完成 GPS 签到，再等待管理员叫号</view>
+	</view>
+
+	<view wx:if="{{item}}" class="card">
+		<view class="status {{item.QUEUE_STATUS === 2 ? 'called' : ''}}">{{item.statusDesc}}</view>
+		<view class="queue-no">{{item.QUEUE_NO || '--'}}</view>
+		<view class="queue-label">排队号</view>
+
+		<view class="info-grid">
+			<view>
+				<view class="info-label">停车场</view>
+				<view class="info-val">{{item.QUEUE_LOT_NAME}}</view>
+			</view>
+			<view>
+				<view class="info-label">业务</view>
+				<view class="info-val">{{item.QUEUE_ACTION_NAME}}</view>
+			</view>
+			<view>
+				<view class="info-label">车牌</view>
+				<view class="info-val">{{item.QUEUE_PLATE}}</view>
+			</view>
+			<view>
+				<view class="info-label">前方人数</view>
+				<view class="info-val strong">{{item.ahead || 0}}</view>
+			</view>
+		</view>
+
+		<view wx:if="{{item.QUEUE_STATUS === 0}}" class="tips">已预约，抵达现场后点击 GPS 签到进入队列。</view>
+		<view wx:elif="{{item.QUEUE_STATUS === 1}}" class="tips">排队中，请关注叫号通知。</view>
+		<view wx:elif="{{item.QUEUE_STATUS === 2}}" class="tips called-text">已叫号，请前往对应装卸区。</view>
+
+		<button wx:if="{{item.QUEUE_STATUS === 0}}" loading="{{loading}}" class="primary-btn" bindtap="bindCheckinTap">GPS 签到</button>
+		<button wx:if="{{item.QUEUE_STATUS !== 2}}" class="ghost-btn" bindtap="bindSubscribeTap">{{item.QUEUE_SUBSCRIBE ? '已订阅叫号通知' : '订阅叫号通知'}}</button>
+	</view>
+
+	<view wx:else class="empty-card">
+		<view class="empty-title">暂无预约</view>
+		<view class="empty-desc">请先提交装卸预约，再查看排队信息。</view>
+	</view>
+
+	<view class="footer-actions">
+		<view bindtap="bindHomeTap">去预约</view>
+		<view bindtap="bindRefreshTap">刷新</view>
+	</view>
+</view>

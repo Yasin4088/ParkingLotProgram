@@ -1,0 +1,144 @@
+.page {
+	min-height: 100vh;
+	background: #f5f7f8;
+	padding: 28rpx;
+	box-sizing: border-box;
+}
+
+.header {
+	background: #102a43;
+	border-radius: 24rpx;
+	color: #fff;
+	padding: 42rpx 34rpx;
+	margin-bottom: 28rpx;
+}
+
+.title {
+	font-size: 42rpx;
+	font-weight: bold;
+}
+
+.desc {
+	font-size: 26rpx;
+	opacity: .86;
+	margin-top: 16rpx;
+	line-height: 1.6;
+}
+
+.card,
+.empty-card {
+	background: #fff;
+	border-radius: 24rpx;
+	padding: 36rpx 32rpx;
+	box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, .06);
+	text-align: center;
+}
+
+.status {
+	display: inline-block;
+	background: #e6f7f1;
+	color: #009F72;
+	border-radius: 999rpx;
+	padding: 10rpx 28rpx;
+	font-size: 26rpx;
+}
+
+.status.called {
+	background: #fff1e6;
+	color: #f07818;
+}
+
+.queue-no {
+	font-size: 92rpx;
+	font-weight: bold;
+	color: #102a43;
+	margin-top: 26rpx;
+}
+
+.queue-label {
+	color: #8a99a8;
+	font-size: 24rpx;
+	margin-bottom: 32rpx;
+}
+
+.info-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 22rpx;
+	text-align: left;
+	margin: 30rpx 0;
+}
+
+.info-grid > view {
+	background: #f7f8fa;
+	border-radius: 16rpx;
+	padding: 22rpx;
+}
+
+.info-label {
+	color: #7b8794;
+	font-size: 24rpx;
+}
+
+.info-val {
+	color: #243b53;
+	font-size: 30rpx;
+	font-weight: 600;
+	margin-top: 10rpx;
+}
+
+.strong {
+	color: #f07818;
+}
+
+.tips {
+	color: #52606d;
+	font-size: 26rpx;
+	line-height: 1.6;
+	margin: 20rpx 0;
+}
+
+.called-text {
+	color: #f07818;
+	font-weight: 600;
+}
+
+.primary-btn,
+.ghost-btn {
+	height: 84rpx;
+	line-height: 84rpx;
+	border-radius: 42rpx;
+	font-size: 30rpx;
+	margin-top: 22rpx;
+}
+
+.primary-btn {
+	background: #009F72;
+	color: #fff;
+}
+
+.ghost-btn {
+	background: #eef8f4;
+	color: #009F72;
+}
+
+.empty-title {
+	font-size: 34rpx;
+	font-weight: bold;
+	color: #243b53;
+}
+
+.empty-desc {
+	color: #7b8794;
+	font-size: 26rpx;
+	margin-top: 18rpx;
+}
+
+.footer-actions {
+	display: flex;
+	justify-content: center;
+	gap: 60rpx;
+	color: #009F72;
+	font-size: 26rpx;
+	padding: 34rpx 0;
+}

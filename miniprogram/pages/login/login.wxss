@@ -1,0 +1,114 @@
+.main {
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #009F72 0%, #00c48a 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card {
+    width: 610rpx;
+    background-color: #fff;
+    border-radius: 24rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 50rpx 40rpx 40rpx;
+}
+
+.logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30rpx;
+}
+
+.icon-park {
+    width: 96rpx;
+    height: 96rpx;
+    border-radius: 50%;
+    background: #009F72;
+    color: #fff;
+    font-size: 58rpx;
+    font-weight: bold;
+    text-align: center;
+    line-height: 96rpx;
+}
+
+.title {
+    font-size: 36rpx;
+    font-weight: bold;
+    color: #333;
+    margin-top: 10rpx;
+}
+
+/* 标签切换 */
+.tabs {
+    width: 100%;
+    display: flex;
+    border-radius: 12rpx;
+    overflow: hidden;
+    margin-bottom: 30rpx;
+    border: 2rpx solid #009F72;
+}
+
+.tab {
+    flex: 1;
+    text-align: center;
+    font-size: 30rpx;
+    line-height: 72rpx;
+    color: #009F72;
+    background: #fff;
+    transition: all 0.2s;
+}
+
+.tab.active {
+    color: #fff;
+    background: #009F72;
+}
+
+/* 表单 */
+.form {
+    width: 100%;
+}
+
+.form-item {
+    width: 100%;
+    height: 88rpx;
+    border: 2rpx solid #e0e0e0;
+    border-radius: 12rpx;
+    margin-bottom: 20rpx;
+    display: flex;
+    align-items: center;
+    padding: 0 24rpx;
+    box-sizing: border-box;
+}
+
+.form-item input {
+    width: 100%;
+    font-size: 30rpx;
+    color: #333;
+}
+
+.login-btn {
+    width: 100%;
+    height: 88rpx;
+    background: linear-gradient(135deg, #009F72 0%, #00c48a 100%);
+    color: #fff;
+    font-size: 34rpx;
+    font-weight: bold;
+    border-radius: 44rpx;
+    border: none;
+    line-height: 88rpx;
+    margin-top: 10rpx;
+}
+
+.hint {
+    margin-top: 24rpx;
+    font-size: 24rpx;
+    color: #999;
+    line-height: 1.6;
+    text-align: center;
+}
