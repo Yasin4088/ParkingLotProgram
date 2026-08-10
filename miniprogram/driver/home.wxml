@@ -42,6 +42,7 @@
 
 	<view class="footer-actions">
 		<view bindtap="bindQueueTap">查看我的排队</view>
+		<view bindtap="bindProfileTap">个人信息</view>
 		<view bindtap="bindLogoutTap">退出登录</view>
 	</view>
 </view>

@@ -11,7 +11,11 @@ module.exports = {
 	'queue/checkin': 'queue_controller@checkin',
 	'queue/subscribe': 'queue_controller@subscribe',
 
-	'driver/login': 'queue_controller@driverLogin',
+	'driver/wxlogin': 'driver_controller@wxLogin',
+	'driver/register': 'driver_controller@register',
+	'driver/getphonenumber': 'driver_controller@getPhoneNumber',
+	'driver/getinfo': 'driver_controller@getMyDetail',
+	'driver/updateinfo': 'driver_controller@updateInfo',
 
 	'admin/login': 'admin/admin_home_controller@adminLogin',
 	'admin/queue_list': 'admin/admin_queue_controller@list',

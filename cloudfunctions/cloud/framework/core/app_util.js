@@ -13,7 +13,7 @@ function handlerBasic(code, msg = '', data = {}) {
 			msg = (msg) ? msg + ':ok' : 'ok';
 			break;
 		case appCode.SVR:
-			msg = '服务器繁忙，请稍后再试';
+			msg = (msg) ? msg : '服务器繁忙，请稍后再试';
 			break;
 		case appCode.LOGIC:
 			break;

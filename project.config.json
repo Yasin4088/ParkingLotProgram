@@ -37,14 +37,19 @@
     "disableUseStrict": false,
     "minifyWXML": true,
     "showES6CompileOption": false,
-    "useCompilerPlugins": false
+    "useCompilerPlugins": false,
+    "compileWorklet": false,
+    "localPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true
   },
   "appid": "wx3decd5e9b69b1b7e",
   "projectname": "V1.0%E5%B0%8F%E7%A8%8B%E5%BA%8F",
   "libVersion": "2.17.0",
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
-  "cloudfunctionTemplateRoot": "cloudfunctionTemplate",
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
   "condition": {
     "plugin": {
       "list": []
@@ -59,5 +64,10 @@
       "list": []
     }
   },
-  "compileType": "miniprogram"
+  "compileType": "miniprogram",
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }

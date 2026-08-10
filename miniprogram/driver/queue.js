@@ -9,12 +9,15 @@ Page({
 		loading: false,
 	},
 
-	onLoad: function () {
+	onLoad: async function () {
 		this._checkLogin();
+		if (!await this._checkRegistration()) return;
 		this.loadCurrent();
 	},
 
-	onShow: function () {
+	onShow: async function () {
+		this._checkLogin();
+		if (!await this._checkRegistration()) return;
 		this.loadCurrent();
 	},
 
@@ -22,6 +25,20 @@ Page({
 		let user = cacheHelper.get(constants.CACHE_TOKEN);
 		if (!user || !user.id) {
 			wx.redirectTo({ url: '/pages/login/login' });
+		}
+	},
+
+	_checkRegistration: async function () {
+		try {
+			let driverInfo = await cloudHelper.callCloudData('driver/getInfo', {}, { title: '' });
+			if (!driverInfo || !driverInfo.USER_IDCARD) {
+				wx.redirectTo({ url: '/pages/driver/register/register' });
+				return false;
+			}
+			return true;
+		} catch (err) {
+			console.error('检查注册状态失败', err);
+			return false;
 		}
 	},
 

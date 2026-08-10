@@ -45,28 +45,40 @@ Page({
 
 		this.setData({ loading: true });
 
+		// 管理员登录
 		try {
-			if (this.data.tab === 'admin') {
-				// 管理员登录
-				let res = await cloudHelper.callCloudSumbit('admin/login', {
-					name: name,
-					pwd: pwd,
-				}, { title: '登录中' });
+			let res = await cloudHelper.callCloudSumbit('admin/login', {
+				name: name,
+				pwd: pwd,
+			}, { title: '登录中' });
 
-				// 缓存管理员信息
-				AdminBiz.adminLogin(res.data);
-				wx.redirectTo({ url: '/admin/queue' });
+			// 缓存管理员信息
+			AdminBiz.adminLogin(res.data);
+			wx.redirectTo({ url: '/admin/queue' });
 
-			} else {
-				// 司机登录
-				let res = await cloudHelper.callCloudSumbit('driver/login', {
-					username: name,
-					password: pwd,
-				}, { title: '登录中' });
+		} catch (e) {
+			console.log(e);
+		} finally {
+			this.setData({ loading: false });
+		}
+	},
 
-				// 缓存司机信息
-				cacheHelper.set(constants.CACHE_TOKEN, res.data, 86400);
+	bindWxLoginTap: async function () {
+		if (this.data.loading) return;
+		this.setData({ loading: true });
+
+		try {
+			let res = await cloudHelper.callCloudSumbit('driver/wxLogin', {}, { title: '登录中' });
+
+			// 始终缓存 token（新用户也有 token）
+			cacheHelper.set(constants.CACHE_TOKEN, res.data, 86400);
+
+			if (res.data.registered) {
+				// 已注册 → 跳转首页
 				wx.redirectTo({ url: '/driver/home' });
+			} else {
+				// 未注册 → 跳转注册页
+				wx.redirectTo({ url: '/pages/driver/register/register' });
 			}
 		} catch (e) {
 			console.log(e);

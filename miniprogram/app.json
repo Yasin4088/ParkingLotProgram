@@ -1,6 +1,7 @@
 {
 	"pages": [
 		"pages/login/login",
+		"pages/driver/register/register",
 		"driver/home",
 		"driver/queue",
 		"admin/queue",

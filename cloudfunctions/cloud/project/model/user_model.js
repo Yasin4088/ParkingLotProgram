@@ -27,6 +27,13 @@ UserModel.DB_STRUCTURE = {
 	USER_CITY: 'string|false|comment=所在城市',
 	USER_TRADE: 'string|false|comment=职业领域',
 
+	USER_IDCARD: 'string|false|comment=身份证号',
+	USER_LICENSE_PLATE: 'string|false|comment=车牌号',
+	USER_DRIVER_LICENSE_IMG: 'string|false|comment=驾驶证照片cloud fileID',
+	USER_VEHICLE_REG_IMG: 'string|false|comment=行驶证照片cloud fileID',
+	USER_IDCARD_IMG: 'string|false|comment=身份证照片cloud fileID',
+	USER_PHONE_VERIFIED: 'int|true|default=0|comment=手机号是否已微信验证 0=否,1=是',
+
 
 	USER_LOGIN_CNT: 'int|true|default=0|comment=登陆次数',
 	USER_LOGIN_TIME: 'int|false|comment=最近登录时间',

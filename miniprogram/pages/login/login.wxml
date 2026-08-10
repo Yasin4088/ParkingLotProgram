@@ -11,18 +11,27 @@
             <view class="tab {{tab === 'admin' ? 'active' : ''}}" bindtap="bindTabTap" data-tab="admin">管理员登录</view>
         </view>
 
-        <!-- 表单 -->
-        <view class="form">
-            <view class="form-item">
-                <input placeholder="请输入用户名" value="{{name}}" bindinput="bindNameInput" maxlength="30" />
-            </view>
-            <view class="form-item">
-                <input placeholder="请输入密码" type="password" value="{{pwd}}" bindinput="bindPwdInput" maxlength="30" />
-            </view>
+        <!-- 司机端：微信一键登录 -->
+        <block wx:if="{{tab === 'driver'}}">
+            <button class="login-btn wechat-btn" loading="{{loading}}" bindtap="bindWxLoginTap">
+                微信一键登录
+            </button>
+            <view class="hint">首次登录后需完善个人信息</view>
+        </block>
 
-            <button class="login-btn" loading="{{loading}}" bindtap="bindLoginTap">登 录</button>
-        </view>
+        <!-- 管理员端：用户名密码 -->
+        <block wx:else>
+            <view class="form">
+                <view class="form-item">
+                    <input placeholder="请输入用户名" value="{{name}}" bindinput="bindNameInput" maxlength="30" />
+                </view>
+                <view class="form-item">
+                    <input placeholder="请输入密码" type="password" value="{{pwd}}" bindinput="bindPwdInput" maxlength="30" />
+                </view>
 
-        <!-- <view class="hint">{{tab === 'admin' ? '默认管理员：Yasin / 4088' : '司机账号由管理员在后台分配，请使用分配的账号登录'}}</view> -->
+                <button class="login-btn" loading="{{loading}}" bindtap="bindLoginTap">登 录</button>
+            </view>
+        </block>
+
     </view>
 </view>

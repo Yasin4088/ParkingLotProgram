@@ -138,7 +138,7 @@ async function app(event, context) {
 
 
 			// 系统error
-			return appUtil.handlerSvrErr();
+			return appUtil.handlerAppErr('系统内部错误: ' + ex.message, appCode.SVR);
 		}
 	}
 }
