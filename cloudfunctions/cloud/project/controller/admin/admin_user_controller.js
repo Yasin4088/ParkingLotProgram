@@ -1,7 +1,7 @@
 /**
  * Notes: 用户控制模块
  * Ver : CCMiniCloud Framework 2.0.1 ALL RIGHTS RESERVED BY cclinux@qq.com
- * Date: 2022-01-22 10:20:00 
+ * Date: 2022-01-22 10:20:00
  */
 
 const BaseAdminController = require('./base_admin_controller.js');
@@ -11,7 +11,7 @@ const LogModel = require('../../model/log_model.js');
 const AdminUserService = require('../../service/admin/admin_user_service.js');
 const timeUtil = require('../../../framework/utils/time_util.js');
 
-class AdminUserController extends BaseAdminController { 
+class AdminUserController extends BaseAdminController {
 
 
 	/** 用户信息 */
@@ -32,7 +32,7 @@ class AdminUserController extends BaseAdminController {
 		});
 
 		if (user) {
-			// 显示转换  
+			// 显示转换
 			user.USER_ADD_TIME = timeUtil.timestamp2Time(user.USER_ADD_TIME);
 			user.USER_LOGIN_TIME = user.USER_LOGIN_TIME ? timeUtil.timestamp2Time(user.USER_LOGIN_TIME) : '未登录';
 		}
@@ -74,7 +74,7 @@ class AdminUserController extends BaseAdminController {
 		}
 		result.list = list;
 		return result;
-	} 
+	}
 
 	/** 删除用户 */
 	async delUser() {
@@ -136,6 +136,10 @@ class AdminUserController extends BaseAdminController {
 
 		if (user) {
 			user.USER_ADD_TIME = timeUtil.timestamp2Time(user.USER_ADD_TIME);
+			user.USER_LOGIN_TIME = user.USER_LOGIN_TIME ? timeUtil.timestamp2Time(user.USER_LOGIN_TIME) : '未登录';
+			user.USER_EDIT_TIME = user.USER_EDIT_TIME ? timeUtil.timestamp2Time(user.USER_EDIT_TIME) : '';
+			// 删除密码字段，不暴露给前端
+			delete user.USER_PASSWORD;
 		}
 
 		return user;
@@ -150,6 +154,7 @@ class AdminUserController extends BaseAdminController {
 			username: 'must|string|min:2|max:30|name=用户名',
 			password: 'string|min:4|max:30|name=密码',
 			phone: 'string|max:20|name=手机号',
+			status: 'int|name=状态',
 		};
 
 		let input = this.validateData(rules);
@@ -159,6 +164,7 @@ class AdminUserController extends BaseAdminController {
 			username: input.username,
 			password: input.password || '',
 			phone: input.phone || '',
+			status: input.status,
 		});
 
 		this.log('编辑了司机「' + input.username + '」', LogModel.TYPE.USER);

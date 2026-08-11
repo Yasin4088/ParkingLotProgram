@@ -18,6 +18,9 @@ module.exports = {
 	'driver/updateinfo': 'driver_controller@updateInfo',
 
 	'admin/login': 'admin/admin_home_controller@adminLogin',
+	'admin/check_setup': 'admin/admin_home_controller@checkSetup',
+	'admin/home': 'admin/admin_home_controller@adminHome',
+	'admin/clear_cache': 'admin/admin_home_controller@clearCache',
 	'admin/queue_list': 'admin/admin_queue_controller@list',
 	'admin/queue_call_next': 'admin/admin_queue_controller@callNext',
 	'admin/queue_detail': 'admin/admin_queue_controller@detail',
@@ -30,4 +33,13 @@ module.exports = {
 	'admin/user_insert': 'admin/admin_user_controller@insertUser',
 	'admin/user_edit': 'admin/admin_user_controller@editUser',
 	'admin/user_del': 'admin/admin_user_controller@delUser',
-}
+
+	'admin/setup': 'admin/admin_mgr_controller@setupAdmin',
+	'admin/admin_list': 'admin/admin_mgr_controller@getAdminList',
+	'admin/admin_detail': 'admin/admin_mgr_controller@getAdminDetail',
+	'admin/admin_insert': 'admin/admin_mgr_controller@insertAdmin',
+	'admin/admin_edit': 'admin/admin_mgr_controller@editAdmin',
+	'admin/admin_del': 'admin/admin_mgr_controller@delAdmin',
+	'admin/admin_change_pwd': 'admin/admin_mgr_controller@changePwd',
+	'admin/admin_reset_pwd': 'admin/admin_mgr_controller@resetPwd',
+};

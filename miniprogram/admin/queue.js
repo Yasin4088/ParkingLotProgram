@@ -21,6 +21,7 @@ Page({
 			phone: '',
 			lotId: '',
 			action: '',
+			cargoName: '',
 		},
 		lotEditIndex: 0,
 		actionEditIndex: 0,
@@ -123,6 +124,7 @@ Page({
 				phone: item.QUEUE_PHONE || '',
 				lotId: item.QUEUE_LOT_ID || '',
 				action: item.QUEUE_ACTION || '',
+				cargoName: item.QUEUE_CARGO_NAME || '',
 			},
 			lotEditIndex: lotEditIndex > -1 ? lotEditIndex : 0,
 			actionEditIndex: actionEditIndex > -1 ? actionEditIndex : 0,
@@ -156,6 +158,10 @@ Page({
 
 	bindPhoneInput: function (e) {
 		this.setData({ 'editForm.phone': e.detail.value });
+	},
+
+	bindCargoNameInput: function (e) {
+		this.setData({ 'editForm.cargoName': e.detail.value });
 	},
 
 	bindCancelReasonInput: function (e) {
@@ -197,6 +203,7 @@ Page({
 				phone,
 				lotId: form.lotId,
 				action: form.action,
+				cargoName: (form.cargoName || '').trim(),
 			}, { title: '保存中' });
 			wx.showToast({ title: '已保存', icon: 'success' });
 			if (res && res.data) this._showDetail(res.data);
@@ -252,6 +259,10 @@ Page({
 
 	bindDriverMgrTap: function () {
 		wx.navigateTo({ url: '/pages/admin/driver/list' });
+	},
+
+	bindAdminHomeTap: function () {
+		wx.navigateTo({ url: '/pages/admin/index/home/admin_home' });
 	},
 
 	bindLogoutTap: function () {

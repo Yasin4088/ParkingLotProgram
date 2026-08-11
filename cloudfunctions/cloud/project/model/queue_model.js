@@ -22,6 +22,7 @@ QueueModel.DB_STRUCTURE = {
 	QUEUE_ACTION: 'string|true|comment=业务类型 load=装货,unload=卸货',
 	QUEUE_ACTION_NAME: 'string|true|comment=业务类型名称',
 	QUEUE_PROOF: 'string|false|comment=上传单证图片fileID',
+	QUEUE_CARGO_NAME: 'string|false|comment=货物名称',
 
 	QUEUE_NO: 'string|false|comment=排队号',
 	QUEUE_STATUS: 'int|true|default=0|comment=状态 0=已预约,1=排队中,2=已叫号,9=已完成,10=已取消',

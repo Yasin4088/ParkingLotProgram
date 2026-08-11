@@ -30,7 +30,7 @@ class QueueService extends BaseService {
 		};
 	}
 
-	async create(userId, openId, lotId, action, plate, phone, proof) {
+	async create(userId, openId, lotId, action, plate, phone, proof, cargoName) {
 		let lot = this._getLot(lotId);
 		if (!ACTIONS[action]) this.AppError('请选择装货或卸货');
 
@@ -50,6 +50,7 @@ class QueueService extends BaseService {
 			QUEUE_ACTION: action,
 			QUEUE_ACTION_NAME: ACTIONS[action],
 			QUEUE_PROOF: proof || '',
+			QUEUE_CARGO_NAME: cargoName || '',
 			QUEUE_STATUS: QueueModel.STATUS.BOOKED,
 			QUEUE_SUBSCRIBE: 0,
 		});
@@ -179,6 +180,7 @@ class QueueService extends BaseService {
 			QUEUE_LOT_NAME: lot.name,
 			QUEUE_ACTION: data.action,
 			QUEUE_ACTION_NAME: ACTIONS[data.action],
+			QUEUE_CARGO_NAME: data.cargoName || '',
 		});
 
 		return await this.detail(id);

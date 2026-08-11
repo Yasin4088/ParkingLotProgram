@@ -6,6 +6,7 @@
         </view>
         <view class="header-actions">
             <view class="driver-mgr" bindtap="bindDriverMgrTap">司机管理</view>
+            <view class="driver-mgr" bindtap="bindAdminHomeTap">后台管理</view>
             <view class="logout" bindtap="bindLogoutTap">退出</view>
         </view>
     </view>
@@ -27,6 +28,7 @@
             </view>
             <view class="plate">{{item.QUEUE_PLATE}}</view>
             <view class="meta">{{item.QUEUE_ACTION_NAME}} · {{item.QUEUE_PHONE}}</view>
+            <view wx:if="{{item.QUEUE_CARGO_NAME}}" class="meta">货物：{{item.QUEUE_CARGO_NAME}}</view>
             <view wx:if="{{item.checkinTimeText}}" class="meta">签到时间：{{item.checkinTimeText}}</view>
             <view wx:else class="meta">预约时间：{{item.addTimeText || '--'}}</view>
             <button wx:if="{{item.QUEUE_STATUS === 2}}" class="finish-btn" data-id="{{item._id}}" catchtap="bindFinishTap">完成装卸</button>
@@ -64,6 +66,10 @@
                     <view class="detail-row">
                         <view class="detail-label">业务类型</view>
                         <view class="detail-value">{{selectedItem.QUEUE_ACTION_NAME || '--'}}</view>
+                    </view>
+                    <view class="detail-row">
+                        <view class="detail-label">货物名称</view>
+                        <view class="detail-value">{{selectedItem.QUEUE_CARGO_NAME || '--'}}</view>
                     </view>
                     <view class="detail-row">
                         <view class="detail-label">预约时间</view>
@@ -109,6 +115,10 @@
                     <picker mode="selector" range="{{actions}}" range-key="name" value="{{actionEditIndex}}" bindchange="bindEditActionChange">
                         <view class="edit-input">{{actions[actionEditIndex].name}}</view>
                     </picker>
+                </view>
+                <view class="form-group">
+                    <view class="form-label">货物名称</view>
+                    <input class="edit-input" value="{{editForm.cargoName}}" bindinput="bindCargoNameInput" maxlength="50" placeholder="请输入货物名称" />
                 </view>
 
                 <view class="detail-actions two">

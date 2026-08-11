@@ -5,6 +5,7 @@
 
 const BaseAdminController = require('./base_admin_controller.js');
 const AdminHomeService = require('../../service/admin/admin_home_service.js');
+const AdminModel = require('../../model/admin_model.js');
 
 class AdminHomeController extends BaseAdminController {
 
@@ -29,6 +30,12 @@ class AdminHomeController extends BaseAdminController {
 	async clearCache() {
 		let service = new AdminHomeService();
 		await service.clearCache();
+	}
+
+	// 检查是否需要初始化（无需登录）
+	async checkSetup() {
+		let adminCnt = await AdminModel.count({});
+		return { needSetup: adminCnt == 0 };
 	}
 
 	// 管理员登录

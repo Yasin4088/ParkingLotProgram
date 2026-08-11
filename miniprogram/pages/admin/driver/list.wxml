@@ -7,11 +7,19 @@
             <view class="driver-item" wx:for="{{dataList.list}}" wx:key="_id">
                 <view class="top-row">
                     <view class="d-name">{{item.USER_NAME}}</view>
-                    <view class="d-status {{item.USER_STATUS === 9 ? 'off' : 'on'}}">{{item.USER_STATUS === 9 ? '已禁用' : '正常'}}</view>
+                    <view class="d-status {{item.USER_STATUS === 9 ? 'off' : (item.USER_STATUS === 0 ? 'pending' : 'on')}}">{{item.USER_STATUS_DESC || '正常'}}</view>
                 </view>
                 <view class="mid-row">
                     <text>{{item.USER_MOBILE || '未填手机号'}}</text>
                     <text class="split">|</text>
+                    <text>{{item.USER_LICENSE_PLATE || '未填车牌'}}</text>
+                </view>
+                <view class="mid-row" wx:if="{{item.USER_WORK}}">
+                    <text>{{item.USER_WORK}}</text>
+                    <text class="split" wx:if="{{item.USER_CITY}}">|</text>
+                    <text>{{item.USER_CITY}}</text>
+                </view>
+                <view class="mid-row sub">
                     <text>注册：{{item.USER_ADD_TIME}}</text>
                 </view>
                 <view class="bottom-row">

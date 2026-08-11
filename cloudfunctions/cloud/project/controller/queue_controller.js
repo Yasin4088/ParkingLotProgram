@@ -19,11 +19,12 @@ class QueueController extends BaseController {
 			plate: 'must|string|min:3|max:20|name=车牌号',
 			phone: 'must|mobile|name=手机号',
 			proof: 'string|name=单证图片',
+			cargoName: 'string|max:50|name=货物名称',
 		};
 		let input = this.validateData(rules);
 
 		let service = new QueueService();
-		return await service.create(this._token, this._userId, input.lotId, input.action, input.plate, input.phone, input.proof);
+		return await service.create(this._token, this._userId, input.lotId, input.action, input.plate, input.phone, input.proof, input.cargoName);
 	}
 
 	async myCurrent() {

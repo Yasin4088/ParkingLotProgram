@@ -11,6 +11,7 @@ Page({
 		name: '',
 		pwd: '',
 		loading: false,
+		needSetup: false,   // 系统是否需要初始化
 	},
 
 	onLoad: function (options) {
@@ -18,12 +19,34 @@ Page({
 		cacheHelper.remove(constants.CACHE_ADMIN);
 	},
 
+	onShow: function () {
+		// 每次显示时检查管理员tab是否需要初始化
+		if (this.data.tab === 'admin') {
+			this._checkSetup();
+		}
+	},
+
 	bindTabTap: function (e) {
+		let tab = e.currentTarget.dataset.tab;
 		this.setData({
-			tab: e.currentTarget.dataset.tab,
+			tab: tab,
 			name: '',
 			pwd: '',
 		});
+
+		if (tab === 'admin') {
+			this._checkSetup();
+		}
+	},
+
+	_checkSetup: async function () {
+		try {
+			let res = await cloudHelper.callCloudData('admin/check_setup', {}, { title: 'bar' });
+			this.setData({ needSetup: res && res.needSetup });
+		} catch (e) {
+			// 检查失败，默认当作已初始化
+			this.setData({ needSetup: false });
+		}
 	},
 
 	bindNameInput: function (e) {
@@ -34,6 +57,41 @@ Page({
 		this.setData({ pwd: e.detail.value });
 	},
 
+	bindConfirmPwdInput: function (e) {
+		this.setData({ confirmPwd: e.detail.value });
+	},
+
+	// 系统初始化（首次部署，创建超级管理员）
+	bindSetupTap: async function () {
+		if (this.data.loading) return;
+
+		let name = this.data.name.trim();
+		let pwd = this.data.pwd.trim();
+		let confirmPwd = this.data.confirmPwd;
+
+		if (!name || name.length < 2) return wx.showToast({ title: '管理员名至少2位', icon: 'none' });
+		if (!pwd || pwd.length < 4) return wx.showToast({ title: '密码至少4位', icon: 'none' });
+		if (pwd !== confirmPwd) return wx.showToast({ title: '两次密码不一致', icon: 'none' });
+
+		this.setData({ loading: true });
+
+		try {
+			await cloudHelper.callCloudSumbit('admin/setup', {
+				name: name,
+				pwd: pwd,
+			}, { title: '初始化中' });
+
+			wx.showToast({ title: '初始化成功，请登录', icon: 'success', duration: 2000 });
+			this.setData({ needSetup: false, name: '', pwd: '', confirmPwd: '' });
+
+		} catch (e) {
+			console.log(e);
+		} finally {
+			this.setData({ loading: false });
+		}
+	},
+
+	// 管理员登录
 	bindLoginTap: async function () {
 		if (this.data.loading) return;
 
