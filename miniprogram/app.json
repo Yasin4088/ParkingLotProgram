@@ -6,10 +6,11 @@
 		"driver/queue",
 		"admin/queue",
 		"pages/admin/driver/list",
-    "pages/admin/driver/edit",
-    "pages/admin/index/home/admin_home",
-    "pages/admin/mgr/admin/list",
-    "pages/admin/mgr/admin/edit"
+		"pages/admin/driver/edit",
+		"pages/admin/index/home/admin_home",
+		"pages/admin/mgr/admin/list",
+		"pages/admin/mgr/admin/edit",
+		"projects/A00/search/search"
 	],
 	"window": {
 		"backgroundColor": "#f1f1f1",
