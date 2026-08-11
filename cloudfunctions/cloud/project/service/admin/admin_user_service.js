@@ -35,7 +35,8 @@ class AdminUserService extends BaseAdminService {
 		whereEx, //附加查询条件
 		page,
 		size,
-		oldTotal = 0
+		oldTotal = 0,
+		role = 'driver', // 角色过滤，默认司机
 	}) {
 		orderBy = orderBy || { USER_ADD_TIME: 'desc' };
 		let fields = '*';
@@ -43,7 +44,7 @@ class AdminUserService extends BaseAdminService {
 		size = size || 20;
 
 		let where = {
-			USER_ROLE: 'driver',
+			USER_ROLE: role,
 		};
 		if (sortType && util.isDefined(sortVal)) {
 			switch (sortType) {
@@ -62,8 +63,13 @@ class AdminUserService extends BaseAdminService {
 
 		let result = await UserModel.getList(where, fields, orderBy, page, size, true, oldTotal);
 
+		// 非 driver 角色不走兼容回退
+		if (role !== 'driver') {
+			result.condition = encodeURIComponent(JSON.stringify(where));
+			return result;
+		}
+
 		// 兼容历史数据：有些司机账号可能缺少 USER_ROLE 字段（但有密码）
-		// 当 driver 精确过滤为空时，回退到"有密码账号"集合，避免新增后列表空白。
 		if (page == 1 && (!result || !result.list || result.list.length == 0)) {
 			let fallbackWhere = {
 				USER_PASSWORD: ['<>', ''],
@@ -71,7 +77,7 @@ class AdminUserService extends BaseAdminService {
 			result = await UserModel.getList(fallbackWhere, fields, orderBy, page, size, true, oldTotal);
 		}
 
-		// 搜索兜底：如果后端组合条件不稳定，使用结果集二次过滤，保证可搜可见
+		// 搜索兜底
 		if (search) {
 			let kw = String(search).toLowerCase();
 			let allByRole = await UserModel.getAll({
@@ -108,11 +114,12 @@ class AdminUserService extends BaseAdminService {
 	}
 
 
-	/** 添加司机 */
+	/** 添加用户（司机或叉车司机） */
 	async insertUser({
 		username,
 		password,
-		phone
+		phone,
+		role
 	}) {
 		// 检查用户名是否已存在
 		let exist = await UserModel.getOne({
@@ -126,7 +133,7 @@ class AdminUserService extends BaseAdminService {
 			USER_NAME: username,
 			USER_PASSWORD: bcrypt.hashSync(password, 10),
 			USER_MOBILE: phone || '',
-			USER_ROLE: 'driver',
+			USER_ROLE: role || 'driver',
 			USER_STATUS: UserModel.STATUS.COMM,
 		};
 
@@ -143,7 +150,8 @@ class AdminUserService extends BaseAdminService {
 		username,
 		password,
 		phone,
-		status
+		status,
+		role
 	}) {
 		// 检查用户名是否被其他用户占用
 		let exist = await UserModel.getOne({
@@ -156,7 +164,6 @@ class AdminUserService extends BaseAdminService {
 		let data = {
 			USER_NAME: username,
 			USER_MOBILE: phone || '',
-			USER_ROLE: 'driver',
 		};
 
 		// 如果填写了新密码，则更新
@@ -167,6 +174,11 @@ class AdminUserService extends BaseAdminService {
 		// 如果传了状态值，则更新
 		if (status !== undefined && status !== null) {
 			data.USER_STATUS = Number(status);
+		}
+
+		// 如果传了角色，则更新
+		if (role) {
+			data.USER_ROLE = role;
 		}
 
 		await UserModel.edit(id, data);

@@ -71,6 +71,11 @@
     background: #009F72;
 }
 
+.tab.active.forklift {
+    background: #E67E22;
+    border-color: #E67E22;
+}
+
 /* 表单 */
 .form {
     width: 100%;
@@ -140,4 +145,9 @@
     border: none;
     line-height: 88rpx;
     margin-top: 10rpx;
+}
+
+/* 叉车司机登录按钮 */
+.forklift-btn {
+    background: linear-gradient(135deg, #E67E22 0%, #f39c12 100%) !important;
 }

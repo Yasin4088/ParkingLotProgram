@@ -2,6 +2,7 @@ const cloudHelper = require('../../helper/cloud_helper.js');
 const cacheHelper = require('../../helper/cache_helper.js');
 const constants = require('../../biz/constants.js');
 const AdminBiz = require('../../biz/admin_biz.js');
+const ForkliftBiz = require('../../biz/forklift_biz.js');
 const setting = require('../../setting/setting.js');
 
 Page({
@@ -17,10 +18,10 @@ Page({
 	onLoad: function (options) {
 		cacheHelper.remove(constants.CACHE_TOKEN);
 		cacheHelper.remove(constants.CACHE_ADMIN);
+		cacheHelper.remove(constants.CACHE_FORKLIFT);
 	},
 
 	onShow: function () {
-		// 每次显示时检查管理员tab是否需要初始化
 		if (this.data.tab === 'admin') {
 			this._checkSetup();
 		}
@@ -44,7 +45,6 @@ Page({
 			let res = await cloudHelper.callCloudData('admin/check_setup', {}, { title: 'bar' });
 			this.setData({ needSetup: res && res.needSetup });
 		} catch (e) {
-			// 检查失败，默认当作已初始化
 			this.setData({ needSetup: false });
 		}
 	},
@@ -103,14 +103,12 @@ Page({
 
 		this.setData({ loading: true });
 
-		// 管理员登录
 		try {
 			let res = await cloudHelper.callCloudSumbit('admin/login', {
 				name: name,
 				pwd: pwd,
 			}, { title: '登录中' });
 
-			// 缓存管理员信息
 			AdminBiz.adminLogin(res.data);
 			wx.redirectTo({ url: '/admin/queue' });
 
@@ -121,6 +119,35 @@ Page({
 		}
 	},
 
+	// 叉车司机登录
+	bindForkliftLoginTap: async function () {
+		if (this.data.loading) return;
+
+		let name = this.data.name.trim();
+		let pwd = this.data.pwd.trim();
+
+		if (!name) return wx.showToast({ title: '请输入用户名', icon: 'none' });
+		if (pwd.length < 4) return wx.showToast({ title: '密码至少4位', icon: 'none' });
+
+		this.setData({ loading: true });
+
+		try {
+			let res = await cloudHelper.callCloudSumbit('forklift/login', {
+				username: name,
+				password: pwd,
+			}, { title: '登录中' });
+
+			ForkliftBiz.forkliftLogin(res.data);
+			wx.redirectTo({ url: '/pages/forklift/home' });
+
+		} catch (e) {
+			console.log(e);
+		} finally {
+			this.setData({ loading: false });
+		}
+	},
+
+	// 司机微信登录
 	bindWxLoginTap: async function () {
 		if (this.data.loading) return;
 		this.setData({ loading: true });
@@ -128,14 +155,11 @@ Page({
 		try {
 			let res = await cloudHelper.callCloudSumbit('driver/wxLogin', {}, { title: '登录中' });
 
-			// 始终缓存 token（新用户也有 token）
 			cacheHelper.set(constants.CACHE_TOKEN, res.data, 86400);
 
 			if (res.data.registered) {
-				// 已注册 → 跳转首页
 				wx.redirectTo({ url: '/driver/home' });
 			} else {
-				// 未注册 → 跳转注册页
 				wx.redirectTo({ url: '/pages/driver/register/register' });
 			}
 		} catch (e) {

@@ -1,17 +1,10 @@
 <view class="page">
 	<view class="header">
 		<view class="title">司机预约</view>
-		<view class="desc">选择停车场、装卸类型，填写信息后进入排队流程</view>
+		<view class="desc">选择装卸类型，填写信息后进入排队流程</view>
 	</view>
 
 	<view class="card">
-		<view class="form-item">
-			<view class="label">停车场</view>
-			<picker mode="selector" range="{{lots}}" range-key="name" value="{{lotIndex}}" bindchange="bindLotChange">
-				<view class="picker">{{lots.length ? lots[lotIndex].name : '请选择停车场'}}</view>
-			</picker>
-		</view>
-
 		<view class="form-item">
 			<view class="label">业务类型</view>
 			<picker mode="selector" range="{{actions}}" range-key="name" value="{{actionIndex}}" bindchange="bindActionChange">

@@ -4,8 +4,6 @@ const constants = require('../biz/constants.js');
 
 Page({
 	data: {
-		lots: [],
-		lotIndex: 0,
 		actions: [
 			{ id: 'load', name: '装货' },
 			{ id: 'unload', name: '卸货' },
@@ -13,19 +11,26 @@ Page({
 		list: [],
 		loading: false,
 		submitting: false,
+
+		// 详情弹窗
 		showDetail: false,
 		editMode: false,
 		selectedItem: null,
 		editForm: {
 			plate: '',
 			phone: '',
-			lotId: '',
 			action: '',
 			cargoName: '',
 		},
-		lotEditIndex: 0,
 		actionEditIndex: 0,
 		cancelReason: '',
+
+		// 叫号弹窗
+		showCallModal: false,
+		callTarget: null,
+		forkliftList: [],
+		forkliftIndex: 0,
+		callLoading: false,
 	},
 
 	onLoad: function () {
@@ -46,44 +51,76 @@ Page({
 	},
 
 	loadList: async function () {
-		let lot = this.data.lots[this.data.lotIndex];
-		let lotId = lot ? lot.id : '';
-		let data = await cloudHelper.callCloudData('admin/queue_list', { lotId }, { title: '加载中' });
+		let data = await cloudHelper.callCloudData('admin/queue_list', {}, { title: '加载中' });
 		if (!data) return;
-
-		let nextLotIndex = this.data.lotIndex;
-		if (!this.data.lots.length && data.lots && data.lots.length) nextLotIndex = 0;
 		this.setData({
-			lots: data.lots || [],
-			lotIndex: nextLotIndex,
 			list: data.list || [],
 		});
 	},
 
-	bindLotChange: function (e) {
-		this.setData({ lotIndex: Number(e.detail.value) }, () => this.loadList());
-	},
+	// ========== 叫号 ==========
 
-	bindCallTap: async function () {
-		let lot = this.data.lots[this.data.lotIndex];
-		if (!lot) return wx.showToast({ title: '请选择停车场', icon: 'none' });
-		if (this.data.loading) return;
+	bindCallTap: async function (e) {
+		let id = e.currentTarget.dataset.id;
+		let item = this.data.list.find(v => v._id === id);
+		if (!item) return;
 
-		this.setData({ loading: true });
+		// 加载叉车司机列表
 		try {
-			let res = await cloudHelper.callCloudSumbit('admin/queue_call_next', { lotId: lot.id }, { title: '叫号中' });
-			wx.showModal({
-				title: '叫号成功',
-				content: '请 ' + (res.data.QUEUE_NO || '') + ' 号，车牌 ' + res.data.QUEUE_PLATE + ' 前往装卸区',
-				showCancel: false
+			let forkliftList = await cloudHelper.callCloudData('admin/forklift_list', {}, { title: '' });
+			if (!forkliftList || !forkliftList.length) {
+				wx.showToast({ title: '暂无可用叉车司机，请先添加', icon: 'none' });
+				return;
+			}
+			this.setData({
+				showCallModal: true,
+				callTarget: item,
+				forkliftList: forkliftList,
+				forkliftIndex: 0,
 			});
-			this.loadList();
-		} catch (e) {
-			console.log(e);
-		} finally {
-			this.setData({ loading: false });
+		} catch (err) {
+			console.log(err);
 		}
 	},
+
+	bindForkliftChange: function (e) {
+		this.setData({ forkliftIndex: Number(e.detail.value) });
+	},
+
+	bindCloseCallModal: function () {
+		this.setData({ showCallModal: false, callTarget: null });
+	},
+
+	bindConfirmCall: async function () {
+		if (this.data.callLoading) return;
+		let target = this.data.callTarget;
+		let forklift = this.data.forkliftList[this.data.forkliftIndex];
+		if (!target || !forklift) return;
+
+		this.setData({ callLoading: true });
+		try {
+			let res = await cloudHelper.callCloudSumbit('admin/queue_call_next', {
+				id: target._id,
+				forkliftId: forklift._id,
+			}, { title: '叫号中' });
+
+			let data = res && res.data ? res.data : res;
+			wx.showModal({
+				title: '叫号成功',
+				content: '请 ' + (data.QUEUE_NO || '') + ' 号，车牌 ' + data.QUEUE_PLATE + ' 前往装卸区\n叉车司机：' + forklift.USER_NAME,
+				showCancel: false,
+			});
+
+			this.setData({ showCallModal: false, callTarget: null });
+			this.loadList();
+		} catch (err) {
+			console.log(err);
+		} finally {
+			this.setData({ callLoading: false });
+		}
+	},
+
+	// ========== 完成 ==========
 
 	bindFinishTap: async function (e) {
 		let id = e.currentTarget.dataset.id;
@@ -95,6 +132,8 @@ Page({
 			console.log(err);
 		}
 	},
+
+	// ========== 详情弹窗 ==========
 
 	bindItemTap: async function (e) {
 		let id = e.currentTarget.dataset.id;
@@ -113,7 +152,6 @@ Page({
 	},
 
 	_showDetail: function (item) {
-		let lotEditIndex = this.data.lots.findIndex(lot => lot.id === item.QUEUE_LOT_ID);
 		let actionEditIndex = this.data.actions.findIndex(action => action.id === item.QUEUE_ACTION);
 		this.setData({
 			showDetail: true,
@@ -122,11 +160,9 @@ Page({
 			editForm: {
 				plate: item.QUEUE_PLATE || '',
 				phone: item.QUEUE_PHONE || '',
-				lotId: item.QUEUE_LOT_ID || '',
 				action: item.QUEUE_ACTION || '',
 				cargoName: item.QUEUE_CARGO_NAME || '',
 			},
-			lotEditIndex: lotEditIndex > -1 ? lotEditIndex : 0,
 			actionEditIndex: actionEditIndex > -1 ? actionEditIndex : 0,
 			cancelReason: '',
 		});
@@ -168,15 +204,6 @@ Page({
 		this.setData({ cancelReason: e.detail.value });
 	},
 
-	bindEditLotChange: function (e) {
-		let index = Number(e.detail.value);
-		let lot = this.data.lots[index];
-		this.setData({
-			lotEditIndex: index,
-			'editForm.lotId': lot ? lot.id : '',
-		});
-	},
-
 	bindEditActionChange: function (e) {
 		let index = Number(e.detail.value);
 		let action = this.data.actions[index];
@@ -201,7 +228,6 @@ Page({
 				id: this.data.selectedItem._id,
 				plate,
 				phone,
-				lotId: form.lotId,
 				action: form.action,
 				cargoName: (form.cargoName || '').trim(),
 			}, { title: '保存中' });
@@ -253,12 +279,18 @@ Page({
 		});
 	},
 
+	// ========== 导航 ==========
+
 	bindRefreshTap: function () {
 		this.loadList();
 	},
 
 	bindDriverMgrTap: function () {
 		wx.navigateTo({ url: '/pages/admin/driver/list' });
+	},
+
+	bindForkliftMgrTap: function () {
+		wx.navigateTo({ url: '/pages/admin/forklift/list' });
 	},
 
 	bindAdminHomeTap: function () {

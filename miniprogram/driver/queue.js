@@ -91,6 +91,26 @@ Page({
 		}
 	},
 
+	bindConfirmTap: async function () {
+		if (!this.data.item) return;
+		wx.showModal({
+			title: '确认收到',
+			content: '确认后叉车司机将前往装卸，确定收到叫号通知？',
+			success: async res => {
+				if (!res.confirm) return;
+				try {
+					let result = await cloudHelper.callCloudSumbit('queue/confirm', {
+						id: this.data.item._id,
+					}, { title: '确认中' });
+					this.setData({ item: result.data });
+					wx.showToast({ title: '已确认', icon: 'success' });
+				} catch (e) {
+					console.log(e);
+				}
+			}
+		});
+	},
+
 	bindHomeTap: function () {
 		wx.redirectTo({ url: '/driver/home' });
 	},

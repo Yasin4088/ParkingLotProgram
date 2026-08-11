@@ -1,3 +1,5 @@
 {
-	"navigationBarTitleText": "停车场装卸"
+	"navigationBarBackgroundColor": "#243b53",
+	"navigationBarTextStyle": "white",
+	"navigationBarTitleText": "装卸叫号"
 }

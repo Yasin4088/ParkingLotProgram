@@ -24,14 +24,19 @@ QueueModel.DB_STRUCTURE = {
 	QUEUE_PROOF: 'string|false|comment=上传单证图片fileID',
 	QUEUE_CARGO_NAME: 'string|false|comment=货物名称',
 
+	QUEUE_FORKLIFT_ID: 'string|false|comment=叉车司机用户ID',
+	QUEUE_FORKLIFT_NAME: 'string|false|comment=叉车司机姓名',
+	QUEUE_FORKLIFT_TIME: 'int|true|default=0|comment=叉车司机指派时间',
+
 	QUEUE_NO: 'string|false|comment=排队号',
-	QUEUE_STATUS: 'int|true|default=0|comment=状态 0=已预约,1=排队中,2=已叫号,9=已完成,10=已取消',
+	QUEUE_STATUS: 'int|true|default=0|comment=状态 0=已预约,1=排队中,2=已叫号,3=司机已确认,9=已完成,10=已取消',
 	QUEUE_SUBSCRIBE: 'int|true|default=0|comment=是否点击订阅叫号通知',
 
 	QUEUE_CHECKIN_LAT: 'float|false|comment=签到纬度',
 	QUEUE_CHECKIN_LNG: 'float|false|comment=签到经度',
 	QUEUE_CHECKIN_TIME: 'int|true|default=0|comment=签到时间',
 	QUEUE_CALL_TIME: 'int|true|default=0|comment=叫号时间',
+	QUEUE_CONFIRM_TIME: 'int|true|default=0|comment=司机确认时间',
 	QUEUE_FINISH_TIME: 'int|true|default=0|comment=完成时间',
 	QUEUE_CANCEL_TIME: 'int|true|default=0|comment=取消时间',
 	QUEUE_CANCEL_REASON: 'string|false|comment=取消原因',
@@ -49,6 +54,7 @@ QueueModel.STATUS = {
 	BOOKED: 0,
 	WAITING: 1,
 	CALLED: 2,
+	CONFIRMED: 3,
 	DONE: 9,
 	CANCEL: 10
 };
@@ -57,6 +63,7 @@ QueueModel.STATUS_DESC = {
 	BOOKED: '已预约',
 	WAITING: '排队中',
 	CALLED: '已叫号',
+	CONFIRMED: '司机已确认',
 	DONE: '已完成',
 	CANCEL: '已取消'
 };

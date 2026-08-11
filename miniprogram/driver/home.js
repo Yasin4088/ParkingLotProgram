@@ -4,9 +4,7 @@ const constants = require('../biz/constants.js');
 
 Page({
 	data: {
-		lots: [],
 		actions: [],
-		lotIndex: 0,
 		actionIndex: 0,
 		plate: '',
 		phone: '',
@@ -52,13 +50,8 @@ Page({
 		let data = await cloudHelper.callCloudData('queue/options', {}, { title: '加载中' });
 		if (!data) return;
 		this.setData({
-			lots: data.lots || [],
 			actions: data.actions || [],
 		});
-	},
-
-	bindLotChange: function (e) {
-		this.setData({ lotIndex: Number(e.detail.value) });
 	},
 
 	bindActionChange: function (e) {
@@ -96,17 +89,14 @@ Page({
 
 	bindSubmitTap: async function () {
 		if (this.data.submitting) return;
-		let lot = this.data.lots[this.data.lotIndex];
 		let action = this.data.actions[this.data.actionIndex];
 
-		if (!lot) return wx.showToast({ title: '请选择停车场', icon: 'none' });
 		if (!action) return wx.showToast({ title: '请选择装货或卸货', icon: 'none' });
 		if (!this.data.plate || this.data.plate.length < 3) return wx.showToast({ title: '请输入车牌号', icon: 'none' });
 		if (!/^1\d{10}$/.test(this.data.phone)) return wx.showToast({ title: '请输入正确手机号', icon: 'none' });
 		this.setData({ submitting: true });
 		try {
 			await cloudHelper.callCloudSumbit('queue/create', {
-				lotId: lot.id,
 				action: action.id,
 				plate: this.data.plate,
 				phone: this.data.phone,
