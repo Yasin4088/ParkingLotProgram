@@ -25,6 +25,11 @@
     margin-bottom: 30rpx;
 }
 
+.logo-img {
+    width: 420rpx;
+    height: 180rpx;
+}
+
 .icon-park {
     width: 96rpx;
     height: 96rpx;
