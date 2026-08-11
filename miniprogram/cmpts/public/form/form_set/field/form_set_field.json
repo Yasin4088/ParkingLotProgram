@@ -2,7 +2,7 @@
 	"usingComponents": { 
 		"cmpt-picker-multi": "../../../picker_multi/picker_multi_cmpt"
 	},
-	"navigationBarBackgroundColor": "#009F72",
+	"navigationBarBackgroundColor": "#3B82E6",
 	"navigationBarTextStyle": "white",
 	"enablePullDownRefresh": true,
 	"backgroundTextStyle": "dark",

@@ -5,12 +5,14 @@ const bizHelper = require('../../../biz/biz_helper.js');
 
 Page({
 
-	data: {},
+	data: {
+		search: '',
+	},
 
 	onLoad: function (options) {
 		if (!AdminBiz.isAdmin(this)) return;
 		wx.setNavigationBarColor({
-			backgroundColor: '#009F72',
+			backgroundColor: '#3B82E6',
 			frontColor: '#ffffff',
 		});
 	},

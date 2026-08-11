@@ -1,7 +1,7 @@
 <view class="page">
     <view class="header">
         <view>
-            <view class="title">停车场装卸</view>
+            <view class="title">挚力供应链</view>
             <view class="desc">选择停车场，查看排队列表并按顺序叫号</view>
         </view>
         <view class="header-actions">

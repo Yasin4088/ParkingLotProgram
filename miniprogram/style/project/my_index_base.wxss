@@ -119,7 +119,7 @@ page{
 
 .main .comm-list .item.arrow::before,
 .main .comm-list .item .content .item-icon {
-	color: #0E9489;
+	color: #3B82E6;
 }
 
 .main .down .today {

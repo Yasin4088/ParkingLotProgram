@@ -6,7 +6,7 @@
 }
 
 .header {
-	background: #243b53;
+	background: #3B82E6;
 	border-radius: 24rpx;
 	color: #fff;
 	padding: 36rpx 30rpx;
@@ -62,7 +62,7 @@
 	background: #fff;
 	border-radius: 16rpx;
 	padding: 0 24rpx;
-	color: #243b53;
+	color: #000;
 	font-size: 28rpx;
 	box-sizing: border-box;
 }
@@ -89,7 +89,7 @@
 	padding: 28rpx;
 	margin-bottom: 22rpx;
 	box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, .05);
-	border-left: 8rpx solid #009F72;
+	border-left: 8rpx solid #3B82E6;
 }
 
 .queue-card:active {
@@ -113,13 +113,13 @@
 .no {
 	font-size: 48rpx;
 	font-weight: bold;
-	color: #102a43;
+	color: #000;
 }
 
 .status {
 	font-size: 24rpx;
-	color: #009F72;
-	background: #e6f7f1;
+	color: #000;
+	background: #eef0ff;
 	padding: 8rpx 20rpx;
 	border-radius: 999rpx;
 }
@@ -137,7 +137,7 @@
 .plate {
 	font-size: 36rpx;
 	font-weight: bold;
-	color: #243b53;
+	color: #000;
 	margin: 18rpx 0 10rpx;
 }
 
@@ -152,7 +152,7 @@
 	height: 76rpx;
 	line-height: 76rpx;
 	border-radius: 38rpx;
-	background: #009F72;
+	background: #3B82E6;
 	color: #fff;
 	font-size: 28rpx;
 }
@@ -168,7 +168,7 @@
 
 .refresh {
 	text-align: center;
-	color: #009F72;
+	color: #000;
 	font-size: 26rpx;
 	padding: 34rpx 0;
 }
@@ -205,7 +205,7 @@
 .detail-title {
 	font-size: 36rpx;
 	font-weight: bold;
-	color: #102a43;
+	color: #000;
 }
 
 .detail-sub {
@@ -216,7 +216,7 @@
 
 .detail-close {
 	font-size: 26rpx;
-	color: #009F72;
+	color: #000;
 	padding: 8rpx 0 8rpx 24rpx;
 }
 
@@ -245,13 +245,13 @@
 }
 
 .detail-value {
-	color: #243b53;
+	color: #000;
 	text-align: right;
 	word-break: break-all;
 }
 
 .detail-link {
-	color: #009F72;
+	color: #000;
 }
 
 .detail-actions {
@@ -273,13 +273,13 @@
 }
 
 .detail-btn.primary {
-	background: #009F72;
+	background: #3B82E6;
 	color: #fff;
 }
 
 .detail-btn.ghost {
 	background: #f0f4f8;
-	color: #243b53;
+	color: #000;
 }
 
 .edit-form {
@@ -307,7 +307,7 @@
 	padding: 0 20rpx;
 	box-sizing: border-box;
 	font-size: 28rpx;
-	color: #243b53;
+	color: #000;
 }
 
 .cancel-box {
@@ -325,7 +325,7 @@
 	padding: 18rpx 20rpx;
 	box-sizing: border-box;
 	font-size: 26rpx;
-	color: #243b53;
+	color: #000;
 }
 
 .danger-btn {

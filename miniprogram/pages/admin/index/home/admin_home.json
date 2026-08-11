@@ -3,7 +3,7 @@
 		"cmpt-foot": "../../../../cmpts/biz/foot/foot_cmpt"
 	},
 	"enablePullDownRefresh": true,
-	"navigationBarBackgroundColor": "#009F72",
+	"navigationBarBackgroundColor": "#3B82E6",
 	"navigationBarTextStyle": "white",
 	"navigationBarTitleText": "后台管理"
 }

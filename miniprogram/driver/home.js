@@ -1,6 +1,7 @@
 const cloudHelper = require('../helper/cloud_helper.js');
 const cacheHelper = require('../helper/cache_helper.js');
 const constants = require('../biz/constants.js');
+const app = getApp();
 
 Page({
 	data: {
@@ -13,9 +14,13 @@ Page({
 		proof: '',
 		proofLocal: '',
 		submitting: false,
+		statusBar: 0,
+		customBar: 0,
+		navBarHeight: 0,
 	},
 
 	onLoad: async function () {
+		this._initNavMetrics();
 		this._checkLogin();
 		if (!await this._checkRegistration()) return;
 		this._loadOptions();
@@ -45,6 +50,24 @@ Page({
 			console.error('检查注册状态失败', err);
 			return false;
 		}
+	},
+
+	_initNavMetrics: function () {
+		let statusBar = app.globalData.statusBar || 0;
+		let customBar = app.globalData.customBar || 0;
+
+		if (!statusBar || !customBar) {
+			let systemInfo = wx.getSystemInfoSync();
+			let capsule = wx.getMenuButtonBoundingClientRect();
+			statusBar = systemInfo.statusBarHeight || 0;
+			customBar = capsule ? capsule.bottom + capsule.top - statusBar : statusBar + 50;
+		}
+
+		this.setData({
+			statusBar,
+			customBar,
+			navBarHeight: customBar - statusBar,
+		});
 	},
 
 	_loadOptions: async function () {

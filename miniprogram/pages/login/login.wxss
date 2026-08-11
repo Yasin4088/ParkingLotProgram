@@ -1,7 +1,7 @@
 .main {
     width: 100%;
     min-height: 100vh;
-    background: linear-gradient(135deg, #009F72 0%, #00c48a 100%);
+    background: #fff;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -34,7 +34,7 @@
     width: 96rpx;
     height: 96rpx;
     border-radius: 50%;
-    background: #009F72;
+    background: #3B82E6;
     color: #fff;
     font-size: 58rpx;
     font-weight: bold;
@@ -56,7 +56,7 @@
     border-radius: 12rpx;
     overflow: hidden;
     margin-bottom: 30rpx;
-    border: 2rpx solid #009F72;
+    border: 2rpx solid #3B82E6;
     box-sizing: border-box;
 }
 
@@ -66,14 +66,14 @@
     font-size: 30rpx;
     height: 72rpx;
     line-height: 72rpx;
-    color: #009F72;
+    color: #3B82E6;
     background: #fff;
     transition: all 0.2s;
 }
 
 .tab.active {
     color: #fff;
-    background: #009F72;
+    background: #3B82E6;
 }
 
 /* 表单 */
@@ -102,7 +102,7 @@
 .login-btn {
     width: 100%;
     height: 88rpx;
-    background: linear-gradient(135deg, #009F72 0%, #00c48a 100%);
+    background: linear-gradient(135deg, #3B82E6 0%, #5A9CF0 100%);
     color: #fff;
     font-size: 34rpx;
     font-weight: bold;
@@ -124,7 +124,7 @@
 .wechat-btn {
     width: 100%;
     height: 88rpx;
-    background: linear-gradient(135deg, #07C160 0%, #06ad56 100%) !important;
+    background: linear-gradient(135deg, #3B82E6 0%, #5A9CF0 100%) !important;
     color: #fff;
     font-size: 34rpx;
     font-weight: bold;

@@ -65,7 +65,7 @@
  	height: 80rpx;
  	line-height: 80rpx;
  	border-radius: 40rpx;
- 	background-color: #0E9489;
+ 	background-color: #3B82E6;
  	color: #fff;
  	font-weight: bold;
  }
@@ -93,33 +93,6 @@
 
 
  /*非分包菜单*/
- .tab-bar-home {
- 	position: fixed;
- 	top: 50rpx;
- 	left: 20rpx;
- 	width: 150rpx;
- 	height: 150rpx;
- 	z-index: 999999;
- 	display: flex;
- 	align-items: center;
- 	justify-content: center;
- 	opacity: .8;
- 	display: flex;
- 	align-items: flex-start;
- 	justify-content: flex-start;
- }
-
- .tab-bar-home text {
- 	background: #fff;
- 	border-radius: 50%;
- 	font-size: 36rpx;
- 	width: 50rpx;
- 	height: 50rpx;
- 	display: flex;
- 	align-items: center;
- 	justify-content: center;
- }
-
  .tab-bar {
  	position: fixed;
  	bottom: 0;

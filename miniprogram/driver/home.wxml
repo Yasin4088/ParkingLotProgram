@@ -1,4 +1,8 @@
 <view class="page">
+	<view class="custom-nav" style="height: {{customBar}}px; padding-top: {{statusBar}}px;">
+		<view class="custom-nav-title" style="height: {{navBarHeight}}px; line-height: {{navBarHeight}}px;">司机预约</view>
+	</view>
+
 	<view class="header">
 		<view class="title">司机预约</view>
 		<view class="desc">选择停车场、装卸类型，填写信息后进入排队流程</view>

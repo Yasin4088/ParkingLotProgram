@@ -1,6 +1,6 @@
 <view wx:if="{{isAdmin}}" class="page">
 <!-- 司机列表 -->
-    <cmpt-comm-list id="driverList" type="admin-driver" route="admin/user_list" topBottom="50" placeholder="搜索司机" bind:list="bindCommListCmpt">
+    <cmpt-comm-list id="driverList" type="admin-driver" route="admin/user_list" search="{{search}}" topBottom="50" placeholder="搜索司机" bind:list="bindCommListCmpt">
         <view>
             <view wx:if="{{dataList && dataList.total}}" class="load text-grey">共 {{dataList.total}} 名司机</view>
 

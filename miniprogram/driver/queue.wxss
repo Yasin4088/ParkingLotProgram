@@ -6,7 +6,7 @@
 }
 
 .header {
-	background: #102a43;
+	background: #2F6FD6;
 	border-radius: 24rpx;
 	color: #fff;
 	padding: 42rpx 34rpx;
@@ -36,8 +36,8 @@
 
 .status {
 	display: inline-block;
-	background: #e6f7f1;
-	color: #009F72;
+	background: #eef0ff;
+	color: #3B82E6;
 	border-radius: 999rpx;
 	padding: 10rpx 28rpx;
 	font-size: 26rpx;
@@ -51,7 +51,7 @@
 .queue-no {
 	font-size: 92rpx;
 	font-weight: bold;
-	color: #102a43;
+	color: #000;
 	margin-top: 26rpx;
 }
 
@@ -81,7 +81,7 @@
 }
 
 .info-val {
-	color: #243b53;
+	color: #000;
 	font-size: 30rpx;
 	font-weight: 600;
 	margin-top: 10rpx;
@@ -113,19 +113,19 @@
 }
 
 .primary-btn {
-	background: #009F72;
+	background: #3B82E6;
 	color: #fff;
 }
 
 .ghost-btn {
-	background: #eef8f4;
-	color: #009F72;
+	background: #eef0ff;
+	color: #3B82E6;
 }
 
 .empty-title {
 	font-size: 34rpx;
 	font-weight: bold;
-	color: #243b53;
+	color: #3B82E6;
 }
 
 .empty-desc {
@@ -138,7 +138,7 @@
 	display: flex;
 	justify-content: center;
 	gap: 60rpx;
-	color: #009F72;
+	color: #3B82E6;
 	font-size: 26rpx;
 	padding: 34rpx 0;
 }

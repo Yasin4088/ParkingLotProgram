@@ -2,7 +2,7 @@
 	"usingComponents": {
 
 	},
-	"navigationBarBackgroundColor": "#009F72",
+	"navigationBarBackgroundColor": "#3B82E6",
 	"navigationBarTextStyle": "white", 
 	"disableScroll": true, 
 	"navigationBarTitleText": "活动/预约管理"

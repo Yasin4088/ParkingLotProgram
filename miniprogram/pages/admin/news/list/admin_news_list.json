@@ -1,7 +1,7 @@
 {
 	"usingComponents": { 
 	},
-	"navigationBarBackgroundColor": "#009F72",
+	"navigationBarBackgroundColor": "#3B82E6",
 	"navigationBarTextStyle": "white", 
 	"disableScroll": true, 
 	"navigationBarTitleText": "后台-内容模块"

@@ -73,7 +73,7 @@ class AdminBiz extends BaseBiz {
 	//  登录状态判定
 	static isAdmin(that) {
 		wx.setNavigationBarColor({ //顶部
-			backgroundColor: '#009F72',
+			backgroundColor: '#3B82E6',
 			frontColor: '#ffffff',
 		});
 

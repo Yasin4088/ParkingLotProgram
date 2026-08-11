@@ -363,7 +363,7 @@
 }
 
 .article-box .article .lean-corner-right-top {
-	background-color: green;
+	background-color: #3B82E6;
 	color: white;
 	width: 50%;
 	height: 40rpx;
@@ -380,7 +380,7 @@
 
 
 .article-box .article .lean-corner-right-bottom {
-	background-color: green;
+	background-color: #3B82E6;
 	color: white;
 	width: 50%;
 	height: 40rpx;

@@ -33,8 +33,8 @@
 }
 
 .d-status.on {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: #eef0ff;
+    color: #3B82E6;
 }
 
 .d-status.off {
@@ -94,7 +94,7 @@
 .add-driver-btn {
     width: 100%;
     height: 88rpx;
-    background: #009F72;
+    background: #3B82E6;
     color: #fff;
     font-size: 32rpx;
     border-radius: 44rpx;

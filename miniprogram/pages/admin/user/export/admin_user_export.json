@@ -2,7 +2,7 @@
 	"usingComponents": {
 
 	},
-	"navigationBarBackgroundColor": "#009F72",
+	"navigationBarBackgroundColor": "#3B82E6",
 	"navigationBarTextStyle": "white",  
 	"enablePullDownRefresh": true,  
 	"navigationBarTitleText": "用户资料导出"

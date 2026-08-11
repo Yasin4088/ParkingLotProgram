@@ -1,10 +1,10 @@
 <view class="top_bar bar search fixed flex-direction" wx:if="{{isTotalMenu}}">
 	<!-- search form BEGIN -->
 	<view class="bar search bg-white " style="width:100%">
-		<view class="search-form round">
+		<view class="search-form round" bindtap="bindSearchTap">
 			<text class="icon-search text-l text-grey"></text>
-			<input type="text" maxlength="30" value="{{search}}" placeholder="{{placeholder}}" disabled='true' bindtap="bindSearchTap"></input>
-			<view wx:if="{{search}}" class="text-xl" bindtap="bindSearchClearTap">
+			<input type="text" maxlength="30" value="{{search}}" placeholder="{{placeholder}}" disabled='true'></input>
+			<view wx:if="{{search}}" class="text-xl" catchtap="bindSearchClearTap">
 				<text class="icon-roundclose text-right  text-gray"></text>
 			</view>
 		</view>

@@ -2,7 +2,7 @@ module.exports = {
 	PID: 'A00', // 停车
 
 	NAV_COLOR: '#ffffff',
-	NAV_BG: '#009F72',
+	NAV_BG: '#3B82E6',
 
 	MEET_NAME: '预约',
 
