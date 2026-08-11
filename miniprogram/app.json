@@ -1,0 +1,39 @@
+{
+	"pages": [
+		"pages/login/login",
+		"pages/driver/register/register",
+		"driver/home",
+		"driver/queue",
+		"pages/forklift/home",
+		"admin/queue",
+		"pages/admin/driver/list",
+		"pages/admin/driver/edit",
+		"pages/admin/forklift/list",
+		"pages/admin/forklift/edit",
+		"pages/admin/index/home/admin_home",
+		"pages/admin/mgr/admin/list",
+		"pages/admin/mgr/admin/edit",
+		"projects/A00/search/search"
+	],
+	"window": {
+		"backgroundColor": "#f1f1f1",
+		"backgroundTextStyle": "dark",
+		"navigationBarBackgroundColor": "#3B82E6",
+		"navigationBarTitleText": "挚力供应链",
+		"navigationBarTextStyle": "white"
+	},
+	"permission": {
+		"scope.userLocation": {
+			"desc": "用于司机到达停车场后完成GPS签到"
+		}
+	},
+	"useExtendedLib": {
+		"weui": true
+	},
+	"usingComponents": {
+		"cmpt-comm-list": "/cmpts/public/list/comm_list_cmpt",
+		"cmpt-picker": "/cmpts/public/picker/picker_cmpt",
+		"cmpt-modal": "/cmpts/public/modal/modal_cmpt"
+	},
+	"sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,175 @@
+.page {
+	min-height: 100vh;
+	background: #f5f7f8;
+	padding: 0 28rpx 28rpx;
+	box-sizing: border-box;
+}
+
+.custom-nav {
+	margin: 0 -28rpx 28rpx;
+	background: #3B82E6;
+	color: #fff;
+	box-sizing: border-box;
+	position: relative;
+}
+
+.custom-nav-back {
+	position: absolute;
+	left: 32rpx;
+	width: 64rpx;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+}
+
+.custom-nav-back-icon {
+	width: 22rpx;
+	height: 22rpx;
+	border-left: 4rpx solid #fff;
+	border-bottom: 4rpx solid #fff;
+	transform: rotate(45deg);
+}
+
+.custom-nav-title {
+	text-align: center;
+	font-size: 32rpx;
+	font-weight: 600;
+}
+
+.header {
+	background: #2F6FD6;
+	border-radius: 24rpx;
+	color: #fff;
+	padding: 42rpx 34rpx;
+	margin-bottom: 28rpx;
+}
+
+.title {
+	font-size: 42rpx;
+	font-weight: bold;
+}
+
+.desc {
+	font-size: 26rpx;
+	opacity: .86;
+	margin-top: 16rpx;
+	line-height: 1.6;
+}
+
+.card,
+.empty-card {
+	background: #fff;
+	border-radius: 24rpx;
+	padding: 36rpx 32rpx;
+	box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, .06);
+	text-align: center;
+}
+
+.status {
+	display: inline-block;
+	background: #eef0ff;
+	color: #3B82E6;
+	border-radius: 999rpx;
+	padding: 10rpx 28rpx;
+	font-size: 26rpx;
+}
+
+.status.called {
+	background: #fff1e6;
+	color: #f07818;
+}
+
+.queue-no {
+	font-size: 92rpx;
+	font-weight: bold;
+	color: #000;
+	margin-top: 26rpx;
+}
+
+.queue-label {
+	color: #8a99a8;
+	font-size: 24rpx;
+	margin-bottom: 32rpx;
+}
+
+.info-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 22rpx;
+	text-align: left;
+	margin: 30rpx 0;
+}
+
+.info-grid > view {
+	background: #f7f8fa;
+	border-radius: 16rpx;
+	padding: 22rpx;
+}
+
+.info-label {
+	color: #7b8794;
+	font-size: 24rpx;
+}
+
+.info-val {
+	color: #000;
+	font-size: 30rpx;
+	font-weight: 600;
+	margin-top: 10rpx;
+}
+
+.strong {
+	color: #f07818;
+}
+
+.tips {
+	color: #52606d;
+	font-size: 26rpx;
+	line-height: 1.6;
+	margin: 20rpx 0;
+}
+
+.called-text {
+	color: #f07818;
+	font-weight: 600;
+}
+
+.primary-btn,
+.ghost-btn {
+	height: 84rpx;
+	line-height: 84rpx;
+	border-radius: 42rpx;
+	font-size: 30rpx;
+	margin-top: 22rpx;
+}
+
+.primary-btn {
+	background: #3B82E6;
+	color: #fff;
+}
+
+.ghost-btn {
+	background: #eef0ff;
+	color: #3B82E6;
+}
+
+.empty-title {
+	font-size: 34rpx;
+	font-weight: bold;
+	color: #3B82E6;
+}
+
+.empty-desc {
+	color: #7b8794;
+	font-size: 26rpx;
+	margin-top: 18rpx;
+}
+
+.footer-actions {
+	display: flex;
+	justify-content: center;
+	gap: 60rpx;
+	color: #3B82E6;
+	font-size: 26rpx;
+	padding: 34rpx 0;
+}

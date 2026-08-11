@@ -1,0 +1,9 @@
+{
+	"usingComponents": {
+		"cmpt-img-upload": "../../../../cmpts/public/img/img_upload_cmpt"
+	},
+	"navigationBarBackgroundColor": "#3B82E6",
+	"navigationBarTextStyle": "white",
+	"enablePullDownRefresh": true, 
+	"navigationBarTitleText": "后台-文章修改"
+}

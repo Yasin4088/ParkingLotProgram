@@ -1,0 +1,8 @@
+{
+	"usingComponents": {
+		"cmpt-foot": "../../../../cmpts/biz/foot/foot_cmpt"
+	},
+	"disableScroll": true,
+	"navigationBarBackgroundColor": "#3B82E6",
+	"navigationBarTextStyle": "white"
+}

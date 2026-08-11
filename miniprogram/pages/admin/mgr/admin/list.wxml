@@ -1,0 +1,34 @@
+<view wx:if="{{isAdmin}}" class="page">
+    <cmpt-comm-list id="adminList" type="admin-mgr-admin" route="admin/admin_list" topBottom="50" placeholder="搜索管理员" bind:list="bindCommListCmpt">
+        <view>
+            <view wx:if="{{dataList && dataList.total}}" class="load text-grey">共 {{dataList.total}} 名管理员</view>
+
+            <view class="admin-item" wx:for="{{dataList.list}}" wx:key="_id">
+                <view class="top-row">
+                    <view class="a-name">{{item.ADMIN_NAME}}</view>
+                    <view class="a-status {{item.ADMIN_STATUS === 0 ? 'off' : 'on'}}">{{item.ADMIN_STATUS_DESC}}</view>
+                </view>
+                <view class="mid-row">
+                    <text>{{item.ADMIN_PHONE || '未填手机号'}}</text>
+                    <text class="split">|</text>
+                    <text>{{item.ADMIN_TYPE_DESC}}</text>
+                    <text class="split">|</text>
+                    <text>登录{{item.ADMIN_LOGIN_CNT || 0}}次</text>
+                </view>
+                <view class="mid-row">
+                    <text>最后登录：{{item.ADMIN_LOGIN_TIME_DESC}}</text>
+                </view>
+                <view wx:if="{{isSuperAdmin}}" class="bottom-row">
+                    <view class="edit-btn" bindtap="bindEditTap" data-id="{{item._id}}">编辑</view>
+                    <view class="reset-btn" bindtap="bindResetPwdTap" data-id="{{item._id}}" data-name="{{item.ADMIN_NAME}}">重置密码</view>
+                    <view class="del-btn" bindtap="bindDelTap" data-id="{{item._id}}">删除</view>
+                </view>
+            </view>
+            <view wx:if="{{dataList && dataList.total === 0}}" class="load text-grey">暂无管理员数据</view>
+        </view>
+    </cmpt-comm-list>
+
+    <view wx:if="{{isSuperAdmin}}" class="bottom-btn">
+        <view class="add-admin-btn" bindtap="bindAddTap">添加管理员</view>
+    </view>
+</view>

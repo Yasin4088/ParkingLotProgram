@@ -1,0 +1,7 @@
+*.xlsx
+.claude/
+.cloudbase/
+.cursor/
+node_modules/
+**.md
+!README.md

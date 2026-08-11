@@ -1,0 +1,51 @@
+<view wx:if="{{isLoad}}" class="page">
+	<view class="custom-nav" style="height: {{customBar}}px; padding-top: {{statusBar}}px;">
+		<view class="custom-nav-back" style="top: {{statusBar}}px; height: {{navBarHeight}}px;" bindtap="bindLogoutTap">
+			<view class="custom-nav-back-icon"></view>
+		</view>
+		<view class="custom-nav-title" style="height: {{navBarHeight}}px; line-height: {{navBarHeight}}px;">叉车司机</view>
+	</view>
+
+	<view class="header">
+		<view class="desc">查看分配的装卸任务并完成</view>
+	</view>
+
+	<view wx:if="{{task}}" class="task-card">
+		<view class="task-status">待完成</view>
+		<view class="task-grid">
+			<view class="task-row">
+				<view class="t-label">车牌号</view>
+				<view class="t-value">{{task.plate}}</view>
+			</view>
+			<view wx:if="{{task.cargoName}}" class="task-row">
+				<view class="t-label">货物名称</view>
+				<view class="t-value">{{task.cargoName}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">业务类型</view>
+				<view class="t-value">{{task.actionName}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">手机号</view>
+				<view class="t-value">{{task.phone}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">叫号时间</view>
+				<view class="t-value">{{task.callTimeText || '--'}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">司机确认时间</view>
+				<view class="t-value">{{task.confirmTimeText || '--'}}</view>
+			</view>
+		</view>
+
+		<button class="complete-btn" loading="{{loading}}" bindtap="bindCompleteTap">完成任务</button>
+	</view>
+
+	<view wx:else class="empty-card">
+		<view class="empty-title">暂无待处理任务</view>
+		<view class="empty-desc">管理员指派 + 司机确认后，任务会出现在这里</view>
+	</view>
+
+	<view class="refresh" bindtap="bindRefreshTap">刷新列表</view>
+</view>

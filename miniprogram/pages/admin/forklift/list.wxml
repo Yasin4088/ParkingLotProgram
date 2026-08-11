@@ -1,0 +1,31 @@
+<view wx:if="{{isAdmin}}" class="page">
+	<!-- 叉车司机列表 -->
+	<cmpt-comm-list id="forkliftList" type="admin-forklift" _params="{{forkliftParams}}" route="admin/user_list" search="{{search}}" topBottom="50" placeholder="搜索叉车司机" bind:list="bindCommListCmpt">
+		<view>
+			<view wx:if="{{dataList && dataList.total}}" class="load text-grey">共 {{dataList.total}} 名叉车司机</view>
+
+			<view class="driver-item" wx:for="{{dataList.list}}" wx:key="_id">
+				<view class="top-row">
+					<view class="d-name">{{item.USER_NAME}}</view>
+					<view class="d-status {{item.USER_STATUS === 9 ? 'off' : (item.USER_STATUS === 0 ? 'pending' : 'on')}}">{{item.USER_STATUS_DESC || '正常'}}</view>
+				</view>
+				<view class="mid-row">
+					<text>{{item.USER_MOBILE || '未填手机号'}}</text>
+				</view>
+				<view class="mid-row sub">
+					<text>注册：{{item.USER_ADD_TIME}}</text>
+				</view>
+				<view class="bottom-row">
+					<view class="edit-btn" bindtap="bindEditTap" data-id="{{item._id}}">编辑</view>
+					<view class="del-btn" bindtap="bindDelTap" data-id="{{item._id}}">删除</view>
+				</view>
+			</view>
+			<view wx:if="{{dataList && dataList.total === 0}}" class="load text-grey">暂无叉车司机数据，请先添加叉车司机账号</view>
+		</view>
+	</cmpt-comm-list>
+
+	<!-- 底部添加按钮 -->
+	<view class="bottom-btn">
+		<view class="add-driver-btn" bindtap="bindAddTap">添加叉车司机账号</view>
+	</view>
+</view>
