@@ -8,7 +8,6 @@ const appCode = require('../../framework/core/app_code.js');
 const timeUtil = require('../../framework/utils/time_util.js');
 const dbUtil = require('../../framework/database/db_util.js');
 const SetupModel = require('../model/setup_model.js');
-const AdminModel = require('../model/admin_model.js');
 const NewsModel = require('../model/news_model.js');
 const MeetModel = require('../model/meet_model.js');
 const config = require('../../config/config.js');
@@ -51,20 +50,6 @@ class BaseService {
 				await dbUtil.createCollection(arr[k]);
 			}
 		} 
-
-		if (await dbUtil.isExistCollection('ax_admin')) {
-			let adminCnt = await AdminModel.count({});
-			if (adminCnt == 0) {
-
-				let data = {};
-				data.ADMIN_NAME = config.ADMIN_NAME;
-				data.ADMIN_PHONE = '13900000000';
-				data.ADMIN_PASSWORD = config.ADMIN_PWD;
-				data.ADMIN_TYPE = 1;
-
-				await AdminModel.insert(data);
-			}
-		}
 
 		if (await dbUtil.isExistCollection('ax_news')) {
 			let newsCnt = await NewsModel.count({});

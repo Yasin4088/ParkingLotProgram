@@ -11,7 +11,7 @@ const cacheUtil = require('../../../framework/utils/cache_util.js');
 const cloudBase = require('../../../framework/cloud/cloud_base.js');
 const timeUtil = require('../../../framework/utils/time_util.js');
 const config = require('../../../config/config.js');
-const md5Lib = require('../../../framework/lib/md5_lib.js');
+const bcrypt = require('bcryptjs');
 const AdminModel = require('../../model/admin_model.js');
 const LogModel = require('../../model/log_model.js');
 
@@ -57,19 +57,42 @@ class AdminHomeService extends BaseAdminService {
 			ADMIN_NAME: name,
 			ADMIN_STATUS: 1
 		};
-		let fields = 'ADMIN_ID,ADMIN_NAME,ADMIN_PASSWORD,ADMIN_TYPE,ADMIN_LOGIN_TIME,ADMIN_LOGIN_CNT';
+		let fields = 'ADMIN_ID,ADMIN_NAME,ADMIN_PASSWORD,ADMIN_TYPE,ADMIN_LOGIN_TIME,ADMIN_LOGIN_CNT,ADMIN_LOGIN_FAIL_CNT,ADMIN_LOGIN_FAIL_TIME';
 		let admin = await AdminModel.getOne(where, fields);
 
 		if (!admin) {
 			this.AppError('管理员账号或密码不正确');
 		}
 
-		// MD5密码比对
-		let inputPwd = md5Lib.md5(password);
-		if (inputPwd !== admin.ADMIN_PASSWORD) {
-			this.AppError('管理员账号或密码不正确');
+		// 检查是否被锁定（15分钟内连续失败5次）
+		let failCnt = admin.ADMIN_LOGIN_FAIL_CNT || 0;
+		let failTime = admin.ADMIN_LOGIN_FAIL_TIME || 0;
+		let now = timeUtil.time();
+		let lockDuration = 15 * 60 * 1000; // 15分钟（毫秒）
+
+		if (failCnt >= 5 && (now - failTime) < lockDuration) {
+			let remainMin = Math.ceil((lockDuration - (now - failTime)) / 60000);
+			this.AppError('账号已被锁定，请' + remainMin + '分钟后重试');
 		}
 
+		// bcrypt密码比对
+		if (!bcrypt.compareSync(password, admin.ADMIN_PASSWORD)) {
+			// 登录失败：增加失败计数
+			let updateData = {
+				ADMIN_LOGIN_FAIL_CNT: failCnt + 1,
+				ADMIN_LOGIN_FAIL_TIME: now,
+			};
+			await AdminModel.edit(admin._id, updateData);
+
+			let remainAttempts = 5 - (failCnt + 1);
+			if (remainAttempts > 0) {
+				this.AppError('管理员账号或密码不正确，还剩' + remainAttempts + '次尝试机会');
+			} else {
+				this.AppError('账号已被锁定，请15分钟后重试');
+			}
+		}
+
+		// 登录成功：重置失败计数
 		let cnt = admin.ADMIN_LOGIN_CNT || 0;
 
 		// 生成token
@@ -79,7 +102,9 @@ class AdminHomeService extends BaseAdminService {
 			ADMIN_TOKEN: token,
 			ADMIN_TOKEN_TIME: tokenTime,
 			ADMIN_LOGIN_TIME: timeUtil.time(),
-			ADMIN_LOGIN_CNT: cnt + 1
+			ADMIN_LOGIN_CNT: cnt + 1,
+			ADMIN_LOGIN_FAIL_CNT: 0,
+			ADMIN_LOGIN_FAIL_TIME: 0,
 		}
 		await AdminModel.edit(admin._id, data);
 

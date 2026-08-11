@@ -7,7 +7,7 @@
 const BaseAdminService = require('./base_admin_service.js');
 
 const util = require('../../../framework/utils/util.js');
-const md5Lib = require('../../../framework/lib/md5_lib.js');
+const bcrypt = require('bcryptjs');
 
 const UserModel = require('../../model/user_model.js');
 const JoinModel = require('../../model/join_model.js');
@@ -63,7 +63,7 @@ class AdminUserService extends BaseAdminService {
 		let result = await UserModel.getList(where, fields, orderBy, page, size, true, oldTotal);
 
 		// 兼容历史数据：有些司机账号可能缺少 USER_ROLE 字段（但有密码）
-		// 当 driver 精确过滤为空时，回退到“有密码账号”集合，避免新增后列表空白。
+		// 当 driver 精确过滤为空时，回退到"有密码账号"集合，避免新增后列表空白。
 		if (page == 1 && (!result || !result.list || result.list.length == 0)) {
 			let fallbackWhere = {
 				USER_PASSWORD: ['<>', ''],
@@ -124,7 +124,7 @@ class AdminUserService extends BaseAdminService {
 
 		let data = {
 			USER_NAME: username,
-			USER_PASSWORD: md5Lib.md5(password),
+			USER_PASSWORD: bcrypt.hashSync(password, 10),
 			USER_MOBILE: phone || '',
 			USER_ROLE: 'driver',
 			USER_STATUS: UserModel.STATUS.COMM,
@@ -135,14 +135,15 @@ class AdminUserService extends BaseAdminService {
 
 	/** 通过_id获取用户详情 */
 	async getUserDetailById(id) {
-		return await UserModel.getOne(id, 'USER_NAME,USER_MOBILE');
+		return await UserModel.getOne(id, '*');
 	}
 
 	/** 编辑用户 */
 	async editUser(id, {
 		username,
 		password,
-		phone
+		phone,
+		status
 	}) {
 		// 检查用户名是否被其他用户占用
 		let exist = await UserModel.getOne({
@@ -160,7 +161,12 @@ class AdminUserService extends BaseAdminService {
 
 		// 如果填写了新密码，则更新
 		if (password) {
-			data.USER_PASSWORD = md5Lib.md5(password);
+			data.USER_PASSWORD = bcrypt.hashSync(password, 10);
+		}
+
+		// 如果传了状态值，则更新
+		if (status !== undefined && status !== null) {
+			data.USER_STATUS = Number(status);
 		}
 
 		await UserModel.edit(id, data);

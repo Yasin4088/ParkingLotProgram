@@ -71,7 +71,14 @@
 			</view>
 		</view> 
 	</view>
-	<view class="comm-list menu margin-bottom-xl"> 
+	<view class="comm-list menu margin-bottom-xl">
+		<view wx:if="{{admin.type==1}}" class="item arrow" bindtap="url" data-url='../../mgr/admin/list'>
+			<view class="content">
+				<text class="icon-peoplefill text-blue"></text>
+				<text class="text-black">管理员管理</text>
+			</view>
+		</view>
+
 		<view class="item arrow" bindtap="url" data-url='../../mgr/log/admin_log_list'>
 			<view class="content">
 				<text class="icon-footprint text-brown"></text>

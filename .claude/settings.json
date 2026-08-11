@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git pull *)",
+      "Bash(echo \"当前工作目录: $\\(pwd\\)\" && echo \"---\" && ls \"D:\\\\practice\\\\zhili-yard-miniapp\" 2>/dev/null && echo \"practice目录存在\" || echo \"practice目录不存在\")",
+      "Read(//d/practice/zhili-yard-miniapp/**)",
+      "Bash(git checkout *)",
+      "Bash(mkdir -p \"D:/practice/zhili-yard-miniapp/cloudfunctions/getPhoneNumber\" \"D:/practice/zhili-yard-miniapp/cloudfunctions/registerDriver\" \"D:/practice/zhili-yard-miniapp/cloudfunctions/getDriverInfo\" \"D:/practice/zhili-yard-miniapp/miniprogram/pages/driver/register\")"
+    ],
+    "additionalDirectories": [
+      "D:\\practice\\zhili-yard-miniapp\\cloudfunctions"
+    ]
+  }
+}

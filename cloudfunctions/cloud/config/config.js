@@ -3,10 +3,6 @@ module.exports = {
 	//### 环境相关
 	CLOUD_ID: 'cloud1-d2go0e8d7d592aa44', //你的云环境id
 
-	ADMIN_NAME: 'Yasin', // 管理员账号（5-30位)
-	ADMIN_PWD: '73c14008d55c730e10bb9412a5be1a16', // 管理员密码 MD5('4088')
-
-
 	// ##################################################################
 	PID: 'A00',
 	IS_DEMO: false,

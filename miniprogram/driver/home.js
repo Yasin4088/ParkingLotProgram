@@ -11,6 +11,7 @@ Page({
 		actionIndex: 0,
 		plate: '',
 		phone: '',
+		cargoName: '',
 		proof: '',
 		proofLocal: '',
 		submitting: false,
@@ -95,6 +96,10 @@ Page({
 		this.setData({ phone: e.detail.value });
 	},
 
+	bindCargoNameInput: function (e) {
+		this.setData({ cargoName: e.detail.value });
+	},
+
 	bindChooseProof: function () {
 		wx.chooseMedia({
 			count: 1,
@@ -129,6 +134,7 @@ Page({
 				plate: this.data.plate,
 				phone: this.data.phone,
 				proof: this.data.proof,
+				cargoName: this.data.cargoName.trim(),
 			}, { title: '预约中' });
 
 			wx.showToast({ title: '预约成功', icon: 'success' });

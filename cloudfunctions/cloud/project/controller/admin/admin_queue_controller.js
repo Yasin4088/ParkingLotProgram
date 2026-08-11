@@ -52,6 +52,7 @@ class AdminQueueController extends BaseAdminController {
 			phone: 'must|string|name=手机号',
 			lotId: 'must|string|name=停车场',
 			action: 'must|string|name=业务类型',
+			cargoName: 'string|max:50|name=货物名称',
 		};
 		let input = this.validateData(rules);
 
