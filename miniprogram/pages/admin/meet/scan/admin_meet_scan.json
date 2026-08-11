@@ -1,9 +1,0 @@
-{
-	"usingComponents": {
-		"cmpt-picker-time": "../../../../cmpts/public/picker_time/picker_time_cmpt"
-	},
-	"navigationBarBackgroundColor": "#3B82E6",
-	"navigationBarTextStyle": "white", 
-	"enablePullDownRefresh": true,  
-	"navigationBarTitleText": "管理员扫码核销"
-}
