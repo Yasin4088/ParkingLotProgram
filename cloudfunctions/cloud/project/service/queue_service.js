@@ -10,11 +10,7 @@ const timeUtil = require('../../framework/utils/time_util.js');
 const md5Lib = require('../../framework/lib/md5_lib.js');
 const miniLib = require('../../framework/lib/mini_lib.js');
 
-const PARKING_LOTS = [
-	{ id: 'A', name: '一号停车场', address: '园区东门装卸区' },
-	{ id: 'B', name: '二号停车场', address: '园区西门装卸区' },
-	{ id: 'C', name: '三号停车场', address: '仓库北侧临停区' },
-];
+const DEFAULT_LOT = { id: 'A', name: '装卸堆场', address: '园区装卸区' };
 
 const ACTIONS = {
 	load: '装货',
@@ -25,19 +21,19 @@ class QueueService extends BaseService {
 
 	getOptions() {
 		return {
-			lots: PARKING_LOTS,
+			lots: [DEFAULT_LOT],
 			actions: Object.keys(ACTIONS).map(key => ({ id: key, name: ACTIONS[key] }))
 		};
 	}
 
-	async create(userId, openId, lotId, action, plate, phone, proof, cargoName) {
-		let lot = this._getLot(lotId);
+	/** 司机预约（不选停车场，使用默认场地） */
+	async create(userId, openId, action, plate, phone, proof, cargoName) {
 		if (!ACTIONS[action]) this.AppError('请选择装货或卸货');
 
 		let active = await QueueModel.getOne({
 			QUEUE_USER_ID: userId,
-			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED]]
-		}, 'QUEUE_ID,QUEUE_STATUS,QUEUE_LOT_NAME,QUEUE_ACTION_NAME');
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED, QueueModel.STATUS.CONFIRMED]]
+		}, 'QUEUE_ID,QUEUE_STATUS');
 		if (active) this.AppError('您已有未完成的预约或排队记录，请完成后再提交');
 
 		return await QueueModel.insert({
@@ -45,8 +41,8 @@ class QueueService extends BaseService {
 			QUEUE_OPENID: openId,
 			QUEUE_PHONE: phone,
 			QUEUE_PLATE: plate,
-			QUEUE_LOT_ID: lot.id,
-			QUEUE_LOT_NAME: lot.name,
+			QUEUE_LOT_ID: DEFAULT_LOT.id,
+			QUEUE_LOT_NAME: DEFAULT_LOT.name,
 			QUEUE_ACTION: action,
 			QUEUE_ACTION_NAME: ACTIONS[action],
 			QUEUE_PROOF: proof || '',
@@ -59,7 +55,7 @@ class QueueService extends BaseService {
 	async myCurrent(userId) {
 		let item = await QueueModel.getOne({
 			QUEUE_USER_ID: userId,
-			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED]]
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED, QueueModel.STATUS.CONFIRMED]]
 		}, '*', { QUEUE_ADD_TIME: 'desc' });
 
 		if (!item) return null;
@@ -67,7 +63,6 @@ class QueueService extends BaseService {
 		let ahead = 0;
 		if (item.QUEUE_STATUS === QueueModel.STATUS.WAITING) {
 			ahead = await QueueModel.count({
-				QUEUE_LOT_ID: item.QUEUE_LOT_ID,
 				QUEUE_STATUS: QueueModel.STATUS.WAITING,
 				QUEUE_CHECKIN_TIME: ['<', item.QUEUE_CHECKIN_TIME]
 			});
@@ -85,7 +80,7 @@ class QueueService extends BaseService {
 		if (!item) this.AppError('未找到可签到的预约记录');
 
 		let now = timeUtil.time();
-		let queueNo = await this._makeQueueNo(item.QUEUE_LOT_ID, now);
+		let queueNo = await this._makeQueueNo(now);
 		await QueueModel.edit(item._id, {
 			QUEUE_NO: queueNo,
 			QUEUE_STATUS: QueueModel.STATUS.WAITING,
@@ -101,20 +96,83 @@ class QueueService extends BaseService {
 		let item = await QueueModel.getOne({
 			_id: id,
 			QUEUE_USER_ID: userId,
-			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED]]
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED, QueueModel.STATUS.CONFIRMED]]
 		}, '_id');
 		if (!item) this.AppError('未找到排队记录');
 
 		await QueueModel.edit(item._id, { QUEUE_SUBSCRIBE: 1 });
 	}
 
-	async list(lotId) {
-		await this.cancelExpiredBookings();
+	/** 管理员叫号（任意选车） + 指派叉车司机 */
+	async callDriver(queueId, forkliftId) {
+		let item = await QueueModel.getOne({
+			_id: queueId,
+			QUEUE_STATUS: QueueModel.STATUS.WAITING
+		});
+		if (!item) this.AppError('仅可叫号排队中的车辆');
+
+		let forklift = await UserModel.getOne({
+			_id: forkliftId,
+			USER_ROLE: 'forklift',
+			USER_STATUS: UserModel.STATUS.COMM
+		}, 'USER_NAME');
+		if (!forklift) this.AppError('叉车司机不存在或已禁用');
+
+		let now = timeUtil.time();
+		await QueueModel.edit(item._id, {
+			QUEUE_STATUS: QueueModel.STATUS.CALLED,
+			QUEUE_CALL_TIME: now,
+			QUEUE_FORKLIFT_ID: forkliftId,
+			QUEUE_FORKLIFT_NAME: forklift.USER_NAME,
+			QUEUE_FORKLIFT_TIME: now,
+		});
+
+		return await QueueModel.getOne(item._id);
+	}
+
+	/** 司机确认收到叫号 */
+	async driverConfirm(userId, queueId) {
+		let item = await QueueModel.getOne({
+			_id: queueId,
+			QUEUE_USER_ID: userId,
+			QUEUE_STATUS: QueueModel.STATUS.CALLED
+		});
+		if (!item) this.AppError('未找到待确认的叫号记录');
+
+		let now = timeUtil.time();
+		await QueueModel.edit(item._id, {
+			QUEUE_STATUS: QueueModel.STATUS.CONFIRMED,
+			QUEUE_CONFIRM_TIME: now,
+		});
+
+		return await QueueModel.getOne(item._id);
+	}
+
+	/** 叉车司机完成任务 */
+	async forkliftComplete(userId, queueId) {
+		let item = await QueueModel.getOne({
+			_id: queueId,
+			QUEUE_FORKLIFT_ID: userId,
+			QUEUE_STATUS: QueueModel.STATUS.CONFIRMED
+		});
+		if (!item) this.AppError('未找到待完成的任务');
+
+		let now = timeUtil.time();
+		await QueueModel.edit(item._id, {
+			QUEUE_STATUS: QueueModel.STATUS.DONE,
+			QUEUE_FINISH_TIME: now,
+		});
+
+		return await QueueModel.getOne(item._id);
+	}
+
+	/** 管理员列表（单一堆场，无需按停车场筛选） */
+	async list() {
+		await this.cancelExpired();
 
 		let where = {
-			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED]]
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED, QueueModel.STATUS.CONFIRMED]]
 		};
-		if (lotId) where.QUEUE_LOT_ID = lotId;
 
 		let list = await QueueModel.getAll(where, '*', {
 			QUEUE_STATUS: 'desc',
@@ -123,49 +181,61 @@ class QueueService extends BaseService {
 		}, 200);
 
 		return {
-			lots: PARKING_LOTS,
+			lots: [DEFAULT_LOT],
 			list: list.map(item => this._formatQueueItem(item))
 		};
 	}
 
-	async cancelExpiredBookings() {
-		let expiredTime = timeUtil.time() - 24 * 60 * 60 * 1000;
-		let list = await QueueModel.getAll({
+	/** 清理过期记录：24h未签到 + 5分钟未确认 */
+	async cancelExpired() {
+		let now = timeUtil.time();
+
+		// 24h 未签到的预约
+		let expiredBooked = await QueueModel.getAll({
 			QUEUE_STATUS: QueueModel.STATUS.BOOKED,
-			QUEUE_ADD_TIME: ['<', expiredTime]
+			QUEUE_ADD_TIME: ['<', now - 24 * 60 * 60 * 1000]
 		}, '_id', { QUEUE_ADD_TIME: 'asc' }, 200);
 
-		if (!list.length) return 0;
-
-		let now = timeUtil.time();
-		let reason = '超过一天未签到，预约已自动取消，请重新预约';
-		for (let item of list) {
+		for (let item of expiredBooked) {
 			await QueueModel.edit(item._id, {
 				QUEUE_STATUS: QueueModel.STATUS.CANCEL,
 				QUEUE_CANCEL_TIME: now,
-				QUEUE_CANCEL_REASON: reason,
+				QUEUE_CANCEL_REASON: '超过一天未签到，预约已自动取消',
 				QUEUE_CANCEL_OPERATOR: '系统自动清理'
 			});
 		}
 
-		return list.length;
+		// 5 分钟未确认的叫号
+		let expiredCalled = await QueueModel.getAll({
+			QUEUE_STATUS: QueueModel.STATUS.CALLED,
+			QUEUE_CALL_TIME: ['<', now - 5 * 60 * 1000]
+		}, '*', { QUEUE_CALL_TIME: 'asc' }, 200);
+
+		for (let item of expiredCalled) {
+			await QueueModel.edit(item._id, {
+				QUEUE_STATUS: QueueModel.STATUS.CANCEL,
+				QUEUE_CANCEL_TIME: now,
+				QUEUE_CANCEL_REASON: '司机超时未确认，自动取消',
+				QUEUE_CANCEL_OPERATOR: '系统自动清理'
+			});
+		}
+
+		return expiredBooked.length + expiredCalled.length;
 	}
 
 	async detail(id) {
 		let item = await QueueModel.getOne({ _id: id });
 		if (!item) this.AppError('未找到排队记录');
-
 		return this._formatQueueItem(item);
 	}
 
 	async edit(id, data) {
 		let item = await QueueModel.getOne({
 			_id: id,
-			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED]]
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED, QueueModel.STATUS.CONFIRMED]]
 		});
 		if (!item) this.AppError('仅可编辑当前队列中的记录');
 
-		let lot = this._getLot(data.lotId);
 		if (!ACTIONS[data.action]) this.AppError('请选择装货或卸货');
 
 		let phone = (data.phone || '').trim();
@@ -176,8 +246,6 @@ class QueueService extends BaseService {
 		await QueueModel.edit(item._id, {
 			QUEUE_PHONE: phone,
 			QUEUE_PLATE: plate,
-			QUEUE_LOT_ID: lot.id,
-			QUEUE_LOT_NAME: lot.name,
 			QUEUE_ACTION: data.action,
 			QUEUE_ACTION_NAME: ACTIONS[data.action],
 			QUEUE_CARGO_NAME: data.cargoName || '',
@@ -189,7 +257,7 @@ class QueueService extends BaseService {
 	async cancel(id, reason, operator = '管理员') {
 		let item = await QueueModel.getOne({
 			_id: id,
-			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED]]
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED, QueueModel.STATUS.CONFIRMED]]
 		});
 		if (!item) this.AppError('仅可取消当前队列中的记录');
 
@@ -206,34 +274,13 @@ class QueueService extends BaseService {
 		await this._sendCancelNotice(item, reason);
 	}
 
-	async callNext(lotId) {
-		this._getLot(lotId);
-
-		let item = await QueueModel.getOne({
-			QUEUE_LOT_ID: lotId,
-			QUEUE_STATUS: QueueModel.STATUS.WAITING
-		}, '*', { QUEUE_CHECKIN_TIME: 'asc' });
-		if (!item) this.AppError('当前停车场暂无排队车辆');
-
-		await QueueModel.edit(item._id, {
-			QUEUE_STATUS: QueueModel.STATUS.CALLED,
-			QUEUE_CALL_TIME: timeUtil.time()
-		});
-
-		return await QueueModel.getOne(item._id);
-	}
-
-	async finish(id) {
-		let item = await QueueModel.getOne({
-			_id: id,
-			QUEUE_STATUS: QueueModel.STATUS.CALLED
-		}, '_id');
-		if (!item) this.AppError('仅已叫号车辆可以完成');
-
-		await QueueModel.edit(item._id, {
-			QUEUE_STATUS: QueueModel.STATUS.DONE,
-			QUEUE_FINISH_TIME: timeUtil.time()
-		});
+	/** 获取可用叉车司机列表 */
+	async getForkliftList() {
+		let list = await UserModel.getAll({
+			USER_ROLE: 'forklift',
+			USER_STATUS: UserModel.STATUS.COMM
+		}, 'USER_NAME', { USER_NAME: 'asc' }, 200);
+		return (list || []).map(u => ({ _id: u._id, USER_NAME: u.USER_NAME }));
 	}
 
 	async _sendCancelNotice(item, reason) {
@@ -250,12 +297,6 @@ class QueueService extends BaseService {
 				thing4: { value: miniLib.fmtThing(item.QUEUE_LOT_NAME || '') },
 			}
 		}, 'queue_cancel');
-	}
-
-	_getLot(lotId) {
-		let lot = PARKING_LOTS.find(item => item.id === lotId);
-		if (!lot) this.AppError('请选择停车场');
-		return lot;
 	}
 
 	async driverLogin(username, password) {
@@ -292,13 +333,12 @@ class QueueService extends BaseService {
 		};
 	}
 
-	async _makeQueueNo(lotId, now) {
+	async _makeQueueNo(now) {
 		let day = timeUtil.timestamp2Time(now, 'Y-M-D');
 		let cnt = await QueueModel.count({
-			QUEUE_LOT_ID: lotId,
 			QUEUE_CHECKIN_TIME: ['>=', timeUtil.time2Timestamp(day + ' 00:00:00')]
 		});
-		return lotId + String(cnt + 1).padStart(3, '0');
+		return String(cnt + 1).padStart(3, '0');
 	}
 
 	_formatQueueItem(item, ahead = 0) {
@@ -307,6 +347,7 @@ class QueueService extends BaseService {
 		item.ahead = ahead;
 		item.checkinTimeText = item.QUEUE_CHECKIN_TIME ? timeUtil.timestamp2Time(item.QUEUE_CHECKIN_TIME) : '';
 		item.callTimeText = item.QUEUE_CALL_TIME ? timeUtil.timestamp2Time(item.QUEUE_CALL_TIME) : '';
+		item.confirmTimeText = item.QUEUE_CONFIRM_TIME ? timeUtil.timestamp2Time(item.QUEUE_CONFIRM_TIME) : '';
 		item.cancelTimeText = item.QUEUE_CANCEL_TIME ? timeUtil.timestamp2Time(item.QUEUE_CANCEL_TIME) : '';
 		item.addTimeText = item.QUEUE_ADD_TIME ? timeUtil.timestamp2Time(item.QUEUE_ADD_TIME) : '';
 		return item;

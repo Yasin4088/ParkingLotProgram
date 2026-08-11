@@ -4,13 +4,15 @@
 		"pages/driver/register/register",
 		"driver/home",
 		"driver/queue",
+		"pages/forklift/home",
 		"admin/queue",
 		"pages/admin/driver/list",
 		"pages/admin/driver/edit",
+		"pages/admin/forklift/list",
+		"pages/admin/forklift/edit",
 		"pages/admin/index/home/admin_home",
 		"pages/admin/mgr/admin/list",
-		"pages/admin/mgr/admin/edit",
-		"projects/A00/search/search"
+		"pages/admin/mgr/admin/edit"
 	],
 	"window": {
 		"backgroundColor": "#f1f1f1",

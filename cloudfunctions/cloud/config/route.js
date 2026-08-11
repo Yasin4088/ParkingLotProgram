@@ -10,12 +10,18 @@ module.exports = {
 	'queue/my_current': 'queue_controller@myCurrent',
 	'queue/checkin': 'queue_controller@checkin',
 	'queue/subscribe': 'queue_controller@subscribe',
+	'queue/confirm': 'queue_controller@confirm',
 
 	'driver/wxlogin': 'driver_controller@wxLogin',
 	'driver/register': 'driver_controller@register',
 	'driver/getphonenumber': 'driver_controller@getPhoneNumber',
 	'driver/getinfo': 'driver_controller@getMyDetail',
 	'driver/updateinfo': 'driver_controller@updateInfo',
+
+	'forklift/login': 'forklift_controller@login',
+	'forklift/my_task': 'forklift_controller@myTask',
+	'forklift/my_tasks': 'forklift_controller@myTasks',
+	'forklift/complete': 'forklift_controller@complete',
 
 	'admin/login': 'admin/admin_home_controller@adminLogin',
 	'admin/check_setup': 'admin/admin_home_controller@checkSetup',
@@ -27,6 +33,7 @@ module.exports = {
 	'admin/queue_edit': 'admin/admin_queue_controller@edit',
 	'admin/queue_cancel': 'admin/admin_queue_controller@cancel',
 	'admin/queue_finish': 'admin/admin_queue_controller@finish',
+	'admin/forklift_list': 'admin/admin_queue_controller@forkliftList',
 
 	'admin/user_list': 'admin/admin_user_controller@getUserList',
 	'admin/user_detail': 'admin/admin_user_controller@getUserDetailById',

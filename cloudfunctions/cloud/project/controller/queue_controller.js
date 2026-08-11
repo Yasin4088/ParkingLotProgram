@@ -14,7 +14,6 @@ class QueueController extends BaseController {
 
 	async create() {
 		let rules = {
-			lotId: 'must|string|name=停车场',
 			action: 'must|string|name=业务类型',
 			plate: 'must|string|min:3|max:20|name=车牌号',
 			phone: 'must|mobile|name=手机号',
@@ -24,7 +23,7 @@ class QueueController extends BaseController {
 		let input = this.validateData(rules);
 
 		let service = new QueueService();
-		return await service.create(this._token, this._userId, input.lotId, input.action, input.plate, input.phone, input.proof, input.cargoName);
+		return await service.create(this._token, this._userId, input.action, input.plate, input.phone, input.proof, input.cargoName);
 	}
 
 	async myCurrent() {
@@ -52,6 +51,17 @@ class QueueController extends BaseController {
 
 		let service = new QueueService();
 		await service.subscribe(this._token, input.id);
+	}
+
+	/** 司机确认收到叫号 */
+	async confirm() {
+		let rules = {
+			id: 'must|string|name=排队记录',
+		};
+		let input = this.validateData(rules);
+
+		let service = new QueueService();
+		return await service.driverConfirm(this._token, input.id);
 	}
 
 	async driverLogin() {

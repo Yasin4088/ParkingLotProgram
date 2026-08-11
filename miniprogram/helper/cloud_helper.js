@@ -96,14 +96,18 @@
 
  	let token = '';
  	// 管理员token
- 	if (route.indexOf('admin/') > -1) {
- 		let admin = cacheHelper.get(constants.CACHE_ADMIN);
- 		if (admin && admin.token) token = admin.token;
- 	} else {
- 		//正常用户
- 		let user = cacheHelper.get(constants.CACHE_TOKEN);
- 		if (user && user.id) token = user.id;
- 	}
+	if (route.indexOf('admin/') > -1) {
+		let admin = cacheHelper.get(constants.CACHE_ADMIN);
+		if (admin && admin.token) token = admin.token;
+	} else if (route.indexOf('forklift/') > -1) {
+		// 叉车司机
+		let forklift = cacheHelper.get(constants.CACHE_FORKLIFT);
+		if (forklift && forklift.id) token = forklift.id;
+	} else {
+		//正常用户
+		let user = cacheHelper.get(constants.CACHE_TOKEN);
+		if (user && user.id) token = user.id;
+	}
 
  	return new Promise(function (resolve, reject) {
 

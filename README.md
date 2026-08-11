@@ -1,6 +1,6 @@
 # ParkingLotProgram — 停车场装卸排队管理系统
 
-微信小程序：司机预约装卸货 → GPS签到 → 排队 → 管理员叫号 → 完成装卸。
+微信小程序：司机预约装卸货 → GPS签到 → 排队 → 管理员叫号+派叉车 → 司机确认 → 叉车执行 → 完成。三个角色：货车司机、叉车司机、管理员。
 
 ## 技术栈
 
@@ -14,18 +14,19 @@
 
 ```
 miniprogram/        # 小程序前端
-  pages/login/      # 统一登录页（司机 + 管理员）
-  pages/admin/      # 管理后台（司机管理、管理员管理、日志等）
+  pages/login/      # 统一登录页（司机/叉车司机/管理员 三Tab）
+  pages/admin/      # 管理后台（司机管理、叉车管理、管理员管理、日志等）
+  pages/forklift/   # 叉车司机任务页
   admin/            # 排队叫号主界面
   driver/           # 司机端
-  biz/              # 业务逻辑（AdminBiz、PassportBiz）
+  biz/              # 业务逻辑（AdminBiz、ForkliftBiz、PassportBiz）
   helper/           # 工具（cloud_helper、cache_helper、page_helper）
   cmpts/            # 公共组件（comm-list、picker、modal）
 
 cloudfunctions/cloud/   # 云函数（单体）
   config/            # 路由、业务配置
   project/
-    controller/      # 控制器（admin/、driver/）
+    controller/      # 控制器（admin/、driver/、forklift）
     service/         # 业务逻辑
     model/           # 数据模型（ax_admin、ax_user、ax_queue 等）
   framework/         # CCMiniCloud 框架核心
@@ -41,6 +42,7 @@ cloudfunctions/cloud/   # 云函数（单体）
 ## 当前状态
 
 - 分支：`dev-lizirui`
+- **三个角色**：货车司机（微信登录）、叉车司机（账号密码登录）、管理员
 - 管理员认证已加固（bcrypt、频率限制、管理员 CRUD）
-- 排队叫号核心流程可用
-- 司机端支持微信一键登录 + 注册 + 个人信息编辑
+- 排队叫号完整工作流可用（预约→签到→叫号+派叉车→司机确认→叉车执行→完成）
+- 唯一堆场：装卸堆场（无需选停车场）

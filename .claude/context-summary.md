@@ -2,14 +2,14 @@
 
 ## 项目概况
 
-微信小程序停车场装卸排队管理系统。司机预约装卸货→GPS签到→排队→管理员叫号→完成。
+微信小程序停车场装卸排队管理系统。三角色：货车司机（预约+签到）→ 管理员（叫号+派叉车）→ 叉车司机（执行+完成）。
 
 ## 两套代码
 
 | 位置 | 用途 | 架构 |
 |------|------|------|
 | `d:/github/ParkingLotProgram` | GitHub 仓库，已关联 `Yasin4088/ParkingLotProgram.git` | 单体云函数（cloudfunctions/cloud/） |
-| `D:/practice/zhili-yard-miniapp` | 微信开发者工具实际打开的项目 | 多函数架构（login/checkIn/getQueue/callDriver/createReservation） |
+| `D:/practice/zhili-yard-miniapp` | 微信开发者工具实际打开的项目 | 多函数架构 |
 
 - GitHub版用自研 CCMiniCloud Framework 2.0.1（MVC），路由 `config/route.js`
 - Practice版是重构后的新版本，云函数各自独立
@@ -25,46 +25,44 @@
 
 - 环境ID: `cloud1-d2go0e8d7d592aa44`
 - AppID: `wx3decd5e9b69b1b7e`
-- Practice 版 `miniprogram/app.js` 中 env 还是占位符 `'你的云环境ID'`（但能跑，因为云函数用了 `DYNAMIC_CURRENT_ENV`）
 
-## 管理员认证（2026-08-11 改）
+## 认证机制
 
-- 密码使用 **bcrypt** 哈希（已从 MD5 升级）
-- 硬编码凭证已从 config.js 移除
-- 首次部署通过登录页初始化表单创建超级管理员（一次性 `/admin/setup` 端点）
+| 角色 | 密码方案 | Token 缓存 Key | 导航栏颜色 |
+|------|----------|---------------|-----------|
+| 货车司机 | MD5（历史兼容） | CACHE_TOKEN | 默认 |
+| 叉车司机 | bcrypt | CACHE_FORKLIFT | #E67E22（橙色） |
+| 管理员 | bcrypt + 频率限制 | CACHE_ADMIN | #009F72（绿色） |
+
+- 首次部署通过登录页初始化表单创建超级管理员（`/admin/setup`）
 - 登录 5 次失败锁定 15 分钟
-- 已清理 MASK_* 认证后门死代码
-- 管理员管理 CRUD 界面：`后台管理 → 管理员管理`（仅超管可见）
 
-## 管理员新增机制
+## 核心工作流
 
-1. 首次部署 → 登录页切管理员 tab → 自动检测需要初始化 → 填 Yasin/4088 → 创建超管
-2. 后续新增 → 超管登录 → 后台管理 → 管理员管理 → 添加管理员
+1. 司机预约（选装货/卸货、填车牌/手机/货物名、上传单证）→ 状态：已预约(0)
+2. 到现场 GPS 签到 → 状态：排队中(1)，获得排队号
+3. 管理员任选一辆排队中车辆叫号 + 指派叉车司机 → 状态：已叫号(2)
+4. 司机收到通知后点"确认收到" → 状态：司机已确认(3)
+5. 叉车司机完成任务 → 状态：已完成(9)
+6. 超时自动取消：已预约 24h 未签到 / 已叫号 5min 未确认 → 已取消(10)
 
-## 云函数调试
+## 场地
 
-- 微信开发者工具中右键云函数目录 → "上传并部署：云端安装依赖"
-- 前端代码改动自动刷新，云函数代码改动需重新上传部署
-- 开发者工具 Console 面板可查看前端日志
-- 云开发控制台 → 云函数 → 日志 可查看云端日志
+- **唯一堆场**：装卸堆场（ID=A，地址=园区装卸区）
+- 所有端（司机/叉车/管理员）均无需停车场选择
 
 ## 登录流程
 
-1. 前端 `pages/login/login.js` 调用 `cloudHelper.callCloudSumbit('admin/login', ...)` 或 `'driver/wxLogin'`
-2. 云函数根据 `route.js` 路由到对应 Controller
-3. Controller 校验参数 → Service 处理业务逻辑 → Model 操作数据库
-4. 返回结果 → 前端跳转
-
-## 核心功能模块
-
-- 排队预约（create）→ GPS签到（checkin）→ 管理员叫号（callNext）→ 完成（finish）
-- 停车场: A/一号停车场、B/二号停车场、C/三号停车场
-- 业务类型: load/装货、unload/卸货
-- 司机上传单证图片（前端调用微信 imgSecCheck 审核色情/政治/暴恐）
+1. 前端 `pages/login/login.js` → 三 Tab：司机（微信一键）/叉车（用户名密码）/管理员（用户名密码）
+2. `cloudHelper` 根据 route 前缀自动注入对应 token（admin/→CACHE_ADMIN, forklift/→CACHE_FORKLIFT, 其他→CACHE_TOKEN）
+3. 云函数按 `route.js` → Controller → Service → Model 处理
 
 ## 数据库集合
 
 ax_admin, ax_user, ax_queue, ax_meet, ax_news, ax_setup, ax_log, ax_day, ax_export, ax_join, ax_cache, ax_temp
+
+- `ax_user`：所有用户共表，`USER_ROLE` 区分（driver/forklift），管理员独立 `ax_admin` 表
+- `ax_queue`：排队记录，新增字段 QUEUE_FORKLIFT_ID/NAME/TIME, QUEUE_CONFIRM_TIME
 
 ## 关于合作者
 

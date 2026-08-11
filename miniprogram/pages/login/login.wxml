@@ -6,8 +6,9 @@
 
         <!-- 标签切换 -->
         <view class="tabs">
-            <view class="tab {{tab === 'driver' ? 'active' : ''}}" bindtap="bindTabTap" data-tab="driver">司机登录</view>
-            <view class="tab {{tab === 'admin' ? 'active' : ''}}" bindtap="bindTabTap" data-tab="admin">管理员登录</view>
+            <view class="tab {{tab === 'driver' ? 'active' : ''}}" bindtap="bindTabTap" data-tab="driver">司机</view>
+            <view class="tab {{tab === 'forklift' ? 'active forklift' : ''}}" bindtap="bindTabTap" data-tab="forklift">叉车司机</view>
+            <view class="tab {{tab === 'admin' ? 'active' : ''}}" bindtap="bindTabTap" data-tab="admin">管理员</view>
         </view>
 
         <!-- 司机端：微信一键登录 -->
@@ -16,6 +17,20 @@
                 微信一键登录
             </button>
             <view class="hint">首次登录后需完善个人信息</view>
+        </block>
+
+        <!-- 叉车司机端：用户名密码登录 -->
+        <block wx:elif="{{tab === 'forklift'}}">
+            <view class="form">
+                <view class="form-item">
+                    <input placeholder="请输入用户名" value="{{name}}" bindinput="bindNameInput" maxlength="30" />
+                </view>
+                <view class="form-item">
+                    <input placeholder="请输入密码" type="password" value="{{pwd}}" bindinput="bindPwdInput" maxlength="30" />
+                </view>
+
+                <button class="login-btn forklift-btn" loading="{{loading}}" bindtap="bindForkliftLoginTap">叉车司机登录</button>
+            </view>
         </block>
 
         <!-- 管理员端：系统初始化 -->

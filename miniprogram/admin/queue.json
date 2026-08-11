@@ -1,3 +1,5 @@
 {
-	"navigationBarTitleText": "挚力供应链"
+	"navigationBarBackgroundColor": "#243b53",
+	"navigationBarTextStyle": "white",
+	"navigationBarTitleText": "装卸叫号"
 }
