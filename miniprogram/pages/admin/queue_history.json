@@ -1,5 +1,6 @@
 {
+	"usingComponents": {},
 	"navigationBarBackgroundColor": "#3B82E6",
 	"navigationBarTextStyle": "white",
-	"navigationBarTitleText": "挚力供应链"
+	"navigationBarTitleText": "历史记录"
 }

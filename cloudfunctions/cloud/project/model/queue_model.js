@@ -22,6 +22,7 @@ QueueModel.DB_STRUCTURE = {
 	QUEUE_ACTION: 'string|true|comment=业务类型 load=装货,unload=卸货',
 	QUEUE_ACTION_NAME: 'string|true|comment=业务类型名称',
 	QUEUE_PROOF: 'string|false|comment=上传单证图片fileID',
+	QUEUE_FINISH_PROOF: 'string|false|comment=完成作业凭证图片fileID',
 	QUEUE_CARGO_NAME: 'string|false|comment=货物名称',
 
 	QUEUE_FORKLIFT_ID: 'string|false|comment=叉车司机用户ID',

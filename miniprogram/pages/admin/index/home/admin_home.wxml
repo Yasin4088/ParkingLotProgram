@@ -12,7 +12,6 @@
 				<text wx:if="{{admin.type==0}}" class="tag small bg-green radius margin-left-s">一般管理员</text>
 
 			</view>
-			<view class="desc text-s">共登录{{admin.cnt}}次，上次{{admin.last}}</view>
 		</view>
 	</view>
 
@@ -44,6 +43,8 @@
 		<view class="item" bindtap="url" data-url="../../driver/list"> <text class="icon-peoplefill text-orange"></text> <text class="text-black">司机管理</text>
 		</view>
 		<view class="item" bindtap="url" data-url="../../forklift/list"> <text class="icon-peoplefill text-orange"></text> <text class="text-black">叉车司机管理</text>
+		</view>
+		<view class="item" bindtap="url" data-url="../../queue_history"> <text class="icon-footprint text-blue"></text> <text class="text-black">历史记录</text>
 		</view>
 	</view>
 

@@ -7,6 +7,9 @@ Page({
 		isLoad: false,
 		task: null,
 		loading: false,
+		uploadingFinishProof: false,
+		finishProof: '',
+		finishProofLocal: '',
 		statusBar: 0,
 		customBar: 0,
 		navBarHeight: 0,
@@ -28,7 +31,13 @@ Page({
 	_loadTask: async function () {
 		try {
 			let task = await cloudHelper.callCloudData('forklift/my_task', {}, { title: '' });
-			this.setData({ task });
+			let data = { task };
+			if (!task) {
+				data.finishProof = '';
+				data.finishProofLocal = '';
+				data.uploadingFinishProof = false;
+			}
+			this.setData(data);
 		} catch (e) {
 			console.log(e);
 		}
@@ -52,21 +61,57 @@ Page({
 		});
 	},
 
+	bindChooseFinishProof: function () {
+		if (!this.data.task || this.data.loading || this.data.uploadingFinishProof) return;
+
+		wx.chooseMedia({
+			count: 1,
+			mediaType: ['image'],
+			sourceType: ['camera', 'album'],
+			success: async res => {
+				let filePath = res.tempFiles && res.tempFiles[0] ? res.tempFiles[0].tempFilePath : '';
+				if (!filePath) return;
+				this.setData({ uploadingFinishProof: true });
+				try {
+					let cloudId = await cloudHelper.transTempPicOne(filePath, 'queue/finish-proof/', this.data.task._id, false);
+					if (!cloudId) return;
+					this.setData({
+						finishProof: cloudId,
+						finishProofLocal: filePath,
+					});
+					wx.showToast({ title: '凭证已上传', icon: 'success' });
+				} catch (e) {
+					console.log(e);
+					wx.showToast({ title: '上传失败，请重试', icon: 'none' });
+				} finally {
+					this.setData({ uploadingFinishProof: false });
+				}
+			}
+		});
+	},
+
 	bindCompleteTap: async function () {
 		if (!this.data.task || this.data.loading) return;
+		if (this.data.uploadingFinishProof) return wx.showToast({ title: '凭证上传中', icon: 'none' });
+		if (!this.data.finishProof) return wx.showToast({ title: '请先上传完成凭证', icon: 'none' });
 
 		wx.showModal({
 			title: '确认完成',
-			content: '确定已完成装卸任务？',
+			content: '确定已完成装卸任务，并提交完成作业凭证？',
 			success: async res => {
 				if (!res.confirm) return;
 				this.setData({ loading: true });
 				try {
 					await cloudHelper.callCloudSumbit('forklift/complete', {
 						id: this.data.task._id,
+						finishProof: this.data.finishProof,
 					}, { title: '提交中' });
 					wx.showToast({ title: '任务已完成', icon: 'success' });
-					this.setData({ task: null });
+					this.setData({
+						task: null,
+						finishProof: '',
+						finishProofLocal: '',
+					});
 				} catch (e) {
 					console.log(e);
 				} finally {

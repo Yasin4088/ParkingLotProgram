@@ -67,7 +67,7 @@ class ForkliftService extends BaseService {
 	}
 
 	/** 叉车司机完成任务 */
-	async completeTask(userId, queueId) {
+	async completeTask(userId, queueId, finishProof) {
 		let item = await QueueModel.getOne({
 			_id: queueId,
 			QUEUE_FORKLIFT_ID: userId,
@@ -75,9 +75,13 @@ class ForkliftService extends BaseService {
 		});
 		if (!item) this.AppError('未找到待完成的任务（仅司机已确认的任务可完成）');
 
+		finishProof = (finishProof || '').trim();
+		if (!finishProof) this.AppError('请先上传完成作业凭证');
+
 		let now = timeUtil.time();
 		await QueueModel.edit(item._id, {
 			QUEUE_STATUS: QueueModel.STATUS.DONE,
+			QUEUE_FINISH_PROOF: finishProof,
 			QUEUE_FINISH_TIME: now,
 		});
 

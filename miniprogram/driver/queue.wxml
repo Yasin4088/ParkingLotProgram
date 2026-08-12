@@ -45,7 +45,16 @@
 		<!-- 已确认状态 -->
 		<view wx:if="{{item.QUEUE_STATUS === 3}}" class="forklift-info confirmed">
 			<view class="fl-label">叉车司机 {{item.QUEUE_FORKLIFT_NAME}} 已收到通知</view>
-			<view class="fl-tip">叉车司机将前往装卸，请耐心等待</view>
+			<view class="fl-tip">装卸完成后，请上传完成作业凭证并提交</view>
+		</view>
+
+		<view wx:if="{{item.QUEUE_STATUS === 3}}" class="finish-proof">
+			<view class="finish-title">完成作业凭证</view>
+			<view class="finish-desc">请拍照上传现场签收单、装卸完成照片等凭证</view>
+			<view class="upload" bindtap="bindChooseFinishProof">
+				<image wx:if="{{finishProofLocal}}" src="{{finishProofLocal}}" mode="aspectFill"></image>
+				<view wx:else class="upload-empty">{{uploadingFinishProof ? '上传中...' : '拍照/上传凭证'}}</view>
+			</view>
 		</view>
 
 		<view wx:if="{{item.QUEUE_STATUS === 0}}" class="tips">已预约，抵达现场后点击 GPS 签到进入队列。</view>
@@ -55,7 +64,8 @@
 
 		<button wx:if="{{item.QUEUE_STATUS === 0}}" loading="{{loading}}" class="primary-btn" bindtap="bindCheckinTap">GPS 签到</button>
 		<button wx:if="{{item.QUEUE_STATUS === 2 && item.QUEUE_FORKLIFT_NAME}}" class="confirm-btn" bindtap="bindConfirmTap">确认收到</button>
-		<button wx:if="{{item.QUEUE_STATUS !== 2}}" class="ghost-btn" bindtap="bindSubscribeTap">{{item.QUEUE_SUBSCRIBE ? '已订阅叫号通知' : '订阅叫号通知'}}</button>
+		<button wx:if="{{item.QUEUE_STATUS === 3}}" loading="{{finishing || uploadingFinishProof}}" class="finish-btn" bindtap="bindFinishTap">完成作业</button>
+		<button wx:if="{{item.QUEUE_STATUS === 0 || item.QUEUE_STATUS === 1}}" class="ghost-btn" bindtap="bindSubscribeTap">{{item.QUEUE_SUBSCRIBE ? '已订阅叫号通知' : '订阅叫号通知'}}</button>
 	</view>
 
 	<view wx:else class="empty-card">

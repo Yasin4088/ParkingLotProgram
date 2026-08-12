@@ -1,12 +1,10 @@
 <view class="page">
 	<view class="header">
 		<view>
-			<view class="title">挚力供应链</view>
+			<view class="title">管理员</view>
 			<view class="desc">查看排队列表，叫号并指派叉车司机</view>
 		</view>
 		<view class="header-actions">
-			<view class="driver-mgr" bindtap="bindDriverMgrTap">司机管理</view>
-			<view class="driver-mgr" bindtap="bindForkliftMgrTap">叉车管理</view>
 			<view class="driver-mgr" bindtap="bindAdminHomeTap">后台管理</view>
 		</view>
 	</view>
@@ -136,8 +134,17 @@
 						<view class="detail-value">{{selectedItem.confirmTimeText || '--'}}</view>
 					</view>
 					<view class="detail-row">
+						<view class="detail-label">完成时间</view>
+						<view class="detail-value">{{selectedItem.finishTimeText || '--'}}</view>
+					</view>
+					<view class="detail-row">
 						<view class="detail-label">装卸凭证</view>
 						<view wx:if="{{selectedItem.QUEUE_PROOF}}" class="detail-link" bindtap="bindPreviewProofTap">点击查看</view>
+						<view wx:else class="detail-value">--</view>
+					</view>
+					<view class="detail-row">
+						<view class="detail-label">完成凭证</view>
+						<view wx:if="{{selectedItem.QUEUE_FINISH_PROOF}}" class="detail-link" bindtap="bindPreviewFinishProofTap">点击查看</view>
 						<view wx:else class="detail-value">--</view>
 					</view>
 				</view>

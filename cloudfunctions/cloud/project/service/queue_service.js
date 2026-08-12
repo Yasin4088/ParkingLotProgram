@@ -166,6 +166,42 @@ class QueueService extends BaseService {
 		return await QueueModel.getOne(item._id);
 	}
 
+	/** 司机上传完成凭证并完成作业 */
+	async driverFinish(userId, queueId, finishProof) {
+		let item = await QueueModel.getOne({
+			_id: queueId,
+			QUEUE_USER_ID: userId,
+			QUEUE_STATUS: QueueModel.STATUS.CONFIRMED
+		});
+		if (!item) this.AppError('未找到可完成的作业记录');
+
+		finishProof = (finishProof || '').trim();
+		if (!finishProof) this.AppError('请先上传完成作业凭证');
+
+		let now = timeUtil.time();
+		await QueueModel.edit(item._id, {
+			QUEUE_STATUS: QueueModel.STATUS.DONE,
+			QUEUE_FINISH_PROOF: finishProof,
+			QUEUE_FINISH_TIME: now,
+		});
+
+		return await QueueModel.getOne(item._id);
+	}
+
+	/** 管理员手动完成 */
+	async finish(queueId) {
+		let item = await QueueModel.getOne({
+			_id: queueId,
+			QUEUE_STATUS: QueueModel.STATUS.CONFIRMED
+		});
+		if (!item) this.AppError('仅可完成司机已确认的记录');
+
+		await QueueModel.edit(item._id, {
+			QUEUE_STATUS: QueueModel.STATUS.DONE,
+			QUEUE_FINISH_TIME: timeUtil.time(),
+		});
+	}
+
 	/** 管理员列表（单一堆场，无需按停车场筛选） */
 	async list() {
 		await this.cancelExpired();
@@ -184,6 +220,41 @@ class QueueService extends BaseService {
 			lots: [DEFAULT_LOT],
 			list: list.map(item => this._formatQueueItem(item))
 		};
+	}
+
+	/** 管理员历史记录（已完成/已取消） */
+	async historyList() {
+		let list = await QueueModel.getAll({
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.DONE, QueueModel.STATUS.CANCEL]]
+		}, '*', {
+			QUEUE_EDIT_TIME: 'desc'
+		}, 500);
+
+		list = (list || []).map(item => this._formatQueueItem(item));
+		list.sort((a, b) => (this._getHistoryTime(b) - this._getHistoryTime(a)));
+
+		return {
+			total: list.length,
+			list
+		};
+	}
+
+	/** 管理员清理单条历史记录 */
+	async clearHistory(id) {
+		let item = await QueueModel.getOne({
+			_id: id,
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.DONE, QueueModel.STATUS.CANCEL]]
+		}, '_id');
+		if (!item) this.AppError('未找到可清理的历史记录');
+
+		await QueueModel.del(item._id);
+	}
+
+	/** 管理员清空全部历史记录 */
+	async clearAllHistory() {
+		await QueueModel.del({
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.DONE, QueueModel.STATUS.CANCEL]]
+		});
 	}
 
 	/** 清理过期记录：24h未签到 + 5分钟未确认 */
@@ -348,9 +419,14 @@ class QueueService extends BaseService {
 		item.checkinTimeText = item.QUEUE_CHECKIN_TIME ? timeUtil.timestamp2Time(item.QUEUE_CHECKIN_TIME) : '';
 		item.callTimeText = item.QUEUE_CALL_TIME ? timeUtil.timestamp2Time(item.QUEUE_CALL_TIME) : '';
 		item.confirmTimeText = item.QUEUE_CONFIRM_TIME ? timeUtil.timestamp2Time(item.QUEUE_CONFIRM_TIME) : '';
+		item.finishTimeText = item.QUEUE_FINISH_TIME ? timeUtil.timestamp2Time(item.QUEUE_FINISH_TIME) : '';
 		item.cancelTimeText = item.QUEUE_CANCEL_TIME ? timeUtil.timestamp2Time(item.QUEUE_CANCEL_TIME) : '';
 		item.addTimeText = item.QUEUE_ADD_TIME ? timeUtil.timestamp2Time(item.QUEUE_ADD_TIME) : '';
 		return item;
+	}
+
+	_getHistoryTime(item) {
+		return item.QUEUE_FINISH_TIME || item.QUEUE_CANCEL_TIME || item.QUEUE_EDIT_TIME || item.QUEUE_ADD_TIME || 0;
 	}
 }
 

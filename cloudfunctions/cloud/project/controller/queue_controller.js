@@ -64,6 +64,18 @@ class QueueController extends BaseController {
 		return await service.driverConfirm(this._token, input.id);
 	}
 
+	/** 司机上传完成凭证并完成作业 */
+	async finish() {
+		let rules = {
+			id: 'must|string|name=排队记录',
+			finishProof: 'must|string|name=完成作业凭证',
+		};
+		let input = this.validateData(rules);
+
+		let service = new QueueService();
+		return await service.driverFinish(this._token, input.id, input.finishProof);
+	}
+
 	async driverLogin() {
 		let rules = {
 			username: 'must|string|min:2|max:30|name=用户名',

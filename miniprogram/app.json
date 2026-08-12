@@ -6,6 +6,7 @@
 		"driver/queue",
 		"pages/forklift/home",
 		"admin/queue",
+		"pages/admin/queue_history",
 		"pages/admin/driver/list",
 		"pages/admin/driver/edit",
 		"pages/admin/forklift/list",

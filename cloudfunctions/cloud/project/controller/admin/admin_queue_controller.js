@@ -44,6 +44,32 @@ class AdminQueueController extends BaseAdminController {
 		return await service.detail(input.id);
 	}
 
+	async historyList() {
+		await this.isAdmin();
+
+		let service = new QueueService();
+		return await service.historyList();
+	}
+
+	async historyClear() {
+		await this.isAdmin();
+
+		let rules = {
+			id: 'must|string|name=历史记录',
+		};
+		let input = this.validateData(rules);
+
+		let service = new QueueService();
+		await service.clearHistory(input.id);
+	}
+
+	async historyClearAll() {
+		await this.isAdmin();
+
+		let service = new QueueService();
+		await service.clearAllHistory();
+	}
+
 	async edit() {
 		await this.isAdmin();
 

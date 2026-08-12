@@ -283,18 +283,19 @@ Page({
 		});
 	},
 
+	bindPreviewFinishProofTap: function () {
+		let proof = this.data.selectedItem && this.data.selectedItem.QUEUE_FINISH_PROOF;
+		if (!proof) return;
+		wx.previewImage({
+			urls: [proof],
+			current: proof,
+		});
+	},
+
 	// ========== 导航 ==========
 
 	bindRefreshTap: function () {
 		this.loadList();
-	},
-
-	bindDriverMgrTap: function () {
-		wx.navigateTo({ url: '/pages/admin/driver/list' });
-	},
-
-	bindForkliftMgrTap: function () {
-		wx.navigateTo({ url: '/pages/admin/forklift/list' });
 	},
 
 	bindAdminHomeTap: function () {

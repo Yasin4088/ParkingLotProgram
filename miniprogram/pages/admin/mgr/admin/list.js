@@ -12,7 +12,7 @@ Page({
     onLoad: function (options) {
         if (!AdminBiz.isAdmin(this)) return;
         wx.setNavigationBarColor({
-            backgroundColor: '#009F72',
+            backgroundColor: '#3B82E6',
             frontColor: '#ffffff',
         });
 

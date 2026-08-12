@@ -31,11 +31,12 @@ class ForkliftController extends BaseController {
 	async complete() {
 		let rules = {
 			id: 'must|string|name=任务记录',
+			finishProof: 'must|string|name=完成作业凭证',
 		};
 		let input = this.validateData(rules);
 
 		let service = new ForkliftService();
-		return await service.completeTask(this._token, input.id);
+		return await service.completeTask(this._token, input.id, input.finishProof);
 	}
 }
 

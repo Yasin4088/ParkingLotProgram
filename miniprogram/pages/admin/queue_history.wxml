@@ -1,0 +1,114 @@
+<view wx:if="{{isAdmin}}" class="page">
+	<view class="header">
+		<view>
+			<view class="title">历史记录</view>
+			<view class="desc">查看已完成/已取消装卸记录，便于统计与复盘</view>
+		</view>
+		<view class="header-actions">
+			<view class="action-btn" bindtap="bindRefreshTap">刷新</view>
+			<view class="action-btn danger" bindtap="bindClearAllTap">清空</view>
+		</view>
+	</view>
+
+	<view class="summary">共 {{total}} 条历史记录</view>
+
+	<view wx:if="{{list.length}}">
+		<view wx:for="{{list}}" wx:key="_id" data-id="{{item._id}}" bindtap="bindItemTap" class="history-card {{item.QUEUE_STATUS === 9 ? 'done' : 'cancel'}}">
+			<view class="top">
+				<view class="plate">{{item.QUEUE_PLATE || '--'}}</view>
+				<view class="status {{item.QUEUE_STATUS === 9 ? 'done' : 'cancel'}}">{{item.statusDesc}}</view>
+			</view>
+			<view class="meta">{{item.QUEUE_ACTION_NAME || '--'}} · {{item.QUEUE_PHONE || '--'}}</view>
+			<view wx:if="{{item.QUEUE_CARGO_NAME}}" class="meta">货物：{{item.QUEUE_CARGO_NAME}}</view>
+			<view wx:if="{{item.QUEUE_FORKLIFT_NAME}}" class="meta">叉车：{{item.QUEUE_FORKLIFT_NAME}}</view>
+			<view wx:if="{{item.finishTimeText}}" class="meta">完成：{{item.finishTimeText}}</view>
+			<view wx:if="{{item.cancelTimeText}}" class="meta">取消：{{item.cancelTimeText}}</view>
+			<view wx:if="{{item.QUEUE_FINISH_PROOF}}" class="proof-tag">已上传完成凭证</view>
+			<view wx:elif="{{item.QUEUE_PROOF}}" class="proof-tag light">有预约单证</view>
+
+			<view class="card-actions">
+				<view class="link-btn">查看详情</view>
+				<view class="clear-btn" data-id="{{item._id}}" catchtap="bindClearTap">清理</view>
+			</view>
+		</view>
+	</view>
+
+	<view wx:else class="empty">{{loading ? '加载中...' : '暂无历史记录'}}</view>
+
+	<view wx:if="{{showDetail}}" class="detail-mask" bindtap="bindCloseDetailTap">
+		<view class="detail-panel" catchtap="bindNoop">
+			<view class="detail-head">
+				<view>
+					<view class="detail-title">记录详情</view>
+					<view class="detail-sub">{{selectedItem.QUEUE_NO || '未签到'}} · {{selectedItem.statusDesc}}</view>
+				</view>
+				<view class="detail-close" bindtap="bindCloseDetailTap">关闭</view>
+			</view>
+
+			<view class="detail-grid">
+				<view class="detail-row">
+					<view class="detail-label">车牌号</view>
+					<view class="detail-value">{{selectedItem.QUEUE_PLATE || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">手机号</view>
+					<view class="detail-value">{{selectedItem.QUEUE_PHONE || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">业务类型</view>
+					<view class="detail-value">{{selectedItem.QUEUE_ACTION_NAME || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">货物名称</view>
+					<view class="detail-value">{{selectedItem.QUEUE_CARGO_NAME || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">叉车司机</view>
+					<view class="detail-value">{{selectedItem.QUEUE_FORKLIFT_NAME || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">预约时间</view>
+					<view class="detail-value">{{selectedItem.addTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">签到时间</view>
+					<view class="detail-value">{{selectedItem.checkinTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">叫号时间</view>
+					<view class="detail-value">{{selectedItem.callTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">确认时间</view>
+					<view class="detail-value">{{selectedItem.confirmTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">完成时间</view>
+					<view class="detail-value">{{selectedItem.finishTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">取消时间</view>
+					<view class="detail-value">{{selectedItem.cancelTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">取消原因</view>
+					<view class="detail-value">{{selectedItem.QUEUE_CANCEL_REASON || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">装卸凭证</view>
+					<view wx:if="{{selectedItem.QUEUE_PROOF}}" class="detail-link" data-url="{{selectedItem.QUEUE_PROOF}}" bindtap="bindPreviewTap">点击查看</view>
+					<view wx:else class="detail-value">--</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">完成凭证</view>
+					<view wx:if="{{selectedItem.QUEUE_FINISH_PROOF}}" class="detail-link" data-url="{{selectedItem.QUEUE_FINISH_PROOF}}" bindtap="bindPreviewTap">点击查看</view>
+					<view wx:else class="detail-value">--</view>
+				</view>
+			</view>
+
+			<view class="detail-actions">
+				<view class="detail-btn danger" data-id="{{selectedItem._id}}" bindtap="bindClearTap">清理此记录</view>
+			</view>
+		</view>
+	</view>
+</view>

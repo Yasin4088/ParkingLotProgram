@@ -39,7 +39,16 @@
 			</view>
 		</view>
 
-		<button class="complete-btn" loading="{{loading}}" bindtap="bindCompleteTap">完成任务</button>
+		<view class="finish-proof">
+			<view class="finish-title">完成作业凭证</view>
+			<view class="finish-desc">请拍照上传现场签收单、装卸完成照片等凭证</view>
+			<view class="upload" bindtap="bindChooseFinishProof">
+				<image wx:if="{{finishProofLocal}}" src="{{finishProofLocal}}" mode="aspectFill"></image>
+				<view wx:else class="upload-empty">{{uploadingFinishProof ? '上传中...' : '拍照/上传凭证'}}</view>
+			</view>
+		</view>
+
+		<button class="complete-btn" loading="{{loading || uploadingFinishProof}}" bindtap="bindCompleteTap">完成任务</button>
 	</view>
 
 	<view wx:else class="empty-card">

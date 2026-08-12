@@ -135,6 +135,8 @@
 }
 
 .primary-btn,
+.confirm-btn,
+.finish-btn,
 .ghost-btn {
 	height: 84rpx;
 	line-height: 84rpx;
@@ -148,9 +150,63 @@
 	color: #fff;
 }
 
+.confirm-btn {
+	background: #f07818;
+	color: #fff;
+}
+
+.finish-btn {
+	background: #3B82E6;
+	color: #fff;
+}
+
 .ghost-btn {
 	background: #eef0ff;
 	color: #3B82E6;
+}
+
+.finish-proof {
+	margin: 26rpx 0 20rpx;
+	padding: 24rpx;
+	border-radius: 18rpx;
+	background: #f7fafc;
+	text-align: left;
+}
+
+.finish-title {
+	font-size: 28rpx;
+	color: #102a43;
+	font-weight: 600;
+}
+
+.finish-desc {
+	margin-top: 8rpx;
+	font-size: 24rpx;
+	color: #7b8794;
+	line-height: 1.5;
+}
+
+.upload {
+	width: 240rpx;
+	height: 170rpx;
+	margin-top: 18rpx;
+	border-radius: 16rpx;
+	background: #fff;
+	border: 2rpx dashed #cfd8d4;
+	overflow: hidden;
+}
+
+.upload image {
+	width: 100%;
+	height: 100%;
+}
+
+.upload-empty {
+	height: 170rpx;
+	line-height: 170rpx;
+	text-align: center;
+	color: #789;
+	font-size: 26rpx;
 }
 
 .empty-title {
