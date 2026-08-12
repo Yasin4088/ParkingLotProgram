@@ -1,6 +1,6 @@
  module.exports = {
  	//### 环境相关 
- 	CLOUD_ID: 'cloud1-d2go0e8d7d592aa44', //你的云环境id 
+ 	CLOUD_ID: 'cloud1-d8gyu2ikvf4aa3997', //你的云环境id 
 
  	// #### 版本信息 
  	VER: 'build 2022.03',
