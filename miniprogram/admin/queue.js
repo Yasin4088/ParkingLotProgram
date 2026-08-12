@@ -25,12 +25,23 @@ Page({
 		actionEditIndex: 0,
 		cancelReason: '',
 
-		// 叫号弹窗
+		// 叫号弹窗（多选叉车）
 		showCallModal: false,
 		callTarget: null,
 		forkliftList: [],
-		forkliftIndex: 0,
+		selectedForkliftIds: [],
 		callLoading: false,
+
+		// 接单状态弹窗
+		showAssignModal: false,
+		assignmentTarget: null,
+
+		// 重新分派弹窗
+		showReassignModal: false,
+		reassignOldForkliftId: '',
+		reassignForkliftList: [],
+		reassignIndex: 0,
+		reassignLoading: false,
 	},
 
 	onLoad: function () {
@@ -41,10 +52,6 @@ Page({
 	onShow: function () {
 		if (wx.hideHomeButton) wx.hideHomeButton();
 		this.loadList();
-	},
-
-	onUnload: function () {
-		cacheHelper.remove(constants.CACHE_ADMIN);
 	},
 
 	_checkLogin: function () {
@@ -62,65 +69,144 @@ Page({
 		});
 	},
 
-	// ========== 叫号 ==========
+	// ========== 叫号（多选叉车） ==========
 
 	bindCallTap: async function (e) {
 		let id = e.currentTarget.dataset.id;
 		let item = this.data.list.find(v => v._id === id);
 		if (!item) return;
 
-		// 加载叉车司机列表
 		try {
-			let forkliftList = await cloudHelper.callCloudData('admin/forklift_list', {}, { title: '' });
-			if (!forkliftList || !forkliftList.length) {
+			let rawList = await cloudHelper.callCloudData('admin/forklift_list', {}, { title: '' });
+			if (!rawList || !rawList.length) {
 				wx.showToast({ title: '暂无可用叉车司机，请先添加', icon: 'none' });
 				return;
 			}
+			let forkliftList = rawList.map(f => ({ ...f, checked: false }));
 			this.setData({
 				showCallModal: true,
 				callTarget: item,
 				forkliftList: forkliftList,
-				forkliftIndex: 0,
+				selectedForkliftIds: [],
 			});
 		} catch (err) {
 			console.log(err);
 		}
 	},
 
-	bindForkliftChange: function (e) {
-		this.setData({ forkliftIndex: Number(e.detail.value) });
+	bindToggleForklift: function (e) {
+		let index = e.currentTarget.dataset.index;
+		let forkliftList = this.data.forkliftList;
+		forkliftList[index].checked = !forkliftList[index].checked;
+		let selectedForkliftIds = forkliftList.filter(f => f.checked).map(f => f._id);
+		this.setData({ forkliftList, selectedForkliftIds });
 	},
 
 	bindCloseCallModal: function () {
-		this.setData({ showCallModal: false, callTarget: null });
+		this.setData({ showCallModal: false, callTarget: null, selectedForkliftIds: [] });
 	},
 
 	bindConfirmCall: async function () {
 		if (this.data.callLoading) return;
 		let target = this.data.callTarget;
-		let forklift = this.data.forkliftList[this.data.forkliftIndex];
-		if (!target || !forklift) return;
+		let ids = this.data.selectedForkliftIds;
+		if (!target || !ids.length) {
+			wx.showToast({ title: '请至少选择一名叉车司机', icon: 'none' });
+			return;
+		}
 
 		this.setData({ callLoading: true });
 		try {
 			let res = await cloudHelper.callCloudSumbit('admin/queue_call', {
 				id: target._id,
-				forkliftId: forklift._id,
+				forkliftIds: ids,
 			}, { title: '叫号中' });
 
 			let data = res && res.data ? res.data : res;
+			let names = (data.QUEUE_FORKLIFT_ASSIGNMENTS || []).map(a => a.name).join('、');
+			if (!names && data.QUEUE_FORKLIFT_NAME) names = data.QUEUE_FORKLIFT_NAME;
 			wx.showModal({
 				title: '叫号成功',
-				content: '请 ' + (data.QUEUE_NO || '') + ' 号，车牌 ' + data.QUEUE_PLATE + ' 前往装卸区\n叉车司机：' + forklift.USER_NAME,
+				content: '请 ' + (data.QUEUE_NO || '') + ' 号，车牌 ' + data.QUEUE_PLATE + ' 前往装卸区\n叉车司机：' + names,
 				showCancel: false,
 			});
 
-			this.setData({ showCallModal: false, callTarget: null });
+			this.setData({ showCallModal: false, callTarget: null, selectedForkliftIds: [] });
 			this.loadList();
 		} catch (err) {
 			console.log(err);
 		} finally {
 			this.setData({ callLoading: false });
+		}
+	},
+
+	// ========== 接单状态弹窗 ==========
+
+	bindViewAssignments: function (e) {
+		let id = e.currentTarget.dataset.id;
+		let item = this.data.list.find(v => v._id === id);
+		if (!item) return;
+		this.setData({ showAssignModal: true, assignmentTarget: item });
+	},
+
+	bindCloseAssignModal: function () {
+		this.setData({ showAssignModal: false, assignmentTarget: null });
+	},
+
+	// ========== 重新分派 ==========
+
+	bindReassignTap: function (e) {
+		let oldId = e.currentTarget.dataset.forkliftid;
+		// 使用完整的叉车列表（不含 checked 状态）作为重新分派的候选
+		let list = (this.data.forkliftList || []).map(f => ({ _id: f._id, USER_NAME: f.USER_NAME }));
+		if (!list.length) {
+			// 如果当前没有缓存的 forkliftList，异步加载
+			cloudHelper.callCloudData('admin/forklift_list', {}, { title: '' }).then(rawList => {
+				this.setData({
+					showReassignModal: true,
+					reassignOldForkliftId: oldId,
+					reassignForkliftList: (rawList || []).map(f => ({ _id: f._id, USER_NAME: f.USER_NAME })),
+					reassignIndex: 0,
+				});
+			});
+			return;
+		}
+		this.setData({
+			showReassignModal: true,
+			reassignOldForkliftId: oldId,
+			reassignForkliftList: list,
+			reassignIndex: 0,
+		});
+	},
+
+	bindCloseReassignModal: function () {
+		this.setData({ showReassignModal: false, reassignOldForkliftId: '' });
+	},
+
+	bindReassignChange: function (e) {
+		this.setData({ reassignIndex: Number(e.detail.value) });
+	},
+
+	bindConfirmReassign: async function () {
+		if (this.data.reassignLoading) return;
+		let target = this.data.assignmentTarget;
+		let newForklift = this.data.reassignForkliftList[this.data.reassignIndex];
+		if (!target || !newForklift || !this.data.reassignOldForkliftId) return;
+
+		this.setData({ reassignLoading: true });
+		try {
+			await cloudHelper.callCloudSumbit('admin/queue_reassign', {
+				id: target._id,
+				oldForkliftId: this.data.reassignOldForkliftId,
+				newForkliftId: newForklift._id,
+			}, { title: '调整中' });
+			wx.showToast({ title: '已调整', icon: 'success' });
+			this.setData({ showReassignModal: false, reassignOldForkliftId: '' });
+			this.loadList();
+		} catch (err) {
+			console.log(err);
+		} finally {
+			this.setData({ reassignLoading: false });
 		}
 	},
 

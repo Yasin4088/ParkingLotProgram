@@ -152,6 +152,202 @@
 	border-radius: 8rpx;
 }
 
+/* ===== 多叉车标签组 ===== */
+.forklift-tags {
+	margin-top: 14rpx;
+	background: #f9fafb;
+	border-radius: 12rpx;
+	padding: 16rpx 18rpx;
+}
+
+.fl-tags-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 24rpx;
+	color: #627d98;
+	margin-bottom: 10rpx;
+}
+
+.fl-view-detail {
+	color: #3B82E6;
+	font-size: 24rpx;
+	padding: 4rpx 12rpx;
+}
+
+.fl-tags-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10rpx;
+}
+
+.fl-tag {
+	font-size: 24rpx;
+	padding: 6rpx 16rpx;
+	border-radius: 8rpx;
+}
+
+.fl-tag.pending {
+	color: #627d98;
+	background: #f0f4f8;
+}
+
+.fl-tag.accepted {
+	color: #0e8c3a;
+	background: #e8f5e9;
+}
+
+.fl-tag.rejected {
+	color: #c62828;
+	background: #ffebee;
+}
+
+.fl-tag.timeout {
+	color: #e65100;
+	background: #fff3e0;
+}
+
+/* ===== 多选叉车列表 ===== */
+.forklift-check-list {
+	max-height: 320rpx;
+	background: #f7fafc;
+	border-radius: 14rpx;
+	padding: 8rpx 0;
+}
+
+.forklift-check-row {
+	display: flex;
+	align-items: center;
+	padding: 16rpx 22rpx;
+}
+
+.forklift-check-row:active {
+	background: #eef2f6;
+}
+
+.check-box {
+	width: 40rpx;
+	height: 40rpx;
+	border: 2rpx solid #cbd2d9;
+	border-radius: 8rpx;
+	margin-right: 18rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 24rpx;
+	color: #fff;
+	flex-shrink: 0;
+}
+
+.check-box.checked {
+	background: #3B82E6;
+	border-color: #3B82E6;
+}
+
+.check-name {
+	font-size: 28rpx;
+	color: #243b53;
+}
+
+/* ===== 接单状态弹窗 ===== */
+.assign-list {
+	background: #f7fafc;
+	border-radius: 14rpx;
+	padding: 6rpx 0;
+	margin-bottom: 20rpx;
+}
+
+.assign-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 20rpx 22rpx;
+	border-bottom: 1rpx solid #e8edf2;
+}
+
+.assign-row:last-child {
+	border-bottom: none;
+}
+
+.assign-info {
+	display: flex;
+	align-items: center;
+	gap: 16rpx;
+}
+
+.assign-name {
+	font-size: 30rpx;
+	color: #243b53;
+	font-weight: 500;
+}
+
+.assign-status {
+	font-size: 24rpx;
+	padding: 4rpx 14rpx;
+	border-radius: 6rpx;
+}
+
+.assign-status.ok {
+	color: #0e8c3a;
+	background: #e8f5e9;
+}
+
+.assign-status.wait {
+	color: #627d98;
+	background: #f0f4f8;
+}
+
+.assign-status.fail {
+	color: #c62828;
+	background: #ffebee;
+}
+
+.assign-empty {
+	text-align: center;
+	color: #999;
+	padding: 30rpx;
+	font-size: 26rpx;
+}
+
+.assign-driver-status {
+	margin-top: 16rpx;
+	padding: 16rpx 22rpx;
+	background: #f7fafc;
+	border-radius: 14rpx;
+	font-size: 28rpx;
+	color: #627d98;
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+}
+
+.assign-driver-status .ok {
+	color: #0e8c3a;
+	font-weight: bold;
+}
+
+.assign-driver-status .wait {
+	color: #f07818;
+	font-weight: bold;
+}
+
+.reassign-btn {
+	font-size: 24rpx;
+	color: #3B82E6;
+	padding: 8rpx 18rpx;
+	border: 1rpx solid #3B82E6;
+	border-radius: 8rpx;
+	flex-shrink: 0;
+}
+
+.reassign-btn:active {
+	background: #e3f2fd;
+}
+
+.call-panel.small {
+	padding: 34rpx 30rpx 28rpx;
+}
+
 /* 等待确认提示 */
 .wait-confirm {
 	margin-top: 16rpx;

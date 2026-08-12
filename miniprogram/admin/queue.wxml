@@ -23,9 +23,20 @@
 			<view wx:if="{{item.checkinTimeText}}" class="meta">签到：{{item.checkinTimeText}}</view>
 			<view wx:else class="meta">预约：{{item.addTimeText || '--'}}</view>
 
-			<!-- 叉车司机信息 -->
-			<view wx:if="{{item.QUEUE_FORKLIFT_NAME}}" class="forklift-tag">
-				<text>叉车：{{item.QUEUE_FORKLIFT_NAME}}</text>
+			<!-- 多叉车司机标签 -->
+			<view wx:if="{{item.forkliftTotalCount}}" class="forklift-tags">
+				<view class="fl-tags-header">
+					<text>叉车 ({{item.forkliftAcceptedCount}}/{{item.forkliftTotalCount}} 已接)</text>
+					<text wx:if="{{item.QUEUE_STATUS === 2}}" class="fl-view-detail" data-id="{{item._id}}" catchtap="bindViewAssignments">详情</text>
+				</view>
+				<view class="fl-tags-row">
+					<view wx:for="{{item.forkliftAssignments}}" wx:key="id" wx:for-item="fl" class="fl-tag {{fl.status === 1 ? 'accepted' : fl.status === 2 ? 'rejected' : fl.status === 9 ? 'timeout' : 'pending'}}">
+						{{fl.name}}
+					</view>
+					<view wx:if="{{!item.forkliftAssignments || !item.forkliftAssignments.length}}">
+						<view wx:if="{{item.QUEUE_FORKLIFT_NAME}}" class="fl-tag accepted">{{item.QUEUE_FORKLIFT_NAME}}</view>
+					</view>
+				</view>
 			</view>
 
 			<!-- 叫号时间 -->
@@ -34,8 +45,10 @@
 			<!-- 排队中 → 叫号按钮 -->
 			<button wx:if="{{item.QUEUE_STATUS === 1}}" class="call-btn" data-id="{{item._id}}" catchtap="bindCallTap">指定叫号</button>
 
-			<!-- 已叫号 → 等待司机确认 -->
-			<view wx:if="{{item.QUEUE_STATUS === 2}}" class="wait-confirm">等待司机确认中...</view>
+			<!-- 已叫号 → 进度提示 -->
+			<view wx:if="{{item.QUEUE_STATUS === 2}}" class="wait-confirm">
+				司机{{item.driverConfirmed ? '已确认' : '未确认'}} · 叉车{{item.forkliftAcceptedCount}}/{{item.forkliftTotalCount}}已接
+			</view>
 
 			<!-- 已确认 → 完成按钮 -->
 			<button wx:if="{{item.QUEUE_STATUS === 3}}" class="finish-btn" data-id="{{item._id}}" catchtap="bindFinishTap">完成装卸</button>
@@ -46,7 +59,7 @@
 
 	<view class="refresh" bindtap="bindRefreshTap">刷新列表</view>
 
-	<!-- 叫号弹窗 -->
+	<!-- 叫号弹窗（多选） -->
 	<view wx:if="{{showCallModal}}" class="call-mask" bindtap="bindCloseCallModal">
 		<view class="call-panel" catchtap="bindNoop">
 			<view class="call-head">
@@ -74,13 +87,64 @@
 			</view>
 
 			<view class="call-forklift">
-				<view class="call-label">指派叉车司机</view>
-				<picker mode="selector" range="{{forkliftList}}" range-key="USER_NAME" value="{{forkliftIndex}}" bindchange="bindForkliftChange">
-					<view class="forklift-picker">{{forkliftList[forkliftIndex].USER_NAME}}</view>
-				</picker>
+				<view class="call-label">指派叉车司机（可多选，已选 {{selectedForkliftIds.length}} 人）</view>
+				<scroll-view scroll-y class="forklift-check-list">
+					<view wx:for="{{forkliftList}}" wx:key="_id" class="forklift-check-row" data-index="{{index}}" bindtap="bindToggleForklift">
+						<view class="check-box {{item.checked ? 'checked' : ''}}">
+							<text wx:if="{{item.checked}}">✓</text>
+						</view>
+						<text class="check-name">{{item.USER_NAME}}</text>
+					</view>
+				</scroll-view>
 			</view>
 
 			<button class="call-confirm-btn" loading="{{callLoading}}" bindtap="bindConfirmCall">确认指定叫号</button>
+		</view>
+	</view>
+
+	<!-- 接单状态弹窗 -->
+	<view wx:if="{{showAssignModal}}" class="call-mask" bindtap="bindCloseAssignModal">
+		<view class="call-panel" catchtap="bindNoop">
+			<view class="call-head">
+				<view class="call-title">叉车司机响应状态</view>
+				<view class="call-close" bindtap="bindCloseAssignModal">关闭</view>
+			</view>
+
+			<view wx:if="{{assignmentTarget.forkliftAssignments && assignmentTarget.forkliftAssignments.length}}" class="assign-list">
+				<view wx:for="{{assignmentTarget.forkliftAssignments}}" wx:key="id" class="assign-row">
+					<view class="assign-info">
+						<text class="assign-name">{{item.name}}</text>
+						<text class="assign-status {{item.status === 1 ? 'ok' : item.status === 0 ? 'wait' : 'fail'}}">
+							{{item.status === 0 ? '待响应' : item.status === 1 ? '已接受' : item.status === 2 ? '已拒绝' : item.status === 9 ? '超时' : ''}}
+						</text>
+					</view>
+					<view wx:if="{{item.status === 2 || item.status === 9}}" class="reassign-btn" data-forkliftid="{{item.id}}" catchtap="bindReassignTap">重新分配</view>
+				</view>
+			</view>
+			<view wx:else class="assign-empty">暂无叉车分配信息</view>
+
+			<!-- 司机确认状态 -->
+			<view class="assign-driver-status">
+				<text>司机确认：</text>
+				<text class="{{assignmentTarget.driverConfirmed ? 'ok' : 'wait'}}">{{assignmentTarget.driverConfirmed ? '已确认' : '未确认'}}</text>
+			</view>
+		</view>
+	</view>
+
+	<!-- 重新分派弹窗 -->
+	<view wx:if="{{showReassignModal}}" class="call-mask" bindtap="bindCloseReassignModal">
+		<view class="call-panel small" catchtap="bindNoop">
+			<view class="call-head">
+				<view class="call-title">重新分派叉车司机</view>
+				<view class="call-close" bindtap="bindCloseReassignModal">取消</view>
+			</view>
+			<view class="call-forklift">
+				<view class="call-label">选择新叉车司机</view>
+				<picker mode="selector" range="{{reassignForkliftList}}" range-key="USER_NAME" value="{{reassignIndex}}" bindchange="bindReassignChange">
+					<view class="forklift-picker">{{reassignForkliftList[reassignIndex].USER_NAME}}</view>
+				</picker>
+			</view>
+			<button class="call-confirm-btn" loading="{{reassignLoading}}" bindtap="bindConfirmReassign">确认调整</button>
 		</view>
 	</view>
 
@@ -113,9 +177,9 @@
 						<view class="detail-label">货物名称</view>
 						<view class="detail-value">{{selectedItem.QUEUE_CARGO_NAME || '--'}}</view>
 					</view>
-					<view wx:if="{{selectedItem.QUEUE_FORKLIFT_NAME}}" class="detail-row">
+					<view class="detail-row">
 						<view class="detail-label">叉车司机</view>
-						<view class="detail-value">{{selectedItem.QUEUE_FORKLIFT_NAME}}</view>
+						<view class="detail-value">{{selectedItem.forkliftSummary || '--'}}</view>
 					</view>
 					<view class="detail-row">
 						<view class="detail-label">预约时间</view>

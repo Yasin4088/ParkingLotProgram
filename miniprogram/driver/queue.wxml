@@ -36,15 +36,21 @@
 		</view>
 
 		<!-- 叫号后显示叉车司机信息 + 确认按钮 -->
-		<view wx:if="{{item.QUEUE_STATUS === 2 && item.QUEUE_FORKLIFT_NAME}}" class="forklift-info">
+		<view wx:if="{{item.QUEUE_STATUS === 2 && !item.driverConfirmed && (item.forkliftSummary || item.QUEUE_FORKLIFT_NAME)}}" class="forklift-info">
 			<view class="fl-label">分配的叉车司机</view>
-			<view class="fl-name">{{item.QUEUE_FORKLIFT_NAME}}</view>
+			<view class="fl-name">{{item.forkliftSummary || item.QUEUE_FORKLIFT_NAME}}</view>
 			<view class="fl-tip">请点击下方按钮确认收到叫号通知</view>
+		</view>
+
+		<!-- 已叫号 + 司机已确认，等待叉车接单 -->
+		<view wx:if="{{item.QUEUE_STATUS === 2 && item.driverConfirmed}}" class="forklift-info confirmed">
+			<view class="fl-label">叉车司机 {{item.forkliftSummary || item.QUEUE_FORKLIFT_NAME}} 已收到通知</view>
+			<view class="fl-tip">已确认收到叫号，等待叉车司机接单...</view>
 		</view>
 
 		<!-- 已确认状态 -->
 		<view wx:if="{{item.QUEUE_STATUS === 3}}" class="forklift-info confirmed">
-			<view class="fl-label">叉车司机 {{item.QUEUE_FORKLIFT_NAME}} 已收到通知</view>
+			<view class="fl-label">叉车司机 {{item.forkliftSummary || item.QUEUE_FORKLIFT_NAME}} 已收到通知</view>
 			<view class="fl-tip">装卸完成后，请上传完成作业凭证并提交</view>
 		</view>
 
@@ -59,11 +65,11 @@
 
 		<view wx:if="{{item.QUEUE_STATUS === 0}}" class="tips">已预约，抵达现场后点击 GPS 签到进入队列。</view>
 		<view wx:elif="{{item.QUEUE_STATUS === 1}}" class="tips">排队中，请关注叫号通知。</view>
-		<view wx:elif="{{item.QUEUE_STATUS === 2 && !item.QUEUE_FORKLIFT_NAME}}" class="tips called-text">已叫号，请前往装卸区。</view>
-		<view wx:elif="{{item.QUEUE_STATUS === 2 && item.QUEUE_FORKLIFT_NAME}}" class="tips called-text">已叫号，请确认收到通知。</view>
+		<view wx:elif="{{item.QUEUE_STATUS === 2 && !item.driverConfirmed && (item.forkliftSummary || item.QUEUE_FORKLIFT_NAME)}}" class="tips called-text">已叫号，请确认收到通知。</view>
+		<view wx:elif="{{item.QUEUE_STATUS === 2 && item.driverConfirmed}}" class="tips">已确认叫号，等待叉车接单...</view>
 
 		<button wx:if="{{item.QUEUE_STATUS === 0}}" loading="{{loading}}" class="primary-btn" bindtap="bindCheckinTap">GPS 签到</button>
-		<button wx:if="{{item.QUEUE_STATUS === 2 && item.QUEUE_FORKLIFT_NAME}}" class="confirm-btn" bindtap="bindConfirmTap">确认收到</button>
+		<button wx:if="{{item.QUEUE_STATUS === 2 && !item.driverConfirmed}}" class="confirm-btn" bindtap="bindConfirmTap">确认收到</button>
 		<button wx:if="{{item.QUEUE_STATUS === 3}}" loading="{{finishing || uploadingFinishProof}}" class="finish-btn" bindtap="bindFinishTap">完成作业</button>
 		<button wx:if="{{item.QUEUE_STATUS === 0 || item.QUEUE_STATUS === 1}}" class="ghost-btn" bindtap="bindSubscribeTap">{{item.QUEUE_SUBSCRIBE ? '已订阅叫号通知' : '订阅叫号通知'}}</button>
 	</view>

@@ -103,34 +103,52 @@ class QueueService extends BaseService {
 		await QueueModel.edit(item._id, { QUEUE_SUBSCRIBE: 1 });
 	}
 
-	/** 管理员叫号（任意选车） + 指派叉车司机 */
-	async callDriver(queueId, forkliftId) {
+	/** 管理员叫号 + 指派多位叉车司机 */
+	async callDriver(queueId, forkliftIds) {
 		let item = await QueueModel.getOne({
 			_id: queueId,
 			QUEUE_STATUS: QueueModel.STATUS.WAITING
 		});
 		if (!item) this.AppError('仅可叫号排队中的车辆');
 
-		let forklift = await UserModel.getOne({
-			_id: forkliftId,
-			USER_ROLE: 'forklift',
-			USER_STATUS: UserModel.STATUS.COMM
-		}, 'USER_NAME');
-		if (!forklift) this.AppError('叉车司机不存在或已禁用');
+		if (!forkliftIds || !Array.isArray(forkliftIds) || !forkliftIds.length) {
+			this.AppError('请至少选择一名叉车司机');
+		}
 
 		let now = timeUtil.time();
+		let assignments = [];
+		for (let fid of forkliftIds) {
+			let forklift = await UserModel.getOne({
+				_id: fid,
+				USER_ROLE: 'forklift',
+				USER_STATUS: UserModel.STATUS.COMM
+			}, 'USER_NAME');
+			if (!forklift) this.AppError('叉车司机不存在或已禁用');
+			assignments.push({
+				id: fid,
+				name: forklift.USER_NAME,
+				status: QueueModel.FORKLIFT_ASSIGN_STATUS.PENDING,
+				assignTime: now,
+				acceptTime: 0
+			});
+		}
+
+		let first = assignments[0];
 		await QueueModel.edit(item._id, {
 			QUEUE_STATUS: QueueModel.STATUS.CALLED,
 			QUEUE_CALL_TIME: now,
-			QUEUE_FORKLIFT_ID: forkliftId,
-			QUEUE_FORKLIFT_NAME: forklift.USER_NAME,
+			QUEUE_FORKLIFT_ASSIGNMENTS: assignments,
+			QUEUE_DRIVER_CONFIRMED: 0,
+			// 向后兼容
+			QUEUE_FORKLIFT_ID: first.id,
+			QUEUE_FORKLIFT_NAME: first.name,
 			QUEUE_FORKLIFT_TIME: now,
 		});
 
 		return await QueueModel.getOne(item._id);
 	}
 
-	/** 司机确认收到叫号 */
+	/** 司机确认收到叫号（与叉车接单并行，仅设标记位） */
 	async driverConfirm(userId, queueId) {
 		let item = await QueueModel.getOne({
 			_id: queueId,
@@ -139,23 +157,118 @@ class QueueService extends BaseService {
 		});
 		if (!item) this.AppError('未找到待确认的叫号记录');
 
-		let now = timeUtil.time();
 		await QueueModel.edit(item._id, {
-			QUEUE_STATUS: QueueModel.STATUS.CONFIRMED,
-			QUEUE_CONFIRM_TIME: now,
+			QUEUE_DRIVER_CONFIRMED: 1,
 		});
 
-		return await QueueModel.getOne(item._id);
+		// 尝试流转到 CONFIRMED
+		return await this._tryConfirm(queueId);
+	}
+
+	/** 检查是否可以进入 CONFIRMED(3)：司机已确认 + ≥1 叉车接取 */
+	async _tryConfirm(queueId) {
+		let item = await QueueModel.getOne({ _id: queueId });
+		if (!item) return null;
+
+		if (item.QUEUE_STATUS !== QueueModel.STATUS.CALLED) {
+			return this._formatQueueItem(item);
+		}
+
+		let driverConfirmed = item.QUEUE_DRIVER_CONFIRMED === 1;
+		let assignments = item.QUEUE_FORKLIFT_ASSIGNMENTS || [];
+
+		// 向后兼容：旧记录无 assignments 数组时使用单字段判断
+		let hasAccepted;
+		if (assignments.length > 0) {
+			hasAccepted = assignments.some(a => a.status === QueueModel.FORKLIFT_ASSIGN_STATUS.ACCEPTED);
+		} else {
+			// 旧记录：有 QUEUE_FORKLIFT_ID 即视为已接取
+			hasAccepted = !!item.QUEUE_FORKLIFT_ID;
+		}
+
+		if (driverConfirmed && hasAccepted) {
+			let now = timeUtil.time();
+			await QueueModel.edit(item._id, {
+				QUEUE_STATUS: QueueModel.STATUS.CONFIRMED,
+				QUEUE_CONFIRM_TIME: now,
+			});
+			item.QUEUE_STATUS = QueueModel.STATUS.CONFIRMED;
+			item.QUEUE_CONFIRM_TIME = now;
+		}
+
+		return this._formatQueueItem(item);
+	}
+
+	/** 管理员重新分派叉车司机（替换拒绝/超时的） */
+	async reassignForklift(queueId, oldForkliftId, newForkliftId) {
+		let item = await QueueModel.getOne({
+			_id: queueId,
+			QUEUE_STATUS: QueueModel.STATUS.CALLED
+		});
+		if (!item) this.AppError('仅可对已叫号的记录进行叉车司机调整');
+
+		let assignments = item.QUEUE_FORKLIFT_ASSIGNMENTS || [];
+		if (!assignments.length) this.AppError('该记录无叉车司机分配信息');
+
+		// 找到旧条目
+		let idx = assignments.findIndex(a => a.id === oldForkliftId);
+		if (idx < 0) this.AppError('未找到该叉车司机分配记录');
+
+		let oldEntry = assignments[idx];
+		if (oldEntry.status === QueueModel.FORKLIFT_ASSIGN_STATUS.ACCEPTED) {
+			this.AppError('该叉车司机已接受任务，不可替换');
+		}
+
+		// 校验新叉车司机
+		let newForklift = await UserModel.getOne({
+			_id: newForkliftId,
+			USER_ROLE: 'forklift',
+			USER_STATUS: UserModel.STATUS.COMM
+		}, 'USER_NAME');
+		if (!newForklift) this.AppError('新叉车司机不存在或已禁用');
+
+		// 检查是否已在任务中
+		if (assignments.some(a => a.id === newForkliftId)) {
+			this.AppError('该叉车司机已在此任务中');
+		}
+
+		let now = timeUtil.time();
+		assignments[idx] = {
+			id: newForkliftId,
+			name: newForklift.USER_NAME,
+			status: QueueModel.FORKLIFT_ASSIGN_STATUS.PENDING,
+			assignTime: now,
+			acceptTime: 0
+		};
+
+		// 同时更新向后兼容字段
+		let firstAccepted = assignments.find(a => a.status === QueueModel.FORKLIFT_ASSIGN_STATUS.ACCEPTED) || assignments[0];
+		await QueueModel.edit(item._id, {
+			QUEUE_FORKLIFT_ASSIGNMENTS: assignments,
+			QUEUE_FORKLIFT_ID: firstAccepted.id,
+			QUEUE_FORKLIFT_NAME: firstAccepted.name,
+		});
+
+		return await this._tryConfirm(queueId);
 	}
 
 	/** 叉车司机完成任务 */
 	async forkliftComplete(userId, queueId) {
 		let item = await QueueModel.getOne({
 			_id: queueId,
-			QUEUE_FORKLIFT_ID: userId,
 			QUEUE_STATUS: QueueModel.STATUS.CONFIRMED
 		});
 		if (!item) this.AppError('未找到待完成的任务');
+
+		// 校验该叉车是否被分配到此任务（兼容新旧两种数据结构）
+		let assignments = item.QUEUE_FORKLIFT_ASSIGNMENTS || [];
+		let isAssigned = false;
+		if (assignments.length > 0) {
+			isAssigned = assignments.some(a => a.id === userId && a.status === QueueModel.FORKLIFT_ASSIGN_STATUS.ACCEPTED);
+		} else {
+			isAssigned = (item.QUEUE_FORKLIFT_ID === userId);
+		}
+		if (!isAssigned) this.AppError('您未被分配到该任务');
 
 		let now = timeUtil.time();
 		await QueueModel.edit(item._id, {
@@ -205,6 +318,7 @@ class QueueService extends BaseService {
 	/** 管理员列表（单一堆场，无需按停车场筛选） */
 	async list() {
 		await this.cancelExpired();
+		await this.checkForkliftTimeouts();
 
 		let where = {
 			QUEUE_STATUS: ['in', [QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED, QueueModel.STATUS.CONFIRMED]]
@@ -257,7 +371,7 @@ class QueueService extends BaseService {
 		});
 	}
 
-	/** 清理过期记录：24h未签到 + 5分钟未确认 */
+	/** 清理过期记录：仅处理24h未签到的预约（不再自动取消叫号） */
 	async cancelExpired() {
 		let now = timeUtil.time();
 
@@ -276,22 +390,39 @@ class QueueService extends BaseService {
 			});
 		}
 
-		// 5 分钟未确认的叫号
-		let expiredCalled = await QueueModel.getAll({
-			QUEUE_STATUS: QueueModel.STATUS.CALLED,
-			QUEUE_CALL_TIME: ['<', now - 5 * 60 * 1000]
+		return expiredBooked.length;
+	}
+
+	/** 检查叉车司机接单超时（5分钟未响应 → 标记为 TIMEOUT，不自动取消） */
+	async checkForkliftTimeouts() {
+		let now = timeUtil.time();
+		let timeout = 5 * 60 * 1000; // 5分钟
+
+		let calledItems = await QueueModel.getAll({
+			QUEUE_STATUS: QueueModel.STATUS.CALLED
 		}, '*', { QUEUE_CALL_TIME: 'asc' }, 200);
 
-		for (let item of expiredCalled) {
-			await QueueModel.edit(item._id, {
-				QUEUE_STATUS: QueueModel.STATUS.CANCEL,
-				QUEUE_CANCEL_TIME: now,
-				QUEUE_CANCEL_REASON: '司机超时未确认，自动取消',
-				QUEUE_CANCEL_OPERATOR: '系统自动清理'
-			});
-		}
+		let changed = 0;
+		for (let item of calledItems) {
+			let assignments = item.QUEUE_FORKLIFT_ASSIGNMENTS || [];
+			if (!assignments.length) continue;
 
-		return expiredBooked.length + expiredCalled.length;
+			let modified = false;
+			for (let a of assignments) {
+				if (a.status === QueueModel.FORKLIFT_ASSIGN_STATUS.PENDING &&
+					a.assignTime && (now - a.assignTime) > timeout) {
+					a.status = QueueModel.FORKLIFT_ASSIGN_STATUS.TIMEOUT;
+					modified = true;
+				}
+			}
+			if (modified) {
+				await QueueModel.edit(item._id, {
+					QUEUE_FORKLIFT_ASSIGNMENTS: assignments,
+				});
+				changed++;
+			}
+		}
+		return changed;
 	}
 
 	async detail(id) {
@@ -422,6 +553,39 @@ class QueueService extends BaseService {
 		item.finishTimeText = item.QUEUE_FINISH_TIME ? timeUtil.timestamp2Time(item.QUEUE_FINISH_TIME) : '';
 		item.cancelTimeText = item.QUEUE_CANCEL_TIME ? timeUtil.timestamp2Time(item.QUEUE_CANCEL_TIME) : '';
 		item.addTimeText = item.QUEUE_ADD_TIME ? timeUtil.timestamp2Time(item.QUEUE_ADD_TIME) : '';
+
+		// 多叉车指派信息
+		let assignments = item.QUEUE_FORKLIFT_ASSIGNMENTS || [];
+		item.forkliftAssignments = assignments;
+		item.driverConfirmed = item.QUEUE_DRIVER_CONFIRMED === 1;
+		item.hasAcceptedForklift = assignments.length > 0
+			? assignments.some(a => a.status === QueueModel.FORKLIFT_ASSIGN_STATUS.ACCEPTED)
+			: !!item.QUEUE_FORKLIFT_ID;
+
+		// 叉车状态摘要（用于管理员看板快速查看）
+		if (assignments.length > 0) {
+			let acceptedCount = assignments.filter(a => a.status === QueueModel.FORKLIFT_ASSIGN_STATUS.ACCEPTED).length;
+			item.forkliftSummary = assignments.map(a => {
+				let statusText = QueueModel.FORKLIFT_ASSIGN_STATUS_DESC[
+					Object.keys(QueueModel.FORKLIFT_ASSIGN_STATUS).find(
+						k => QueueModel.FORKLIFT_ASSIGN_STATUS[k] === a.status
+					)
+				] || '';
+				return a.name + '(' + statusText + ')';
+			}).join('、');
+			item.forkliftAcceptedCount = acceptedCount;
+			item.forkliftTotalCount = assignments.length;
+		} else if (item.QUEUE_FORKLIFT_NAME) {
+			// 向后兼容旧记录
+			item.forkliftSummary = item.QUEUE_FORKLIFT_NAME;
+			item.forkliftAcceptedCount = 1;
+			item.forkliftTotalCount = 1;
+		} else {
+			item.forkliftSummary = '';
+			item.forkliftAcceptedCount = 0;
+			item.forkliftTotalCount = 0;
+		}
+
 		return item;
 	}
 
