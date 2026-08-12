@@ -2,6 +2,7 @@
     <view class="login-card shadow">
         <view class="logo">
             <image class="logo-img" src="/images/zhili_logo.png" mode="aspectFit"></image>
+            <view class="company-name">广州挚力供应链有限公司</view>
         </view>
 
         <!-- 标签切换 -->
