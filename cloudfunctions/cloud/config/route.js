@@ -23,6 +23,8 @@ module.exports = {
 	'forklift/my_task': 'forklift_controller@myTask',
 	'forklift/my_tasks': 'forklift_controller@myTasks',
 	'forklift/complete': 'forklift_controller@complete',
+	'forklift/accept': 'forklift_controller@accept',
+	'forklift/reject': 'forklift_controller@reject',
 
 	'admin/login': 'admin/admin_home_controller@adminLogin',
 	'admin/check_setup': 'admin/admin_home_controller@checkSetup',
@@ -39,6 +41,7 @@ module.exports = {
 	'admin/queue_cancel': 'admin/admin_queue_controller@cancel',
 	'admin/queue_finish': 'admin/admin_queue_controller@finish',
 	'admin/forklift_list': 'admin/admin_queue_controller@forkliftList',
+	'admin/queue_reassign': 'admin/admin_queue_controller@reassignForklift',
 
 	'admin/user_list': 'admin/admin_user_controller@getUserList',
 	'admin/user_detail': 'admin/admin_user_controller@getUserDetailById',

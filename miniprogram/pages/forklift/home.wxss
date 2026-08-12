@@ -99,6 +99,82 @@
 	line-height: 88rpx;
 }
 
+/* ===== CALLED 状态卡 ===== */
+
+.call-status {
+	text-align: center;
+	padding: 24rpx 20rpx;
+	border-radius: 16rpx;
+	margin-bottom: 24rpx;
+}
+
+.cs-label {
+	font-size: 32rpx;
+	font-weight: bold;
+}
+
+.cs-sub {
+	font-size: 26rpx;
+	margin-top: 10rpx;
+	line-height: 1.5;
+}
+
+.cs-countdown {
+	font-size: 28rpx;
+	font-weight: bold;
+	margin-top: 10rpx;
+	color: #e65100;
+}
+
+.call-status.new-task {
+	background: #fff8e1;
+	border: 2rpx solid #ffe082;
+}
+
+.call-status.accepted-status {
+	background: #e8f5e9;
+	border: 2rpx solid #a5d6a7;
+}
+
+.call-status.rejected-status {
+	background: #ffebee;
+	border: 2rpx solid #ef9a9a;
+}
+
+.call-status.timeout-status {
+	background: #fff3e0;
+	border: 2rpx solid #ffcc80;
+}
+
+.action-btns {
+	display: flex;
+	gap: 20rpx;
+	margin-top: 20rpx;
+}
+
+.accept-btn {
+	flex: 1;
+	height: 84rpx;
+	line-height: 84rpx;
+	background: #3B82E6;
+	color: #fff;
+	font-size: 30rpx;
+	font-weight: bold;
+	border-radius: 42rpx;
+	border: none;
+}
+
+.reject-btn {
+	flex: 1;
+	height: 84rpx;
+	line-height: 84rpx;
+	background: #fff;
+	color: #e53e3e;
+	font-size: 30rpx;
+	border-radius: 42rpx;
+	border: 2rpx solid #e53e3e;
+}
+
 .finish-proof {
 	margin: 24rpx 0;
 	padding: 24rpx;

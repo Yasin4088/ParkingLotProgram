@@ -38,6 +38,28 @@ class ForkliftController extends BaseController {
 		let service = new ForkliftService();
 		return await service.completeTask(this._token, input.id, input.finishProof);
 	}
+
+	/** 叉车司机接受任务 */
+	async accept() {
+		let rules = {
+			id: 'must|string|name=任务记录',
+		};
+		let input = this.validateData(rules);
+
+		let service = new ForkliftService();
+		return await service.acceptTask(this._token, input.id);
+	}
+
+	/** 叉车司机拒绝任务 */
+	async reject() {
+		let rules = {
+			id: 'must|string|name=任务记录',
+		};
+		let input = this.validateData(rules);
+
+		let service = new ForkliftService();
+		return await service.rejectTask(this._token, input.id);
+	}
 }
 
 module.exports = ForkliftController;

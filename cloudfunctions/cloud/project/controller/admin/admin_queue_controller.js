@@ -14,18 +14,18 @@ class AdminQueueController extends BaseAdminController {
 		return await service.list();
 	}
 
-	/** 叫号（管理员指定车辆 + 叉车司机） */
+	/** 叫号（管理员指定车辆 + 多位叉车司机） */
 	async callSelected() {
 		await this.isAdmin();
 
 		let rules = {
 			id: 'must|string|name=排队记录',
-			forkliftId: 'must|string|name=叉车司机',
+			forkliftIds: 'must|array|name=叉车司机',
 		};
 		let input = this.validateData(rules);
 
 		let service = new QueueService();
-		return await service.callDriver(input.id, input.forkliftId);
+		return await service.callDriver(input.id, input.forkliftIds);
 	}
 
 	async callNext() {
@@ -117,6 +117,21 @@ class AdminQueueController extends BaseAdminController {
 
 		let service = new QueueService();
 		return await service.getForkliftList();
+	}
+
+	/** 管理员重新分派叉车司机（替换拒绝/超时的） */
+	async reassignForklift() {
+		await this.isAdmin();
+
+		let rules = {
+			id: 'must|string|name=排队记录',
+			oldForkliftId: 'must|string|name=被替换叉车司机',
+			newForkliftId: 'must|string|name=新叉车司机',
+		};
+		let input = this.validateData(rules);
+
+		let service = new QueueService();
+		return await service.reassignForklift(input.id, input.oldForkliftId, input.newForkliftId);
 	}
 }
 

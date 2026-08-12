@@ -10,7 +10,65 @@
 		<view class="desc">查看分配的装卸任务并完成</view>
 	</view>
 
-	<view wx:if="{{task}}" class="task-card">
+	<!-- CALLED 状态：未接单 / 已接单 / 超时 -->
+	<view wx:if="{{task && task.status === 2}}" class="task-card">
+		<!-- PENDING：待响应 -->
+		<view wx:if="{{task.myAssignment.status === 0}}" class="call-status new-task">
+			<view class="cs-label">📋 新任务</view>
+			<view class="cs-countdown">{{countdownText || '等待响应'}}</view>
+		</view>
+		<!-- ACCEPTED：已接受 -->
+		<view wx:if="{{task.myAssignment.status === 1}}" class="call-status accepted-status">
+			<view class="cs-label">✅ 已接受</view>
+			<view class="cs-sub">等待司机确认中...</view>
+		</view>
+		<!-- REJECTED：已拒绝 -->
+		<view wx:if="{{task.myAssignment.status === 2}}" class="call-status rejected-status">
+			<view class="cs-label">❌ 已拒绝</view>
+			<view class="cs-sub">请联系管理员重新分配</view>
+		</view>
+		<!-- TIMEOUT：超时 -->
+		<view wx:if="{{task.myAssignment.status === 9}}" class="call-status timeout-status">
+			<view class="cs-label">⏰ 已超时</view>
+			<view class="cs-sub">请联系管理员重新分配</view>
+		</view>
+
+		<view class="task-grid">
+			<view class="task-row">
+				<view class="t-label">车牌号</view>
+				<view class="t-value">{{task.plate}}</view>
+			</view>
+			<view wx:if="{{task.cargoName}}" class="task-row">
+				<view class="t-label">货物名称</view>
+				<view class="t-value">{{task.cargoName}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">业务类型</view>
+				<view class="t-value">{{task.actionName}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">手机号</view>
+				<view class="t-value">{{task.phone}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">叫号时间</view>
+				<view class="t-value">{{task.callTimeText || '--'}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">司机状态</view>
+				<view class="t-value">{{task.driverConfirmed ? '已确认' : '未确认'}}</view>
+			</view>
+		</view>
+
+		<!-- PENDING：操作按钮 -->
+		<view wx:if="{{task.myAssignment.status === 0}}" class="action-btns">
+			<button class="accept-btn" loading="{{accepting}}" bindtap="bindAcceptTap">接受任务</button>
+			<button class="reject-btn" loading="{{rejecting}}" bindtap="bindRejectTap">拒绝任务</button>
+		</view>
+	</view>
+
+	<!-- CONFIRMED 状态：待完成 -->
+	<view wx:if="{{task && task.status === 3}}" class="task-card">
 		<view class="task-status">待完成</view>
 		<view class="task-grid">
 			<view class="task-row">
@@ -51,7 +109,8 @@
 		<button class="complete-btn" loading="{{loading || uploadingFinishProof}}" bindtap="bindCompleteTap">完成任务</button>
 	</view>
 
-	<view wx:else class="empty-card">
+	<!-- 无任务 -->
+	<view wx:if="{{!task}}" class="empty-card">
 		<view class="empty-title">暂无待处理任务</view>
 		<view class="empty-desc">管理员指派 + 司机确认后，任务会出现在这里</view>
 	</view>

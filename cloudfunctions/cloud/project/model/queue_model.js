@@ -25,9 +25,11 @@ QueueModel.DB_STRUCTURE = {
 	QUEUE_FINISH_PROOF: 'string|false|comment=完成作业凭证图片fileID',
 	QUEUE_CARGO_NAME: 'string|false|comment=货物名称',
 
-	QUEUE_FORKLIFT_ID: 'string|false|comment=叉车司机用户ID',
-	QUEUE_FORKLIFT_NAME: 'string|false|comment=叉车司机姓名',
-	QUEUE_FORKLIFT_TIME: 'int|true|default=0|comment=叉车司机指派时间',
+	QUEUE_FORKLIFT_ID: 'string|false|comment=叉车司机用户ID(向后兼容，新记录使用ASSIGNMENTS数组)',
+	QUEUE_FORKLIFT_NAME: 'string|false|comment=叉车司机姓名(向后兼容)',
+	QUEUE_FORKLIFT_TIME: 'int|true|default=0|comment=叉车司机指派时间(向后兼容)',
+	QUEUE_FORKLIFT_ASSIGNMENTS: 'array|false|comment=叉车司机分配列表[{id,name,status,assignTime,acceptTime}]',
+	QUEUE_DRIVER_CONFIRMED: 'int|true|default=0|comment=司机是否已确认收到叫号 0=未确认,1=已确认',
 
 	QUEUE_NO: 'string|false|comment=排队号',
 	QUEUE_STATUS: 'int|true|default=0|comment=状态 0=已预约,1=排队中,2=已叫号,3=司机已确认,9=已完成,10=已取消',
@@ -67,6 +69,21 @@ QueueModel.STATUS_DESC = {
 	CONFIRMED: '司机已确认',
 	DONE: '已完成',
 	CANCEL: '已取消'
+};
+
+/** 叉车司机接单状态 */
+QueueModel.FORKLIFT_ASSIGN_STATUS = {
+	PENDING: 0,
+	ACCEPTED: 1,
+	REJECTED: 2,
+	TIMEOUT: 9
+};
+
+QueueModel.FORKLIFT_ASSIGN_STATUS_DESC = {
+	PENDING: '待响应',
+	ACCEPTED: '已接受',
+	REJECTED: '已拒绝',
+	TIMEOUT: '超时'
 };
 
 module.exports = QueueModel;
