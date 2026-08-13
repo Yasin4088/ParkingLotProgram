@@ -20,12 +20,13 @@ Page({
 		this._checkLogin();
 		if (!await this._checkRegistration()) return;
 		this.loadCurrent();
+		this._loaded = true;
 	},
 
 	onShow: async function () {
+		if (!this._loaded) return; // 首次加载由 onLoad 处理，避免重复请求导致闪烁
 		this._checkLogin();
-		if (!await this._checkRegistration()) return;
-		this.loadCurrent();
+		this.loadCurrent(true); // 返回页面时静默刷新
 	},
 
 	_checkLogin: function () {
@@ -37,7 +38,7 @@ Page({
 
 	_checkRegistration: async function () {
 		try {
-			let driverInfo = await cloudHelper.callCloudData('driver/getInfo', {}, { title: '' });
+			let driverInfo = await cloudHelper.callCloudData('driver/getInfo', {}, { title: '', hint: false });
 			if (!driverInfo || !driverInfo.USER_IDCARD) {
 				wx.redirectTo({ url: '/pages/driver/register/register' });
 				return false;
@@ -67,8 +68,9 @@ Page({
 		});
 	},
 
-	loadCurrent: async function () {
-		let data = await cloudHelper.callCloudData('queue/my_current', {}, { title: '加载中' });
+	loadCurrent: async function (silent) {
+		let options = silent ? { title: '', hint: false } : { title: '加载中' };
+		let data = await cloudHelper.callCloudData('queue/my_current', {}, options);
 		this.setData({
 			item: (data && data.item) || null,
 			lastDone: (data && data.lastDone) || null,
@@ -98,8 +100,9 @@ Page({
 					console.log(e);
 				}
 			},
-			fail: () => {
-				wx.showToast({ title: '请授权定位后签到', icon: 'none' });
+			fail: err => {
+				console.error('getLocation失败', err);
+				wx.showToast({ title: '定位失败：' + (err && err.errMsg ? err.errMsg : '请授权定位'), icon: 'none' });
 			},
 			complete: () => {
 				this.setData({ loading: false });

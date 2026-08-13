@@ -158,7 +158,8 @@ Page({
 			cacheHelper.set(constants.CACHE_TOKEN, res.data, 86400);
 
 			if (res.data.registered) {
-				wx.redirectTo({ url: '/driver/home' });
+				// 有进行中的排队/作业记录 → 直达排队页；否则去认领页
+				wx.redirectTo({ url: res.data.hasActiveQueue ? '/driver/queue' : '/driver/home' });
 			} else {
 				wx.redirectTo({ url: '/pages/driver/register/register' });
 			}

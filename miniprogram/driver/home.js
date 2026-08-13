@@ -20,11 +20,12 @@ Page({
 		this._checkLogin();
 		if (!await this._checkRegistration()) return;
 		this._prefill();
+		this._loaded = true;
 	},
 
 	onShow: async function () {
+		if (!this._loaded) return; // 首次加载由 onLoad 处理，避免重复请求导致闪烁
 		this._checkLogin();
-		if (!await this._checkRegistration()) return;
 		this._prefill();
 	},
 
@@ -37,7 +38,7 @@ Page({
 
 	_checkRegistration: async function () {
 		try {
-			let driverInfo = await cloudHelper.callCloudData('driver/getInfo', {}, { title: '' });
+			let driverInfo = await cloudHelper.callCloudData('driver/getInfo', {}, { title: '', hint: false });
 			if (!driverInfo || !driverInfo.USER_IDCARD) {
 				wx.redirectTo({ url: '/pages/driver/register/register' });
 				return false;
@@ -52,7 +53,7 @@ Page({
 	/** 预填注册时登记的车牌与手机号（可修改） */
 	_prefill: async function () {
 		try {
-			let driverInfo = await cloudHelper.callCloudData('driver/getInfo', {}, { title: '' });
+			let driverInfo = await cloudHelper.callCloudData('driver/getInfo', {}, { title: '', hint: false });
 			if (!driverInfo) return;
 			let data = {};
 			if (!this.data.plate && driverInfo.USER_LICENSE_PLATE) {

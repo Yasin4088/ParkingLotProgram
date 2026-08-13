@@ -29,6 +29,9 @@
 			"desc": "用于司机到达停车场后完成GPS签到"
 		}
 	},
+	"requiredPrivateInfos": [
+		"getLocation"
+	],
 	"useExtendedLib": {
 		"weui": true
 	},
