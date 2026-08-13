@@ -358,6 +358,37 @@
 
  }
 
+/**
+ * 云存储 fileID → 临时 URL（wx.previewImage / 保存相册均需临时链接）
+ * @param {*} fileID cloud:// 开头的文件ID
+ */
+async function getTempUrl(fileID) {
+	if (!fileID) return '';
+	try {
+		let res = await wx.cloud.getTempFileURL({ fileList: [fileID] });
+		let item = res && res.fileList && res.fileList[0];
+		return (item && item.tempFileURL) || '';
+	} catch (err) {
+		console.error('获取临时链接失败', err);
+		return '';
+	}
+}
+
+/**
+ * 预览云存储图片（自动转换 fileID → 临时链接）
+ * @param {*} fileID
+ */
+async function previewCloudImage(fileID) {
+	wx.showLoading({ title: '加载中', mask: true });
+	let url = await getTempUrl(fileID);
+	wx.hideLoading();
+	if (!url) {
+		wx.showToast({ title: '图片加载失败', icon: 'none' });
+		return;
+	}
+	wx.previewImage({ urls: [url], current: url });
+}
+
  module.exports = {
  	CODE,
  	dataList,
@@ -366,5 +397,7 @@
  	callCloudData,
  	callCloudSumbitAsync,
  	transTempPics,
- 	transTempPicOne
+ 	transTempPicOne,
+ 	getTempUrl,
+ 	previewCloudImage
  }

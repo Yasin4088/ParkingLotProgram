@@ -24,17 +24,16 @@ class ForkliftController extends BaseController {
 		return await service.getMyTask(this._token);
 	}
 
-	/** 叉车司机完成作业（现场照片 + 单据照片） */
+	/** 叉车司机完成作业（单据照片） */
 	async complete() {
 		let rules = {
 			id: 'must|string|name=任务记录',
-			finishProof: 'must|string|name=现场照片',
 			billProof: 'must|string|name=单据照片',
 		};
 		let input = this.validateData(rules);
 
 		let service = new ForkliftService();
-		return await service.completeTask(this._token, input.id, input.finishProof, input.billProof);
+		return await service.completeTask(this._token, input.id, input.billProof);
 	}
 
 	/** 叉车司机抢单 */

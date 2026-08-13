@@ -88,11 +88,9 @@ class ForkliftService extends BaseService {
 		return await queueService._tryExecuting(queueId);
 	}
 
-	/** 叉车司机完成作业（现场照片 + 单据照片） */
-	async completeTask(userId, queueId, finishProof, billProof) {
-		finishProof = (finishProof || '').trim();
+	/** 叉车司机完成作业（仅上传单据照片） */
+	async completeTask(userId, queueId, billProof) {
 		billProof = (billProof || '').trim();
-		if (!finishProof) this.AppError('请先上传现场照片');
 		if (!billProof) this.AppError('请先上传单据照片');
 
 		let now = timeUtil.time();
@@ -102,7 +100,6 @@ class ForkliftService extends BaseService {
 			QUEUE_FORKLIFT_ID: userId
 		}, {
 			QUEUE_STATUS: QueueModel.STATUS.FINISHED,
-			QUEUE_FINISH_PROOF: finishProof,
 			QUEUE_FINISH_BILL_PROOF: billProof,
 			QUEUE_FINISH_TIME: now,
 		});

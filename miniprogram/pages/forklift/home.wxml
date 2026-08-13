@@ -59,23 +59,14 @@
 			</view>
 		</view>
 
-		<!-- 执行中 → 双凭证上传 + 完成 -->
+		<!-- 执行中 → 单据照片上传 + 完成 -->
 		<block wx:if="{{myTask.status === 4}}">
-			<view class="finish-proof">
-				<view class="finish-title">现场照片（必传）</view>
-				<view class="finish-desc">拍照上传装卸现场照片</view>
-				<view class="upload" bindtap="bindChooseFinishProof">
-					<image wx:if="{{finishProofLocal}}" src="{{finishProofLocal}}" mode="aspectFill"></image>
-					<view wx:else class="upload-empty">{{uploading ? '上传中...' : '拍照/上传'}}</view>
-				</view>
-			</view>
-
 			<view class="finish-proof">
 				<view class="finish-title">单据照片（必传）</view>
 				<view class="finish-desc">拍照上传签收单、单据照片</view>
 				<view class="upload" bindtap="bindChooseBillProof">
 					<image wx:if="{{billProofLocal}}" src="{{billProofLocal}}" mode="aspectFill"></image>
-					<view wx:else class="upload-empty">{{uploading ? '上传中...' : '拍照/上传'}}</view>
+					<view wx:else class="upload-empty">{{uploadingField === 'billProof' ? '上传中...' : '拍照/上传'}}</view>
 				</view>
 			</view>
 

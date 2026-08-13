@@ -120,12 +120,9 @@ Page({
 	bindNoop: function () {},
 
 	bindPreviewTap: function (e) {
-		let url = e.currentTarget.dataset.url;
-		if (!url) return;
-		wx.previewImage({
-			urls: [url],
-			current: url,
-		});
+		let fileID = e.currentTarget.dataset.url;
+		if (!fileID) return;
+		cloudHelper.previewCloudImage(fileID);
 	},
 
 	bindClearTap: function (e) {

@@ -25,11 +25,12 @@ class AdminQueueController extends BaseAdminController {
 			cargoName: 'string|max:50|name=货物名称',
 			remark: 'string|max:500|name=备注',
 			fees: 'array|name=预估费用',
+			payMode: 'int|name=支付方式',
 		};
 		let input = this.validateData(rules);
 
 		let service = new QueueService();
-		return await service.createTask(input.plate, input.action, input.cargoName, input.phone, input.fees, input.remark);
+		return await service.createTask(input.plate, input.action, input.cargoName, input.phone, input.fees, input.remark, input.payMode);
 	}
 
 	/** 叫号（任务进入叉车抢单池） */
@@ -96,11 +97,12 @@ class AdminQueueController extends BaseAdminController {
 
 		let rules = {
 			id: 'must|string|name=排队记录',
+			payMode: 'int|name=支付方式',
 		};
 		let input = this.validateData(rules);
 
 		let service = new QueueService();
-		return await service.settle(input.id);
+		return await service.settle(input.id, '管理员', input.payMode);
 	}
 
 	async detail() {
@@ -157,6 +159,7 @@ class AdminQueueController extends BaseAdminController {
 			cargoName: 'string|max:50|name=货物名称',
 			remark: 'string|max:500|name=备注',
 			fees: 'array|name=预估费用',
+			payMode: 'int|name=支付方式',
 		};
 		let input = this.validateData(rules);
 

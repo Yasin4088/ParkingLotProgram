@@ -47,7 +47,7 @@ class QueueService extends BaseService {
 	}
 
 	/** 管理员创建任务（待认领） */
-	async createTask(plate, action, cargoName, phone, fees, remark) {
+	async createTask(plate, action, cargoName, phone, fees, remark, payMode) {
 		if (!ACTIONS[action]) this.AppError('请选择装货或卸货');
 
 		plate = (plate || '').trim().toUpperCase();
@@ -71,6 +71,7 @@ class QueueService extends BaseService {
 			QUEUE_CREATE_TYPE: 0,
 			QUEUE_FEES: fees,
 			QUEUE_FEE_TOTAL: this._sumFees(fees),
+			QUEUE_PAY_MODE: Number(payMode) === 1 ? 1 : 0,
 			QUEUE_FORKLIFT_ID: '',
 			QUEUE_FORKLIFT_NAME: '',
 			QUEUE_STATUS: QueueModel.STATUS.CLAIM_PENDING,
@@ -309,19 +310,37 @@ class QueueService extends BaseService {
 		return await this.detail(queueId);
 	}
 
-	/** 管理员结算：总费用>0 → 待支付；=0 → 免支付直接完成 */
-	async settle(queueId, operator = '管理员') {
+	/** 管理员结算：总费用>0 → 待支付（现场付）或直接完成（客户记账）；=0 → 免支付直接完成 */
+	async settle(queueId, operator = '管理员', payMode) {
 		let item = await QueueModel.getOne({
 			_id: queueId,
 			QUEUE_STATUS: QueueModel.STATUS.FINISHED
 		});
 		if (!item) this.AppError('仅可结算作业完成的记录');
 
+		// 结算时显式选择的支付方式优先，未传时沿用建单时预填的方式
+		let mode = Number(payMode);
+		if (mode !== 0 && mode !== 1) {
+			mode = Number(item.QUEUE_PAY_MODE) === 1 ? 1 : 0;
+		}
+
 		let now = timeUtil.time();
 		let total = this._sumFees(item.QUEUE_FEES || []);
-		if (total > 0) {
+		if (total > 0 && mode === 1) {
+			// 客户记账：视为已完成，后台留支付方式记录
 			await QueueModel.edit(item._id, {
 				QUEUE_FEE_TOTAL: total,
+				QUEUE_PAY_MODE: 1,
+				QUEUE_STATUS: QueueModel.STATUS.DONE,
+				QUEUE_PAY_STATUS: QueueModel.PAY_STATUS.ON_ACCOUNT,
+				QUEUE_SETTLE_TIME: now,
+				QUEUE_SETTLE_OPERATOR: operator,
+				QUEUE_DONE_TIME: now,
+			});
+		} else if (total > 0) {
+			await QueueModel.edit(item._id, {
+				QUEUE_FEE_TOTAL: total,
+				QUEUE_PAY_MODE: 0,
 				QUEUE_STATUS: QueueModel.STATUS.TO_PAY,
 				QUEUE_SETTLE_TIME: now,
 				QUEUE_SETTLE_OPERATOR: operator,
@@ -329,6 +348,7 @@ class QueueService extends BaseService {
 		} else {
 			await QueueModel.edit(item._id, {
 				QUEUE_FEE_TOTAL: 0,
+				QUEUE_PAY_MODE: mode,
 				QUEUE_STATUS: QueueModel.STATUS.DONE,
 				QUEUE_PAY_STATUS: QueueModel.PAY_STATUS.FREE,
 				QUEUE_SETTLE_TIME: now,
@@ -456,7 +476,25 @@ class QueueService extends BaseService {
 	async detail(id) {
 		let item = await QueueModel.getOne({ _id: id });
 		if (!item) this.AppError('未找到排队记录');
-		return this._formatQueueItem(item);
+		let ret = this._formatQueueItem(item);
+
+		// 附司机注册信息（管理员详情可见；列表不 join 避免 N+1）
+		if (item.QUEUE_USER_ID) {
+			let user = await UserModel.getOne({ _id: item.QUEUE_USER_ID }, 'USER_NAME,USER_IDCARD,USER_LICENSE_PLATE,USER_MOBILE,USER_DRIVER_LICENSE_IMG,USER_VEHICLE_REG_IMG,USER_IDCARD_IMG');
+			if (user) {
+				ret.driverInfo = {
+					name: user.USER_NAME || '',
+					idCard: user.USER_IDCARD || '',
+					licensePlate: user.USER_LICENSE_PLATE || '',
+					mobile: user.USER_MOBILE || '',
+					driverLicenseImg: user.USER_DRIVER_LICENSE_IMG || '',
+					vehicleRegImg: user.USER_VEHICLE_REG_IMG || '',
+					idCardImg: user.USER_IDCARD_IMG || '',
+				};
+			}
+		}
+
+		return ret;
 	}
 
 	async edit(id, data) {
@@ -488,6 +526,9 @@ class QueueService extends BaseService {
 				QUEUE_CARGO_NAME: data.cargoName || '',
 				QUEUE_REMARK: (data.remark || '').trim(),
 			};
+			if (data.payMode !== undefined && data.payMode !== null) {
+				editData.QUEUE_PAY_MODE = Number(data.payMode) === 1 ? 1 : 0;
+			}
 			if (data.fees !== undefined && data.fees !== null) {
 				let fees = this._checkEstimateFees(data.fees);
 				editData.QUEUE_FEES = fees;
@@ -503,9 +544,9 @@ class QueueService extends BaseService {
 	async cancel(id, reason, operator = '管理员') {
 		let item = await QueueModel.getOne({
 			_id: id,
-			QUEUE_STATUS: ['in', [QueueModel.STATUS.CLAIM_PENDING, QueueModel.STATUS.BOOKED, QueueModel.STATUS.WAITING, QueueModel.STATUS.CALLED]]
+			QUEUE_STATUS: ['in', BOARD_STATUS]
 		});
-		if (!item) this.AppError('仅可取消未开始执行的任务');
+		if (!item) this.AppError('仅可删除看板上的记录');
 
 		reason = (reason || '').trim();
 		if (!reason) this.AppError('请输入取消原因');
@@ -517,7 +558,10 @@ class QueueService extends BaseService {
 			QUEUE_CANCEL_OPERATOR: operator
 		});
 
-		await this._sendCancelNotice(item, reason);
+		// 已开始执行的记录不再向司机推送取消通知（文案不适用）
+		if (item.QUEUE_STATUS <= QueueModel.STATUS.CALLED) {
+			await this._sendCancelNotice(item, reason);
+		}
 	}
 
 	/** 获取可用叉车司机列表 */
@@ -553,21 +597,24 @@ class QueueService extends BaseService {
 		return String(cnt + 1).padStart(3, '0');
 	}
 
-	/** 校验预估费用条目并转为标准结构 */
+	/** 校验预估费用条目并转为标准结构（金额为 0 或留空的项不计入） */
 	_checkEstimateFees(fees) {
 		let list = Array.isArray(fees) ? fees : [];
+		let clean = [];
 		for (let f of list) {
-			f.name = (f.name || '').trim();
-			if (!f.name) this.AppError('费用名称不能为空');
-			if (f.name.length > 20) this.AppError('费用名称过长');
 			let amount = Number(f.amount);
-			if (!Number.isInteger(amount) || amount <= 0) this.AppError('费用金额需为大于0的整数（分）');
+			if (!Number.isFinite(amount) || amount <= 0) continue; // 0/空不计入
+			let name = (f.name || '').trim();
+			if (!name) this.AppError('费用名称不能为空');
+			if (name.length > 20) this.AppError('费用名称过长');
+			if (!Number.isInteger(amount)) this.AppError('费用金额需为整数（分）');
+			clean.push({
+				name,
+				amount,
+				type: QueueModel.FEE_TYPE.ESTIMATE
+			});
 		}
-		return list.map(f => ({
-			name: f.name,
-			amount: Number(f.amount),
-			type: QueueModel.FEE_TYPE.ESTIMATE
-		}));
+		return clean;
 	}
 
 	_sumFees(fees) {
@@ -611,6 +658,10 @@ class QueueService extends BaseService {
 		item.feeTotal = Number(item.QUEUE_FEE_TOTAL) || this._sumFees(item.QUEUE_FEES);
 		item.feeTotalText = this._fmtMoney(item.feeTotal);
 		item.payStatusDesc = QueueModel.getDesc('PAY_STATUS', item.QUEUE_PAY_STATUS);
+
+		// 支付方式
+		item.payMode = Number(item.QUEUE_PAY_MODE) === 1 ? 1 : 0;
+		item.payModeDesc = QueueModel.getDesc('PAY_MODE', item.payMode);
 
 		return item;
 	}

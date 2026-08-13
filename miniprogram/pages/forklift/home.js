@@ -10,8 +10,7 @@ Page({
 		grabbingId: '',
 		loading: false,
 		uploading: false,
-		finishProof: '',
-		finishProofLocal: '',
+		uploadingField: '',
 		billProof: '',
 		billProofLocal: '',
 		statusBar: 0,
@@ -19,31 +18,34 @@ Page({
 		navBarHeight: 0,
 	},
 
-	onLoad: function () {
+	onLoad: async function () {
 		this._initNavMetrics();
 		if (!ForkliftBiz.isForklift(this)) return;
 		this.setData({ isLoad: true });
-		this._loadTask();
+		await this._loadTask(true);
+		this._loaded = true;
 	},
 
 	onShow: function () {
+		if (!this._loaded) return; // 首次加载由 onLoad 处理，避免重复请求导致闪烁
+		if (this.data.uploading) return; // 选图返回会触发 onShow，跳过以免与上传冲突
 		if (ForkliftBiz.getForkliftToken()) {
-			this._loadTask();
+			this._loadTask(true);
 		}
 	},
 
-	_loadTask: async function () {
+	_loadTask: async function (silent) {
 		try {
-			let data = await cloudHelper.callCloudData('forklift/my_task', {}, { title: '' });
+			let options = silent ? { title: '', hint: false } : { title: '加载中' };
+			let data = await cloudHelper.callCloudData('forklift/my_task', {}, options);
 			data = data || { pool: [], my: null };
 			let myTask = (data.my && data.my.length) ? data.my[0] : null;
 			let setData = { pool: data.pool || [], myTask };
-			if (!myTask) {
-				setData.finishProof = '';
-				setData.finishProofLocal = '';
+			if (!myTask && !this.data.uploading) {
 				setData.billProof = '';
 				setData.billProofLocal = '';
 				setData.uploading = false;
+				setData.uploadingField = '';
 			}
 			this.setData(setData);
 		} catch (e) {
@@ -98,11 +100,7 @@ Page({
 		});
 	},
 
-	// ========== 双凭证上传 ==========
-
-	bindChooseFinishProof: function () {
-		this._chooseImage('finishProof');
-	},
+	// ========== 单据照片上传 ==========
 
 	bindChooseBillProof: function () {
 		this._chooseImage('billProof');
@@ -110,7 +108,7 @@ Page({
 
 	_chooseImage: function (field) {
 		if (!this.data.myTask || this.data.loading || this.data.uploading) return;
-		let dir = field === 'finishProof' ? 'queue/finish-proof/' : 'queue/finish-bill/';
+		let dir = 'queue/finish-bill/';
 
 		wx.chooseMedia({
 			count: 1,
@@ -119,7 +117,7 @@ Page({
 			success: async res => {
 				let filePath = res.tempFiles && res.tempFiles[0] ? res.tempFiles[0].tempFilePath : '';
 				if (!filePath) return;
-				this.setData({ uploading: true });
+				this.setData({ uploading: true, uploadingField: field });
 				try {
 					let cloudId = await cloudHelper.transTempPicOne(filePath, dir, this.data.myTask._id, false);
 					if (!cloudId) return;
@@ -132,7 +130,7 @@ Page({
 					console.log(e);
 					wx.showToast({ title: '上传失败，请重试', icon: 'none' });
 				} finally {
-					this.setData({ uploading: false });
+					this.setData({ uploading: false, uploadingField: '' });
 				}
 			}
 		});
@@ -143,20 +141,18 @@ Page({
 	bindCompleteTap: function () {
 		if (!this.data.myTask || this.data.loading) return;
 		if (this.data.uploading) return wx.showToast({ title: '图片上传中', icon: 'none' });
-		if (!this.data.finishProof) return wx.showToast({ title: '请先上传现场照片', icon: 'none' });
 		if (!this.data.billProof) return wx.showToast({ title: '请先上传单据照片', icon: 'none' });
 
 		let that = this;
 		wx.showModal({
 			title: '确认完成',
-			content: '提交现场照片与单据照片后，任务将提交管理员结算。确定完成？',
+			content: '提交单据照片后，任务将提交管理员结算。确定完成？',
 			success: async res => {
 				if (!res.confirm) return;
 				that.setData({ loading: true });
 				try {
 					await cloudHelper.callCloudSumbit('forklift/complete', {
 						id: that.data.myTask._id,
-						finishProof: that.data.finishProof,
 						billProof: that.data.billProof,
 					}, { title: '提交中' });
 					wx.showToast({ title: '任务已完成', icon: 'success' });

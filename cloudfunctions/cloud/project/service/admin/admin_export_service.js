@@ -105,6 +105,7 @@ class AdminExportService extends BaseAdminService {
 		let rows = [header];
 		let feeTotal = 0;
 		let paidTotal = 0;
+		let accountTotal = 0;
 
 		for (let item of list) {
 			let feeText = (item.fees || []).map(f => f.name + '¥' + f.amountText + '(' + f.typeDesc + ')').join('；');
@@ -133,11 +134,13 @@ class AdminExportService extends BaseAdminService {
 			]);
 			feeTotal += Number(item.feeTotal) || 0;
 			if (Number(item.QUEUE_PAY_STATUS) === 1) paidTotal += Number(item.feeTotal) || 0;
+			if (Number(item.QUEUE_PAY_STATUS) === 3) accountTotal += Number(item.feeTotal) || 0;
 		}
 
 		let empty = ['', '', '', '', '', '', '', '', ''];
 		rows.push(empty.concat(['', '合计费用(元)', (feeTotal / 100).toFixed(2), '']).concat(['', '', '', '', '', '', '', '', '']));
 		rows.push(empty.concat(['', '已支付(元)', (paidTotal / 100).toFixed(2), '']).concat(['', '', '', '', '', '', '', '', '']));
+		rows.push(empty.concat(['', '记账(元)', (accountTotal / 100).toFixed(2), '']).concat(['', '', '', '', '', '', '', '', '']));
 
 		let dataService = new DataService();
 		return await dataService.exportDataExcel(

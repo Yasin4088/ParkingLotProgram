@@ -10,6 +10,12 @@ const ACTIONS = [
 // 固定费用项（可另加自定义费用）
 const FEE_ITEMS = ['办单费', '过磅费', '拆箱费', '吊机费', '存柜费'];
 
+// 支付方式（与后端 QueueModel.PAY_MODE 一致）
+const PAY_MODES = [
+	{ id: 0, name: '现场支付' },
+	{ id: 1, name: '客户记账' },
+];
+
 // 状态 → 卡片/徽标配色
 const STATUS_CLASS = {
 	0: 'st-pending',
@@ -67,6 +73,7 @@ Page({
 		},
 		editFees: [],
 		actionEditIndex: 0,
+		editPayModeIndex: 0,
 		cancelReason: '',
 
 		// 新建任务弹窗
@@ -79,6 +86,8 @@ Page({
 			remark: '',
 		},
 		createActionIndex: 0,
+		createPayModeIndex: 0,
+		payModes: PAY_MODES,
 		createFees: [],
 		createLoading: false,
 
@@ -217,20 +226,17 @@ Page({
 		return Math.round(n * 100);
 	},
 
-	/** 收集费用行 [{name, amountYuan}] → [{name, amount(分)}]，校验失败返回 null */
+	/** 收集费用行 [{name, amountYuan}] → [{name, amount(分)}]，校验失败返回 null；金额留空或为 0 的项不计入 */
 	_collectFees: function (fees) {
 		let out = [];
 		for (let f of fees) {
 			let name = (f.name || '').trim();
 			let yuan = String(f.amountYuan == null ? '' : f.amountYuan).trim();
-			if (!name && !yuan) continue;
+			if (!yuan) continue; // 金额留空不计入
+			let amount = this._fen(yuan);
+			if (!amount) continue; // 金额为 0 不计入
 			if (!name) {
 				wx.showToast({ title: '请填写费用名称', icon: 'none' });
-				return null;
-			}
-			let amount = this._fen(yuan);
-			if (!amount) {
-				wx.showToast({ title: '费用金额需大于0', icon: 'none' });
 				return null;
 			}
 			out.push({ name, amount });
@@ -269,6 +275,7 @@ Page({
 			showCreate: true,
 			createForm: { plate: '', phone: '', action: 'load', cargoName: '', remark: '' },
 			createActionIndex: 0,
+			createPayModeIndex: 0,
 			createFees: this._emptyFeeRows(),
 		});
 	},
@@ -300,6 +307,10 @@ Page({
 			createActionIndex: index,
 			'createForm.action': action ? action.id : '',
 		});
+	},
+
+	bindCreatePayModeChange: function (e) {
+		this.setData({ createPayModeIndex: Number(e.detail.value) });
 	},
 
 	bindCreateFeeNameInput: function (e) {
@@ -336,6 +347,9 @@ Page({
 		let fees = this._collectFees(this.data.createFees);
 		if (fees === null) return;
 
+		let payModeItem = PAY_MODES[this.data.createPayModeIndex];
+		let payMode = payModeItem ? payModeItem.id : 0;
+
 		this.setData({ createLoading: true });
 		try {
 			await cloudHelper.callCloudSumbit('admin/queue_create', {
@@ -345,6 +359,7 @@ Page({
 				cargoName: (form.cargoName || '').trim(),
 				remark: (form.remark || '').trim(),
 				fees,
+				payMode,
 			}, { title: '创建中' });
 			wx.showToast({ title: '任务已创建，等待司机认领', icon: 'none' });
 			this.setData({ showCreate: false });
@@ -592,31 +607,62 @@ Page({
 		let item = this.data.selectedItem;
 		let that = this;
 
-		let content = '合计费用 ¥' + item.feeTotalText + '。结算后费用锁定，司机支付完成后离场。确定结算？';
+		// 无费用：免支付直接完成
 		if (Number(item.feeTotal) === 0) {
-			content = '当前无费用，结算后任务直接完成（免支付）。确定结算？';
+			this._settle(item, 0, '当前无费用，结算后任务直接完成（免支付）。确定结算？');
+			return;
 		}
 
-		wx.showModal({
-			title: '确认结算',
-			content,
-			success: async res => {
-				if (!res.confirm) return;
-				that.setData({ submitting: true });
-				try {
-					let ret = await cloudHelper.callCloudSumbit('admin/queue_settle', {
-						id: item._id,
-					}, { title: '结算中' });
-					wx.showToast({ title: '已结算', icon: 'success' });
-					if (ret && ret.data) that._showDetail(ret.data);
-					that.loadList();
-				} catch (err) {
-					console.log(err);
-				} finally {
-					that.setData({ submitting: false });
+		wx.showActionSheet({
+			itemList: ['现场支付（司机支付后完成）', '客户记账（直接完成）'],
+			success: res => {
+				if (res.tapIndex === 0) {
+					that._settle(item, 0, '合计费用 ¥' + item.feeTotalText + '。结算后费用锁定，司机支付完成后离场。确定结算？');
+				} else if (res.tapIndex === 1) {
+					wx.showModal({
+						title: '客户记账',
+						content: '合计费用 ¥' + item.feeTotalText + ' 记入客户账，结算后任务直接完成。请与客户确认后再继续。',
+						success: modalRes => {
+							if (!modalRes.confirm) return;
+							that._settle(item, 1);
+						}
+					});
 				}
 			}
 		});
+	},
+
+	/** 结算：payMode 0=现场支付 1=客户记账；confirmContent 为空则直接提交 */
+	_settle: function (item, payMode, confirmContent) {
+		let that = this;
+		let doSettle = async () => {
+			that.setData({ submitting: true });
+			try {
+				let ret = await cloudHelper.callCloudSumbit('admin/queue_settle', {
+					id: item._id,
+					payMode,
+				}, { title: '结算中' });
+				wx.showToast({ title: '已结算', icon: 'success' });
+				if (ret && ret.data) that._showDetail(ret.data);
+				that.loadList();
+			} catch (err) {
+				console.log(err);
+			} finally {
+				that.setData({ submitting: false });
+			}
+		};
+
+		if (confirmContent) {
+			wx.showModal({
+				title: '确认结算',
+				content: confirmContent,
+				success: res => {
+					if (res.confirm) doSettle();
+				}
+			});
+		} else {
+			doSettle();
+		}
 	},
 
 	// ========== 详情弹窗 ==========
@@ -639,6 +685,7 @@ Page({
 
 	_showDetail: function (item) {
 		let actionEditIndex = this.data.actions.findIndex(action => action.id === item.QUEUE_ACTION);
+		let payModeIndex = PAY_MODES.findIndex(mode => mode.id === Number(item.payMode));
 		this.setData({
 			showDetail: true,
 			editMode: false,
@@ -652,6 +699,7 @@ Page({
 			},
 			editFees: [],
 			actionEditIndex: actionEditIndex > -1 ? actionEditIndex : 0,
+			editPayModeIndex: payModeIndex > -1 ? payModeIndex : 0,
 			cancelReason: '',
 		});
 	},
@@ -713,6 +761,10 @@ Page({
 		});
 	},
 
+	bindEditPayModeChange: function (e) {
+		this.setData({ editPayModeIndex: Number(e.detail.value) });
+	},
+
 	bindEditFeeNameInput: function (e) {
 		let index = e.currentTarget.dataset.index;
 		this.setData({ ['editFees[' + index + '].name']: e.detail.value });
@@ -751,6 +803,9 @@ Page({
 			if (!phone) return wx.showToast({ title: '请输入手机号', icon: 'none' });
 		}
 
+		let payModeItem = PAY_MODES[this.data.editPayModeIndex];
+		let payMode = payModeItem ? payModeItem.id : 0;
+
 		this.setData({ submitting: true });
 		try {
 			let res = await cloudHelper.callCloudSumbit('admin/queue_edit', {
@@ -761,6 +816,7 @@ Page({
 				cargoName: (form.cargoName || '').trim(),
 				remark: (form.remark || '').trim(),
 				fees,
+				payMode,
 			}, { title: '保存中' });
 			wx.showToast({ title: '已保存', icon: 'success' });
 			if (res && res.data) this._showDetail(res.data);
@@ -808,24 +864,80 @@ Page({
 		});
 	},
 
-	// ========== 凭证预览 ==========
+	// ========== 凭证预览 / 保存到相册 ==========
 
 	bindPreviewProofTap: function () {
 		let proof = this.data.selectedItem && this.data.selectedItem.QUEUE_PROOF;
 		if (!proof) return;
-		wx.previewImage({ urls: [proof], current: proof });
+		cloudHelper.previewCloudImage(proof);
 	},
 
 	bindPreviewFinishProofTap: function () {
 		let proof = this.data.selectedItem && this.data.selectedItem.QUEUE_FINISH_PROOF;
 		if (!proof) return;
-		wx.previewImage({ urls: [proof], current: proof });
+		cloudHelper.previewCloudImage(proof);
 	},
 
 	bindPreviewBillProofTap: function () {
 		let proof = this.data.selectedItem && this.data.selectedItem.QUEUE_FINISH_BILL_PROOF;
 		if (!proof) return;
-		wx.previewImage({ urls: [proof], current: proof });
+		cloudHelper.previewCloudImage(proof);
+	},
+
+	/** 司机注册信息三证预览（field: driverLicenseImg/vehicleRegImg/idCardImg） */
+	bindPreviewDriverImgTap: function (e) {
+		let field = e.currentTarget.dataset.field;
+		let info = this.data.selectedItem && this.data.selectedItem.driverInfo;
+		if (!info || !info[field]) return;
+		cloudHelper.previewCloudImage(info[field]);
+	},
+
+	bindSaveProofTap: function () {
+		let proof = this.data.selectedItem && this.data.selectedItem.QUEUE_PROOF;
+		if (proof) this._saveCloudImage(proof);
+	},
+
+	bindSaveFinishProofTap: function () {
+		let proof = this.data.selectedItem && this.data.selectedItem.QUEUE_FINISH_PROOF;
+		if (proof) this._saveCloudImage(proof);
+	},
+
+	bindSaveBillProofTap: function () {
+		let proof = this.data.selectedItem && this.data.selectedItem.QUEUE_FINISH_BILL_PROOF;
+		if (proof) this._saveCloudImage(proof);
+	},
+
+	/** 云存储图片保存到相册 */
+	_saveCloudImage: async function (fileID) {
+		wx.showLoading({ title: '保存中', mask: true });
+		try {
+			let url = await cloudHelper.getTempUrl(fileID);
+			if (!url) throw new Error('获取图片失败');
+			let download = await new Promise((resolve, reject) => {
+				wx.downloadFile({ url, success: resolve, fail: reject });
+			});
+			if (download.statusCode !== 200) throw new Error('下载失败');
+			await new Promise((resolve, reject) => {
+				wx.saveImageToPhotosAlbum({ filePath: download.tempFilePath, success: resolve, fail: reject });
+			});
+			wx.showToast({ title: '已保存到相册', icon: 'success' });
+		} catch (err) {
+			console.log(err);
+			if (err && err.errMsg && err.errMsg.indexOf('auth') > -1) {
+				wx.showModal({
+					title: '需要相册权限',
+					content: '请在设置中允许使用相册权限后重试',
+					confirmText: '去设置',
+					success: res => {
+						if (res.confirm) wx.openSetting();
+					}
+				});
+			} else {
+				wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+			}
+		} finally {
+			wx.hideLoading();
+		}
 	},
 
 	// ========== 导航 ==========

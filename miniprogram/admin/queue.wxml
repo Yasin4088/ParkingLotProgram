@@ -96,6 +96,12 @@
 				</picker>
 			</view>
 			<view class="form-group">
+				<view class="form-label">支付方式</view>
+				<picker mode="selector" range="{{payModes}}" range-key="name" value="{{createPayModeIndex}}" bindchange="bindCreatePayModeChange">
+					<view class="edit-input">{{payModes[createPayModeIndex].name}}</view>
+				</picker>
+			</view>
+			<view class="form-group">
 				<view class="form-label">货物名称</view>
 				<input class="edit-input" value="{{createForm.cargoName}}" bindinput="bindCreateCargoNameInput" maxlength="50" placeholder="选填" />
 			</view>
@@ -228,6 +234,27 @@
 					<view wx:if="{{selectedItem.QUEUE_PROOF}}" class="detail-row">
 						<view class="detail-label">认领单证</view>
 						<view class="detail-link" bindtap="bindPreviewProofTap">点击查看</view>
+						<view class="detail-link" bindtap="bindSaveProofTap">保存</view>
+					</view>
+					<view wx:if="{{selectedItem.driverInfo}}" class="detail-row">
+						<view class="detail-label">司机姓名</view>
+						<view class="detail-value">{{selectedItem.driverInfo.name || '--'}}</view>
+					</view>
+					<view wx:if="{{selectedItem.driverInfo && selectedItem.driverInfo.idCard}}" class="detail-row">
+						<view class="detail-label">身份证号</view>
+						<view class="detail-value">{{selectedItem.driverInfo.idCard}}</view>
+					</view>
+					<view wx:if="{{selectedItem.driverInfo && selectedItem.driverInfo.driverLicenseImg}}" class="detail-row">
+						<view class="detail-label">驾驶证</view>
+						<view class="detail-link" data-field="driverLicenseImg" bindtap="bindPreviewDriverImgTap">点击查看</view>
+					</view>
+					<view wx:if="{{selectedItem.driverInfo && selectedItem.driverInfo.vehicleRegImg}}" class="detail-row">
+						<view class="detail-label">行驶证</view>
+						<view class="detail-link" data-field="vehicleRegImg" bindtap="bindPreviewDriverImgTap">点击查看</view>
+					</view>
+					<view wx:if="{{selectedItem.driverInfo && selectedItem.driverInfo.idCardImg}}" class="detail-row">
+						<view class="detail-label">身份证照</view>
+						<view class="detail-link" data-field="idCardImg" bindtap="bindPreviewDriverImgTap">点击查看</view>
 					</view>
 					<view wx:if="{{selectedItem.forkliftName}}" class="detail-row">
 						<view class="detail-label">叉车司机</view>
@@ -236,6 +263,10 @@
 					<view wx:if="{{selectedItem.QUEUE_STATUS === 3}}" class="detail-row">
 						<view class="detail-label">司机确认</view>
 						<view class="detail-value">{{selectedItem.driverConfirmed ? '已确认' : '未确认'}}</view>
+					</view>
+					<view class="detail-row">
+						<view class="detail-label">支付方式</view>
+						<view class="detail-value">{{selectedItem.payModeDesc || '--'}}</view>
 					</view>
 
 					<view wx:if="{{selectedItem.addTimeText}}" class="detail-row">
@@ -270,10 +301,12 @@
 					<view wx:if="{{selectedItem.QUEUE_FINISH_PROOF}}" class="detail-row">
 						<view class="detail-label">现场照片</view>
 						<view class="detail-link" bindtap="bindPreviewFinishProofTap">点击查看</view>
+						<view class="detail-link" bindtap="bindSaveFinishProofTap">保存</view>
 					</view>
 					<view wx:if="{{selectedItem.QUEUE_FINISH_BILL_PROOF}}" class="detail-row">
 						<view class="detail-label">单据照片</view>
 						<view class="detail-link" bindtap="bindPreviewBillProofTap">点击查看</view>
+						<view class="detail-link" bindtap="bindSaveBillProofTap">保存</view>
 					</view>
 				</view>
 
@@ -334,6 +367,12 @@
 						</picker>
 					</view>
 					<view class="form-group">
+						<view class="form-label">支付方式</view>
+						<picker mode="selector" range="{{payModes}}" range-key="name" value="{{editPayModeIndex}}" bindchange="bindEditPayModeChange">
+							<view class="edit-input">{{payModes[editPayModeIndex].name}}</view>
+						</picker>
+					</view>
+					<view class="form-group">
 						<view class="form-label">货物名称</view>
 						<input class="edit-input" value="{{editForm.cargoName}}" bindinput="bindCargoNameInput" maxlength="50" placeholder="请输入货物名称" />
 					</view>
@@ -358,8 +397,8 @@
 				</view>
 			</view>
 
-			<!-- 取消任务（未开始执行前） -->
-			<view wx:if="{{selectedItem.QUEUE_STATUS <= 3 && !editMode}}" class="cancel-box">
+			<!-- 取消任务（看板所有状态均可删除） -->
+			<view wx:if="{{selectedItem.QUEUE_STATUS <= 6 && !editMode}}" class="cancel-box">
 				<view class="form-label">删除/取消原因</view>
 				<textarea class="reason-input" value="{{cancelReason}}" bindinput="bindCancelReasonInput" maxlength="80" placeholder="请输入原因" />
 				<view class="danger-btn" bindtap="bindCancelQueueTap">{{submitting ? '处理中...' : '删除并取消任务'}}</view>
