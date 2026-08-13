@@ -109,17 +109,30 @@ class DriverService extends BaseService {
 	}
 
 	/**
-	 * 微信手机号 code 换取真实手机号
-	 * @param {*} code 前端 getPhoneNumber 按钮返回的 code
+	 * 微信手机号 cloudID 换取真实手机号（cloud.getOpenData，官方云开发推荐方式，
+	 * 所有 wx-server-sdk 2.x 均支持，无需 openapi 权限配置）
+	 * @param {*} cloudID 前端 getPhoneNumber 按钮返回的 cloudID
 	 */
-	async getPhoneNumber(code) {
+	async getPhoneNumber(cloudID) {
+		const cloud = require('wx-server-sdk');
+		let res;
 		try {
-			const cloud = require('wx-server-sdk');
-			let result = await cloud.getPhoneNumber({ code });
-			return { success: true, phoneNumber: result.phoneNumber };
+			res = await cloud.getOpenData({ list: [cloudID] });
 		} catch (err) {
 			this.AppError('手机号获取失败，请重新授权：' + err.message);
 		}
+
+		let data = res && res.list && res.list[0] && res.list[0].data;
+		if (typeof data === 'string') {
+			try {
+				data = JSON.parse(data);
+			} catch (e) {
+				data = null;
+			}
+		}
+		if (!data || !data.phoneNumber) this.AppError('手机号获取失败，请重新授权');
+
+		return { success: true, phoneNumber: data.phoneNumber };
 	}
 
 	/**

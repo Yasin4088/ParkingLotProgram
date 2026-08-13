@@ -88,18 +88,18 @@ Page({
       return;
     }
 
-    let code = e.detail.code;
-    if (!code) {
+    let cloudID = e.detail.cloudID;
+    if (!cloudID) {
       wx.showModal({
         title: '授权结果',
-        content: '授权成功但未获取到code，请重试',
+        content: '授权成功但未获取到cloudID（需基础库2.7.0+且已开通云开发），请重试',
         showCancel: false
       });
       return;
     }
 
     try {
-      let res = await cloudHelper.callCloudSumbit('driver/getPhoneNumber', { code }, { title: '获取中' });
+      let res = await cloudHelper.callCloudSumbit('driver/getPhoneNumber', { cloudID: cloudID }, { title: '获取中' });
       if (res.data && res.data.success) {
         this.setData({
           phone: res.data.phoneNumber,

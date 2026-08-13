@@ -32,15 +32,15 @@ class DriverController extends BaseController {
 		return await service.register(this._userId, input);
 	}
 
-	/** 微信手机号换取 */
+	/** 微信手机号换取（cloudID + getOpenData） */
 	async getPhoneNumber() {
 		let rules = {
-			code: 'must|string|name=手机号code',
+			cloudID: 'must|string|name=手机号cloudID',
 		};
 		let input = this.validateData(rules);
 
 		let service = new DriverService();
-		return await service.getPhoneNumber(input.code);
+		return await service.getPhoneNumber(input.cloudID);
 	}
 
 	/** 司机修改个人信息 */
