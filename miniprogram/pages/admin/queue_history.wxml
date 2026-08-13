@@ -2,12 +2,20 @@
 	<view class="header">
 		<view>
 			<view class="title">历史记录</view>
-			<view class="desc">查看已完成/已取消装卸记录，便于统计与复盘</view>
+			<view class="desc">查看已完成/已取消装卸记录，按月导出经营报表</view>
 		</view>
 		<view class="header-actions">
 			<view class="action-btn" bindtap="bindRefreshTap">刷新</view>
 			<view class="action-btn danger" bindtap="bindClearAllTap">清空</view>
 		</view>
+	</view>
+
+	<!-- 月份选择 + 导出 -->
+	<view class="month-bar">
+		<picker mode="selector" range="{{months}}" range-key="label" value="{{monthIndex}}" bindchange="bindMonthChange">
+			<view class="month-picker">{{months[monthIndex].label}} ▾</view>
+		</picker>
+		<view class="export-btn {{exporting ? 'disabled' : ''}}" bindtap="bindExportTap">{{exporting ? '生成中...' : '导出本月报表'}}</view>
 	</view>
 
 	<view class="summary">共 {{total}} 条历史记录</view>
@@ -23,8 +31,9 @@
 			<view wx:if="{{item.QUEUE_FORKLIFT_NAME}}" class="meta">叉车：{{item.QUEUE_FORKLIFT_NAME}}</view>
 			<view wx:if="{{item.finishTimeText}}" class="meta">完成：{{item.finishTimeText}}</view>
 			<view wx:if="{{item.cancelTimeText}}" class="meta">取消：{{item.cancelTimeText}}</view>
+			<view wx:if="{{item.fees.length}}" class="meta">费用：¥{{item.feeTotalText}}（{{item.payStatusDesc}}）</view>
 			<view wx:if="{{item.QUEUE_FINISH_PROOF}}" class="proof-tag">已上传完成凭证</view>
-			<view wx:elif="{{item.QUEUE_PROOF}}" class="proof-tag light">有预约单证</view>
+			<view wx:elif="{{item.QUEUE_PROOF}}" class="proof-tag light">有认领单证</view>
 
 			<view class="card-actions">
 				<view class="link-btn">查看详情</view>
@@ -33,7 +42,7 @@
 		</view>
 	</view>
 
-	<view wx:else class="empty">{{loading ? '加载中...' : '暂无历史记录'}}</view>
+	<view wx:else class="empty">{{loading ? '加载中...' : '该月暂无历史记录'}}</view>
 
 	<view wx:if="{{showDetail}}" class="detail-mask" bindtap="bindCloseDetailTap">
 		<view class="detail-panel" catchtap="bindNoop">
@@ -67,7 +76,7 @@
 					<view class="detail-value">{{selectedItem.QUEUE_FORKLIFT_NAME || '--'}}</view>
 				</view>
 				<view class="detail-row">
-					<view class="detail-label">预约时间</view>
+					<view class="detail-label">创建时间</view>
 					<view class="detail-value">{{selectedItem.addTimeText || '--'}}</view>
 				</view>
 				<view class="detail-row">
@@ -87,6 +96,14 @@
 					<view class="detail-value">{{selectedItem.finishTimeText || '--'}}</view>
 				</view>
 				<view class="detail-row">
+					<view class="detail-label">结算时间</view>
+					<view class="detail-value">{{selectedItem.settleTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">支付时间</view>
+					<view class="detail-value">{{selectedItem.payTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
 					<view class="detail-label">取消时间</view>
 					<view class="detail-value">{{selectedItem.cancelTimeText || '--'}}</view>
 				</view>
@@ -95,15 +112,33 @@
 					<view class="detail-value">{{selectedItem.QUEUE_CANCEL_REASON || '--'}}</view>
 				</view>
 				<view class="detail-row">
-					<view class="detail-label">装卸凭证</view>
+					<view class="detail-label">认领单证</view>
 					<view wx:if="{{selectedItem.QUEUE_PROOF}}" class="detail-link" data-url="{{selectedItem.QUEUE_PROOF}}" bindtap="bindPreviewTap">点击查看</view>
 					<view wx:else class="detail-value">--</view>
 				</view>
 				<view class="detail-row">
-					<view class="detail-label">完成凭证</view>
+					<view class="detail-label">现场照片</view>
 					<view wx:if="{{selectedItem.QUEUE_FINISH_PROOF}}" class="detail-link" data-url="{{selectedItem.QUEUE_FINISH_PROOF}}" bindtap="bindPreviewTap">点击查看</view>
 					<view wx:else class="detail-value">--</view>
 				</view>
+				<view class="detail-row">
+					<view class="detail-label">单据照片</view>
+					<view wx:if="{{selectedItem.QUEUE_FINISH_BILL_PROOF}}" class="detail-link" data-url="{{selectedItem.QUEUE_FINISH_BILL_PROOF}}" bindtap="bindPreviewTap">点击查看</view>
+					<view wx:else class="detail-value">--</view>
+				</view>
+			</view>
+
+			<!-- 费用明细 -->
+			<view class="fee-box">
+				<view class="fee-box-title">费用明细</view>
+				<view wx:if="{{selectedItem.fees.length}}" class="fee-list">
+					<view wx:for="{{selectedItem.fees}}" wx:key="index" class="fee-line">
+						<view class="fee-line-name">{{item.name}}<text class="fee-line-type">{{item.typeDesc}}</text></view>
+						<view class="fee-line-amount">¥{{item.amountText}}</view>
+					</view>
+				</view>
+				<view wx:else class="fee-empty">暂无费用</view>
+				<view class="fee-total">合计：¥{{selectedItem.feeTotalText}}（{{selectedItem.payStatusDesc}}）</view>
 			</view>
 
 			<view class="detail-actions">

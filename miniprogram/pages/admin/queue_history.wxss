@@ -53,6 +53,43 @@
 	margin-bottom: 18rpx;
 }
 
+/* 月份选择 + 导出 */
+.month-bar {
+	display: flex;
+	align-items: center;
+	gap: 18rpx;
+	margin-bottom: 22rpx;
+}
+
+.month-picker {
+	flex: 1;
+	height: 76rpx;
+	line-height: 76rpx;
+	background: #fff;
+	border: 1rpx solid #d9e2ec;
+	border-radius: 38rpx;
+	padding: 0 30rpx;
+	font-size: 28rpx;
+	color: #243b53;
+	text-align: center;
+}
+
+.export-btn {
+	height: 76rpx;
+	line-height: 76rpx;
+	background: #f07818;
+	color: #fff;
+	font-size: 27rpx;
+	font-weight: bold;
+	border-radius: 38rpx;
+	padding: 0 30rpx;
+	flex-shrink: 0;
+}
+
+.export-btn.disabled {
+	opacity: .6;
+}
+
 .history-card {
 	background: #fff;
 	border-radius: 20rpx;
@@ -240,4 +277,66 @@
 .detail-btn.danger {
 	background: #e53e3e;
 	color: #fff;
+}
+
+/* 费用明细 */
+.fee-box {
+	margin-top: 24rpx;
+	background: #f7fafc;
+	border-radius: 18rpx;
+	padding: 20rpx 22rpx;
+}
+
+.fee-box-title {
+	font-size: 26rpx;
+	color: #627d98;
+	margin-bottom: 8rpx;
+}
+
+.fee-line {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 12rpx 0;
+	border-bottom: 1rpx solid #e8edf2;
+}
+
+.fee-line:last-child {
+	border-bottom: none;
+}
+
+.fee-line-name {
+	font-size: 27rpx;
+	color: #000;
+	display: flex;
+	align-items: center;
+	gap: 10rpx;
+}
+
+.fee-line-type {
+	font-size: 20rpx;
+	color: #7b8794;
+	background: #e8edf2;
+	padding: 2rpx 10rpx;
+	border-radius: 6rpx;
+}
+
+.fee-line-amount {
+	font-size: 27rpx;
+	color: #000;
+	font-weight: 500;
+}
+
+.fee-empty {
+	font-size: 26rpx;
+	color: #999;
+	padding: 16rpx 0;
+}
+
+.fee-total {
+	margin-top: 14rpx;
+	text-align: right;
+	font-size: 30rpx;
+	font-weight: bold;
+	color: #e53e3e;
 }

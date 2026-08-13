@@ -8,11 +8,11 @@
 
 	<view class="header">
 		<view class="title">我的排队</view>
-		<view class="desc">到达堆场后请先完成 GPS 签到，再等待管理员叫号</view>
+		<view class="desc">认领任务后到达堆场，先完成 GPS 签到，再等待叫号与装卸</view>
 	</view>
 
 	<view wx:if="{{item}}" class="card">
-		<view class="status {{item.QUEUE_STATUS === 2 ? 'called' : ''}} {{item.QUEUE_STATUS === 3 ? 'confirmed' : ''}}">{{item.statusDesc}}</view>
+		<view class="status {{item.QUEUE_STATUS === 3 ? 'called' : ''}} {{item.QUEUE_STATUS === 6 ? 'topay' : ''}}">{{item.statusDesc}}</view>
 		<view class="queue-no">{{item.QUEUE_NO || '--'}}</view>
 		<view class="queue-label">排队号</view>
 
@@ -35,52 +35,68 @@
 			</view>
 		</view>
 
-		<!-- 叫号后显示叉车司机信息 + 确认按钮 -->
-		<view wx:if="{{item.QUEUE_STATUS === 2 && !item.driverConfirmed && (item.forkliftSummary || item.QUEUE_FORKLIFT_NAME)}}" class="forklift-info">
-			<view class="fl-label">分配的叉车司机</view>
-			<view class="fl-name">{{item.forkliftSummary || item.QUEUE_FORKLIFT_NAME}}</view>
+		<!-- 已叫号 -->
+		<view wx:if="{{item.QUEUE_STATUS === 3}}" class="forklift-info">
+			<view wx:if="{{item.forkliftName}}" class="fl-label">叉车司机 {{item.forkliftName}} 已接单</view>
+			<view wx:else class="fl-label">已叫号，等待叉车司机抢单</view>
 			<view class="fl-tip">请点击下方按钮确认收到叫号通知</view>
 		</view>
 
-		<!-- 已叫号 + 司机已确认，等待叉车接单 -->
-		<view wx:if="{{item.QUEUE_STATUS === 2 && item.driverConfirmed}}" class="forklift-info confirmed">
-			<view class="fl-label">叉车司机 {{item.forkliftSummary || item.QUEUE_FORKLIFT_NAME}} 已收到通知</view>
-			<view class="fl-tip">已确认收到叫号，等待叉车司机接单...</view>
+		<!-- 执行中 -->
+		<view wx:if="{{item.QUEUE_STATUS === 4}}" class="forklift-info confirmed">
+			<view class="fl-label">叉车司机 {{item.forkliftName || ''}} 正在作业</view>
+			<view class="fl-tip">装卸进行中，请留意现场安排</view>
 		</view>
 
-		<!-- 已确认状态 -->
-		<view wx:if="{{item.QUEUE_STATUS === 3}}" class="forklift-info confirmed">
-			<view class="fl-label">叉车司机 {{item.forkliftSummary || item.QUEUE_FORKLIFT_NAME}} 已收到通知</view>
-			<view class="fl-tip">装卸完成后，请上传完成作业凭证并提交</view>
+		<!-- 待结算 -->
+		<view wx:if="{{item.QUEUE_STATUS === 5}}" class="forklift-info confirmed">
+			<view class="fl-label">作业已完成</view>
+			<view class="fl-tip">等待管理员核对并结算费用</view>
 		</view>
 
-		<view wx:if="{{item.QUEUE_STATUS === 3}}" class="finish-proof">
-			<view class="finish-title">完成作业凭证</view>
-			<view class="finish-desc">请拍照上传现场签收单、装卸完成照片等凭证</view>
-			<view class="upload" bindtap="bindChooseFinishProof">
-				<image wx:if="{{finishProofLocal}}" src="{{finishProofLocal}}" mode="aspectFill"></image>
-				<view wx:else class="upload-empty">{{uploadingFinishProof ? '上传中...' : '拍照/上传凭证'}}</view>
+		<!-- 费用明细（待结算/待支付） -->
+		<view wx:if="{{item.QUEUE_STATUS >= 5}}" class="fee-box">
+			<view class="fee-box-title">费用明细</view>
+			<view wx:if="{{item.fees.length}}" class="fee-list">
+				<view wx:for="{{item.fees}}" wx:key="index" class="fee-line">
+					<view class="fee-line-name">{{item.name}}<text class="fee-line-type">{{item.typeDesc}}</text></view>
+					<view class="fee-line-amount">¥{{item.amountText}}</view>
+				</view>
 			</view>
+			<view wx:else class="fee-empty">暂无费用</view>
+			<view class="fee-total">合计：¥{{item.feeTotalText}}</view>
 		</view>
 
-		<view wx:if="{{item.QUEUE_STATUS === 0}}" class="tips">已预约，抵达现场后点击 GPS 签到进入队列。</view>
-		<view wx:elif="{{item.QUEUE_STATUS === 1}}" class="tips">排队中，请关注叫号通知。</view>
-		<view wx:elif="{{item.QUEUE_STATUS === 2 && !item.driverConfirmed && (item.forkliftSummary || item.QUEUE_FORKLIFT_NAME)}}" class="tips called-text">已叫号，请确认收到通知。</view>
-		<view wx:elif="{{item.QUEUE_STATUS === 2 && item.driverConfirmed}}" class="tips">已确认叫号，等待叉车接单...</view>
+		<!-- 待支付提示 -->
+		<view wx:if="{{item.QUEUE_STATUS === 6}}" class="pay-tip">费用已锁定，请在现场完成支付后离场</view>
 
-		<button wx:if="{{item.QUEUE_STATUS === 0}}" loading="{{loading}}" class="primary-btn" bindtap="bindCheckinTap">GPS 签到</button>
-		<button wx:if="{{item.QUEUE_STATUS === 2 && !item.driverConfirmed}}" class="confirm-btn" bindtap="bindConfirmTap">确认收到</button>
-		<button wx:if="{{item.QUEUE_STATUS === 3}}" loading="{{finishing || uploadingFinishProof}}" class="finish-btn" bindtap="bindFinishTap">完成作业</button>
-		<button wx:if="{{item.QUEUE_STATUS === 0 || item.QUEUE_STATUS === 1}}" class="ghost-btn" bindtap="bindSubscribeTap">{{item.QUEUE_SUBSCRIBE ? '已订阅叫号通知' : '订阅叫号通知'}}</button>
+		<!-- 状态文字 -->
+		<view wx:if="{{item.QUEUE_STATUS === 1}}" class="tips">已认领任务，抵达现场后点击 GPS 签到进入队列。</view>
+		<view wx:elif="{{item.QUEUE_STATUS === 2}}" class="tips">排队中，请关注叫号通知。</view>
+		<view wx:elif="{{item.QUEUE_STATUS === 3 && !item.driverConfirmed}}" class="tips called-text">已叫号，请确认收到通知。</view>
+		<view wx:elif="{{item.QUEUE_STATUS === 3 && item.driverConfirmed}}" class="tips">已确认叫号，等待叉车司机接单...</view>
+
+		<button wx:if="{{item.QUEUE_STATUS === 1}}" loading="{{loading}}" class="primary-btn" bindtap="bindCheckinTap">GPS 签到</button>
+		<button wx:if="{{item.QUEUE_STATUS === 3 && !item.driverConfirmed}}" class="confirm-btn" bindtap="bindConfirmTap">确认收到</button>
+		<button wx:if="{{item.QUEUE_STATUS === 6}}" loading="{{paying}}" class="pay-btn" bindtap="bindPayTap">去支付 ¥{{item.feeTotalText}}</button>
+		<button wx:if="{{item.QUEUE_STATUS === 1 || item.QUEUE_STATUS === 2}}" class="ghost-btn" bindtap="bindSubscribeTap">{{item.QUEUE_SUBSCRIBE ? '已订阅叫号通知' : '订阅叫号通知'}}</button>
+	</view>
+
+	<!-- 无进行中任务：最近一条历史记录（只读） -->
+	<view wx:elif="{{lastDone}}" class="empty-card">
+		<view class="empty-title">{{lastDone.statusDesc}}</view>
+		<view class="lastdone-plate">{{lastDone.QUEUE_PLATE}}</view>
+		<view class="empty-desc">{{lastDone.doneTimeText || lastDone.cancelTimeText || lastDone.addTimeText}}</view>
+		<view class="empty-desc">合计费用：¥{{lastDone.feeTotalText}}</view>
 	</view>
 
 	<view wx:else class="empty-card">
-		<view class="empty-title">暂无预约</view>
-		<view class="empty-desc">请先提交装卸预约，再查看排队信息。</view>
+		<view class="empty-title">暂无任务</view>
+		<view class="empty-desc">请联系管理员创建任务，再用车牌号认领。</view>
 	</view>
 
 	<view class="footer-actions">
-		<view bindtap="bindHomeTap">去预约</view>
+		<view bindtap="bindHomeTap">去认领任务</view>
 		<view bindtap="bindRefreshTap">刷新</view>
 	</view>
 </view>

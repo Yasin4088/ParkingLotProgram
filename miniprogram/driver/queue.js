@@ -7,11 +7,9 @@ const app = getApp();
 Page({
 	data: {
 		item: null,
+		lastDone: null,
 		loading: false,
-		finishing: false,
-		uploadingFinishProof: false,
-		finishProof: '',
-		finishProofLocal: '',
+		paying: false,
 		statusBar: 0,
 		customBar: 0,
 		navBarHeight: 0,
@@ -70,14 +68,11 @@ Page({
 	},
 
 	loadCurrent: async function () {
-		let item = await cloudHelper.callCloudData('queue/my_current', {}, { title: '加载中' });
-		let data = { item };
-		if (!item || item.QUEUE_STATUS !== 3) {
-			data.finishProof = '';
-			data.finishProofLocal = '';
-			data.uploadingFinishProof = false;
-		}
-		this.setData(data);
+		let data = await cloudHelper.callCloudData('queue/my_current', {}, { title: '加载中' });
+		this.setData({
+			item: (data && data.item) || null,
+			lastDone: (data && data.lastDone) || null,
+		});
 	},
 
 	bindCheckinTap: function () {
@@ -92,7 +87,12 @@ Page({
 						lat: res.latitude,
 						lng: res.longitude,
 					}, { title: '签到中' });
-					this.setData({ item: result.data });
+					if (result && result.data) {
+						this.setData({
+							item: result.data.item || null,
+							lastDone: result.data.lastDone || null,
+						});
+					}
 					wx.showToast({ title: '签到成功', icon: 'success' });
 				} catch (e) {
 					console.log(e);
@@ -144,64 +144,9 @@ Page({
 		});
 	},
 
-	bindChooseFinishProof: function () {
-		if (!this.data.item || this.data.item.QUEUE_STATUS !== 3 || this.data.finishing || this.data.uploadingFinishProof) return;
-
-		wx.chooseMedia({
-			count: 1,
-			mediaType: ['image'],
-			sourceType: ['camera', 'album'],
-			success: async res => {
-				let filePath = res.tempFiles && res.tempFiles[0] ? res.tempFiles[0].tempFilePath : '';
-				if (!filePath) return;
-				this.setData({ uploadingFinishProof: true });
-				try {
-					let cloudId = await cloudHelper.transTempPicOne(filePath, 'queue/finish-proof/', this.data.item._id, false);
-					if (!cloudId) return;
-					this.setData({
-						finishProof: cloudId,
-						finishProofLocal: filePath,
-					});
-					wx.showToast({ title: '凭证已上传', icon: 'success' });
-				} catch (e) {
-					console.log(e);
-					wx.showToast({ title: '上传失败，请重试', icon: 'none' });
-				} finally {
-					this.setData({ uploadingFinishProof: false });
-				}
-			}
-		});
-	},
-
-	bindFinishTap: function () {
-		if (!this.data.item || this.data.finishing) return;
-		if (this.data.uploadingFinishProof) return wx.showToast({ title: '凭证上传中', icon: 'none' });
-		if (!this.data.finishProof) return wx.showToast({ title: '请先上传完成凭证', icon: 'none' });
-
-		wx.showModal({
-			title: '确认完成作业',
-			content: '确认完成后，该排队记录将结束，并提交完成作业凭证。',
-			success: async res => {
-				if (!res.confirm) return;
-				this.setData({ finishing: true });
-				try {
-					await cloudHelper.callCloudSumbit('queue/finish', {
-						id: this.data.item._id,
-						finishProof: this.data.finishProof,
-					}, { title: '提交中' });
-					wx.showToast({ title: '作业已完成', icon: 'success' });
-					this.setData({
-						item: null,
-						finishProof: '',
-						finishProofLocal: '',
-					});
-				} catch (e) {
-					console.log(e);
-				} finally {
-					this.setData({ finishing: false });
-				}
-			}
-		});
+	bindPayTap: function () {
+		if (this.data.paying) return;
+		wx.showToast({ title: '支付功能即将开通，请联系管理员', icon: 'none' });
 	},
 
 	bindHomeTap: function () {

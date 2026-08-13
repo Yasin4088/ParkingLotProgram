@@ -2,68 +2,130 @@
 	<view class="header">
 		<view>
 			<view class="title">管理员</view>
-			<view class="desc">查看排队列表，叫号并指派叉车司机</view>
+			<view class="desc">建任务 · 叫号 · 派单 · 现场费用 · 结算</view>
 		</view>
 		<view class="header-actions">
+			<view class="create-task" bindtap="bindOpenCreateTap">新建任务</view>
 			<view class="driver-mgr" bindtap="bindAdminHomeTap">后台管理</view>
 		</view>
 	</view>
 
-	<view class="summary">当前队列 {{list.length}} 辆</view>
+	<!-- 状态统计 + 筛选 -->
+	<view class="chip-bar">
+		<view class="chip {{filterStatus === '' ? 'active' : ''}}" data-key="" bindtap="bindFilterTap">全部 {{total}}</view>
+		<view wx:for="{{stats}}" wx:key="key" class="chip {{filterStatus === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="bindFilterTap">{{item.label}} {{item.count}}</view>
+	</view>
 
-	<view wx:if="{{list.length}}">
-		<view wx:for="{{list}}" wx:key="_id" data-id="{{item._id}}" bindtap="bindItemTap" class="queue-card {{item.QUEUE_STATUS === 2 ? 'called' : ''}} {{item.QUEUE_STATUS === 3 ? 'confirmed' : ''}} {{item.QUEUE_STATUS === 0 ? 'booked' : ''}}">
+	<view class="summary">{{filterStatus === '' ? '当前看板 ' + total + ' 单' : '已筛选 ' + displayList.length + ' / ' + total + ' 单'}}</view>
+
+	<view wx:if="{{displayList.length}}">
+		<view wx:for="{{displayList}}" wx:key="_id" data-id="{{item._id}}" bindtap="bindItemTap" class="queue-card {{item.statusClass}}">
 			<view class="top">
-				<view class="no">{{item.QUEUE_NO || '未签到'}}</view>
-				<view class="status {{item.QUEUE_STATUS === 2 ? 'sts-called' : ''}} {{item.QUEUE_STATUS === 3 ? 'sts-confirmed' : ''}}">{{item.statusDesc}}</view>
+				<view class="no">{{item.QUEUE_NO || '待认领'}}</view>
+				<view class="status {{item.statusClass}}">{{item.statusDesc}}</view>
 			</view>
 			<view class="plate">{{item.QUEUE_PLATE}}</view>
 			<view class="meta">{{item.QUEUE_ACTION_NAME}} · {{item.QUEUE_PHONE}}</view>
 			<view wx:if="{{item.QUEUE_CARGO_NAME}}" class="meta">货物：{{item.QUEUE_CARGO_NAME}}</view>
+			<view wx:if="{{item.QUEUE_REMARK}}" class="remark-clamp">备注：{{item.QUEUE_REMARK}}</view>
 			<view wx:if="{{item.checkinTimeText}}" class="meta">签到：{{item.checkinTimeText}}</view>
-			<view wx:else class="meta">预约：{{item.addTimeText || '--'}}</view>
-
-			<!-- 多叉车司机标签 -->
-			<view wx:if="{{item.forkliftTotalCount}}" class="forklift-tags">
-				<view class="fl-tags-header">
-					<text>叉车 ({{item.forkliftAcceptedCount}}/{{item.forkliftTotalCount}} 已接)</text>
-					<text wx:if="{{item.QUEUE_STATUS === 2}}" class="fl-view-detail" data-id="{{item._id}}" catchtap="bindViewAssignments">详情</text>
-				</view>
-				<view class="fl-tags-row">
-					<view wx:for="{{item.forkliftAssignments}}" wx:key="id" wx:for-item="fl" class="fl-tag {{fl.status === 1 ? 'accepted' : fl.status === 2 ? 'rejected' : fl.status === 9 ? 'timeout' : 'pending'}}">
-						{{fl.name}}
-					</view>
-					<view wx:if="{{!item.forkliftAssignments || !item.forkliftAssignments.length}}">
-						<view wx:if="{{item.QUEUE_FORKLIFT_NAME}}" class="fl-tag accepted">{{item.QUEUE_FORKLIFT_NAME}}</view>
-					</view>
-				</view>
-			</view>
-
-			<!-- 叫号时间 -->
+			<view wx:else class="meta">创建：{{item.addTimeText || '--'}}</view>
 			<view wx:if="{{item.callTimeText}}" class="meta">叫号：{{item.callTimeText}}</view>
+			<view wx:if="{{item.elapsedText}}" class="elapsed">用时 {{item.elapsedText}}</view>
 
-			<!-- 排队中 → 叫号按钮 -->
-			<button wx:if="{{item.QUEUE_STATUS === 1}}" class="call-btn" data-id="{{item._id}}" catchtap="bindCallTap">指定叫号</button>
-
-			<!-- 已叫号 → 进度提示 -->
-			<view wx:if="{{item.QUEUE_STATUS === 2}}" class="wait-confirm">
-				司机{{item.driverConfirmed ? '已确认' : '未确认'}} · 叉车{{item.forkliftAcceptedCount}}/{{item.forkliftTotalCount}}已接
+			<!-- 叉车司机 -->
+			<view wx:if="{{item.forkliftName}}" class="meta">
+				叉车：{{item.forkliftName}}<text wx:if="{{item.grabTypeDesc}}">（{{item.grabTypeDesc}}）</text>
 			</view>
 
-			<!-- 已确认 → 完成按钮 -->
-			<button wx:if="{{item.QUEUE_STATUS === 3}}" class="finish-btn" data-id="{{item._id}}" catchtap="bindFinishTap">完成装卸</button>
+			<!-- 费用合计 -->
+			<view wx:if="{{item.fees.length}}" class="meta">费用：¥{{item.feeTotalText}}</view>
+
+			<!-- 待认领 -->
+			<view wx:if="{{item.QUEUE_STATUS === 0}}" class="wait-confirm gray">等待司机按车牌认领</view>
+
+			<!-- 已预约 -->
+			<view wx:if="{{item.QUEUE_STATUS === 1}}" class="wait-confirm gray">等待司机到场签到</view>
+
+			<!-- 排队中 → 叫号 -->
+			<button wx:if="{{item.QUEUE_STATUS === 2}}" class="call-btn" data-id="{{item._id}}" catchtap="bindCallTap">叫号</button>
+
+			<!-- 已叫号 → 叉车未接单：派单/收回 -->
+			<view wx:if="{{item.QUEUE_STATUS === 3 && !item.forkliftName}}" class="card-actions">
+				<view class="card-btn orange" data-id="{{item._id}}" catchtap="bindAssignTap">派单</view>
+				<view class="card-btn ghost" data-id="{{item._id}}" catchtap="bindRecallTap">收回叫号</view>
+			</view>
+			<view wx:if="{{item.QUEUE_STATUS === 3 && item.forkliftName}}" class="wait-confirm">
+				司机{{item.driverConfirmed ? '已确认' : '未确认'}} · 叉车已接单
+			</view>
+
+			<!-- 执行中 → 完成兜底 -->
+			<button wx:if="{{item.QUEUE_STATUS === 4}}" class="finish-btn" data-id="{{item._id}}" catchtap="bindFinishTap">完成装卸</button>
+
+			<!-- 待结算 -->
+			<view wx:if="{{item.QUEUE_STATUS === 5}}" class="wait-confirm blue">作业完成，点击补充费用并结算</view>
+
+			<!-- 待支付 -->
+			<view wx:if="{{item.QUEUE_STATUS === 6}}" class="wait-confirm red">待支付 ¥{{item.feeTotalText}}</view>
+			<view wx:if="{{item.QUEUE_STATUS === 6}}" class="card-actions">
+				<view class="card-btn ghost" data-id="{{item._id}}" catchtap="bindCardFeeTap">修改费用</view>
+			</view>
 		</view>
 	</view>
 
-	<view wx:else class="empty">暂无预约或排队车辆</view>
+	<view wx:else class="empty">{{filterStatus === '' ? '暂无任务，点击右上角「新建任务」创建' : '该状态下暂无任务'}}</view>
 
 	<view class="refresh" bindtap="bindRefreshTap">刷新列表</view>
 
-	<!-- 叫号弹窗（多选） -->
+	<!-- 新建任务弹窗 -->
+	<view wx:if="{{showCreate}}" class="call-mask" bindtap="bindCloseCreateTap">
+		<view class="call-panel" catchtap="bindNoop">
+			<view class="call-head">
+				<view class="call-title">新建任务</view>
+				<view class="call-close" bindtap="bindCloseCreateTap">取消</view>
+			</view>
+
+			<view class="form-group">
+				<view class="form-label">车牌号</view>
+				<input class="edit-input" value="{{createForm.plate}}" bindinput="bindCreatePlateInput" maxlength="20" placeholder="司机需输入一致车牌认领" />
+			</view>
+			<view class="form-group">
+				<view class="form-label">业务类型</view>
+				<picker mode="selector" range="{{actions}}" range-key="name" value="{{createActionIndex}}" bindchange="bindCreateActionChange">
+					<view class="edit-input">{{actions[createActionIndex].name}}</view>
+				</picker>
+			</view>
+			<view class="form-group">
+				<view class="form-label">货物名称</view>
+				<input class="edit-input" value="{{createForm.cargoName}}" bindinput="bindCreateCargoNameInput" maxlength="50" placeholder="选填" />
+			</view>
+			<view class="form-group">
+				<view class="form-label">司机手机号</view>
+				<input class="edit-input" value="{{createForm.phone}}" bindinput="bindCreatePhoneInput" type="number" maxlength="11" placeholder="用于现场联系司机" />
+			</view>
+			<view class="form-group">
+				<view class="form-label">备注（粘贴客户信息）</view>
+				<textarea class="edit-input remark-input" value="{{createForm.remark}}" bindinput="bindCreateRemarkInput" maxlength="500" placeholder="客户发来的文本信息可直接粘贴到此处，如货品清单、特殊要求" />
+			</view>
+
+			<view class="form-label">预估费用（可留空，结算前均可修改）</view>
+			<view class="fee-row" wx:for="{{createFees}}" wx:key="index">
+				<input wx:if="{{!item.fixed}}" class="fee-input name" value="{{item.name}}" data-index="{{index}}" bindinput="bindCreateFeeNameInput" maxlength="20" placeholder="费用名称" />
+				<view wx:else class="fee-label-fixed">{{item.name}}</view>
+				<input class="fee-input amount" value="{{item.amountYuan}}" data-index="{{index}}" bindinput="bindCreateFeeAmountInput" type="digit" placeholder="金额(元)" />
+				<view wx:if="{{!item.fixed}}" class="fee-remove" data-index="{{index}}" bindtap="bindCreateFeeRemoveTap">✕</view>
+			</view>
+			<view class="fee-add" bindtap="bindCreateFeeAddTap">+ 添加自定义费用</view>
+
+			<button class="call-confirm-btn" loading="{{createLoading}}" bindtap="bindSubmitCreateTap">创建任务</button>
+		</view>
+	</view>
+
+	<!-- 叫号确认弹窗 -->
 	<view wx:if="{{showCallModal}}" class="call-mask" bindtap="bindCloseCallModal">
 		<view class="call-panel" catchtap="bindNoop">
 			<view class="call-head">
-				<view class="call-title">指定叫号确认</view>
+				<view class="call-title">叫号确认</view>
 				<view class="call-close" bindtap="bindCloseCallModal">取消</view>
 			</view>
 
@@ -73,78 +135,60 @@
 					<text class="call-value">{{callTarget.QUEUE_PLATE}}</text>
 				</view>
 				<view class="call-row">
-					<text class="call-label">业务类型</text>
-					<text class="call-value">{{callTarget.QUEUE_ACTION_NAME}}</text>
-				</view>
-				<view wx:if="{{callTarget.QUEUE_CARGO_NAME}}" class="call-row">
-					<text class="call-label">货物名称</text>
-					<text class="call-value">{{callTarget.QUEUE_CARGO_NAME}}</text>
-				</view>
-				<view class="call-row">
 					<text class="call-label">排队号</text>
 					<text class="call-value">{{callTarget.QUEUE_NO}}</text>
 				</view>
-			</view>
-
-			<view class="call-forklift">
-				<view class="call-label">指派叉车司机（可多选，已选 {{selectedForkliftIds.length}} 人）</view>
-				<scroll-view scroll-y class="forklift-check-list">
-					<view wx:for="{{forkliftList}}" wx:key="_id" class="forklift-check-row" data-index="{{index}}" bindtap="bindToggleForklift">
-						<view class="check-box {{item.checked ? 'checked' : ''}}">
-							<text wx:if="{{item.checked}}">✓</text>
-						</view>
-						<text class="check-name">{{item.USER_NAME}}</text>
-					</view>
-				</scroll-view>
-			</view>
-
-			<button class="call-confirm-btn" loading="{{callLoading}}" bindtap="bindConfirmCall">确认指定叫号</button>
-		</view>
-	</view>
-
-	<!-- 接单状态弹窗 -->
-	<view wx:if="{{showAssignModal}}" class="call-mask" bindtap="bindCloseAssignModal">
-		<view class="call-panel" catchtap="bindNoop">
-			<view class="call-head">
-				<view class="call-title">叉车司机响应状态</view>
-				<view class="call-close" bindtap="bindCloseAssignModal">关闭</view>
-			</view>
-
-			<view wx:if="{{assignmentTarget.forkliftAssignments && assignmentTarget.forkliftAssignments.length}}" class="assign-list">
-				<view wx:for="{{assignmentTarget.forkliftAssignments}}" wx:key="id" class="assign-row">
-					<view class="assign-info">
-						<text class="assign-name">{{item.name}}</text>
-						<text class="assign-status {{item.status === 1 ? 'ok' : item.status === 0 ? 'wait' : 'fail'}}">
-							{{item.status === 0 ? '待响应' : item.status === 1 ? '已接受' : item.status === 2 ? '已拒绝' : item.status === 9 ? '超时' : ''}}
-						</text>
-					</view>
-					<view wx:if="{{item.status === 2 || item.status === 9}}" class="reassign-btn" data-forkliftid="{{item.id}}" catchtap="bindReassignTap">重新分配</view>
+				<view class="call-row">
+					<text class="call-label">业务类型</text>
+					<text class="call-value">{{callTarget.QUEUE_ACTION_NAME}}</text>
 				</view>
 			</view>
-			<view wx:else class="assign-empty">暂无叉车分配信息</view>
 
-			<!-- 司机确认状态 -->
-			<view class="assign-driver-status">
-				<text>司机确认：</text>
-				<text class="{{assignmentTarget.driverConfirmed ? 'ok' : 'wait'}}">{{assignmentTarget.driverConfirmed ? '已确认' : '未确认'}}</text>
-			</view>
+			<view class="call-tip">叫号后任务进入叉车抢单池，叉车司机自行抢单，一单一车；无人抢单时可手动派单。</view>
+
+			<button class="call-confirm-btn" loading="{{callLoading}}" bindtap="bindConfirmCall">确认叫号</button>
 		</view>
 	</view>
 
-	<!-- 重新分派弹窗 -->
-	<view wx:if="{{showReassignModal}}" class="call-mask" bindtap="bindCloseReassignModal">
+	<!-- 手动派单弹窗 -->
+	<view wx:if="{{showAssignModal}}" class="call-mask" bindtap="bindCloseAssignModal">
 		<view class="call-panel small" catchtap="bindNoop">
 			<view class="call-head">
-				<view class="call-title">重新分派叉车司机</view>
-				<view class="call-close" bindtap="bindCloseReassignModal">取消</view>
+				<view class="call-title">手动派单</view>
+				<view class="call-close" bindtap="bindCloseAssignModal">取消</view>
 			</view>
+
 			<view class="call-forklift">
-				<view class="call-label">选择新叉车司机</view>
-				<picker mode="selector" range="{{reassignForkliftList}}" range-key="USER_NAME" value="{{reassignIndex}}" bindchange="bindReassignChange">
-					<view class="forklift-picker">{{reassignForkliftList[reassignIndex].USER_NAME}}</view>
+				<view class="call-label">为 {{assignTarget.QUEUE_PLATE}} 指定叉车司机</view>
+				<picker mode="selector" range="{{assignForkliftList}}" range-key="USER_NAME" value="{{assignIndex}}" bindchange="bindAssignChange">
+					<view class="forklift-picker">{{assignForkliftList[assignIndex].USER_NAME}}</view>
 				</picker>
 			</view>
-			<button class="call-confirm-btn" loading="{{reassignLoading}}" bindtap="bindConfirmReassign">确认调整</button>
+
+			<button class="call-confirm-btn" loading="{{assignLoading}}" bindtap="bindConfirmAssign">确认派单</button>
+		</view>
+	</view>
+
+	<!-- 费用编辑弹窗（支付前可改） -->
+	<view wx:if="{{showFeeModal}}" class="call-mask" bindtap="bindCloseFeeTap">
+		<view class="call-panel" catchtap="bindNoop">
+			<view class="call-head">
+				<view class="call-title">修改费用</view>
+				<view class="call-close" bindtap="bindCloseFeeTap">取消</view>
+			</view>
+
+			<view class="call-tip">司机支付前可随时修改费用；金额留空或为 0 的项不计入。</view>
+
+			<view class="form-label">费用明细</view>
+			<view class="fee-row" wx:for="{{feeRows}}" wx:key="index">
+				<input wx:if="{{!item.fixed}}" class="fee-input name" value="{{item.name}}" data-index="{{index}}" bindinput="bindFeeNameInput" maxlength="20" placeholder="费用名称" />
+				<view wx:else class="fee-label-fixed">{{item.name}}</view>
+				<input class="fee-input amount" value="{{item.amountYuan}}" data-index="{{index}}" bindinput="bindFeeAmountInput" type="digit" placeholder="金额(元)" />
+				<view wx:if="{{!item.fixed}}" class="fee-remove" data-index="{{index}}" bindtap="bindFeeRemoveTap">✕</view>
+			</view>
+			<view class="fee-add" bindtap="bindFeeAddTap">+ 添加自定义费用</view>
+
+			<button class="call-confirm-btn" loading="{{feeLoading}}" bindtap="bindConfirmFeeTap">保存费用</button>
 		</view>
 	</view>
 
@@ -153,8 +197,8 @@
 		<view class="detail-panel" catchtap="bindNoop">
 			<view class="detail-head">
 				<view>
-					<view class="detail-title">{{editMode ? '编辑预约' : '预约详情'}}</view>
-					<view class="detail-sub">{{selectedItem.QUEUE_NO || '未签到'}} · {{selectedItem.statusDesc}}</view>
+					<view class="detail-title">{{editMode ? '编辑信息' : '任务详情'}}</view>
+					<view class="detail-sub">{{selectedItem.QUEUE_NO || '待认领'}} · {{selectedItem.statusDesc}}</view>
 				</view>
 				<view class="detail-close" bindtap="bindCloseDetailTap">关闭</view>
 			</view>
@@ -177,66 +221,136 @@
 						<view class="detail-label">货物名称</view>
 						<view class="detail-value">{{selectedItem.QUEUE_CARGO_NAME || '--'}}</view>
 					</view>
-					<view class="detail-row">
+					<view wx:if="{{selectedItem.QUEUE_REMARK}}" class="detail-row">
+						<view class="detail-label">备注</view>
+						<view class="detail-value remark-text">{{selectedItem.QUEUE_REMARK}}</view>
+					</view>
+					<view wx:if="{{selectedItem.QUEUE_PROOF}}" class="detail-row">
+						<view class="detail-label">认领单证</view>
+						<view class="detail-link" bindtap="bindPreviewProofTap">点击查看</view>
+					</view>
+					<view wx:if="{{selectedItem.forkliftName}}" class="detail-row">
 						<view class="detail-label">叉车司机</view>
-						<view class="detail-value">{{selectedItem.forkliftSummary || '--'}}</view>
+						<view class="detail-value">{{selectedItem.forkliftName}}<text wx:if="{{selectedItem.grabTypeDesc}}">（{{selectedItem.grabTypeDesc}}）</text></view>
 					</view>
-					<view class="detail-row">
-						<view class="detail-label">预约时间</view>
-						<view class="detail-value">{{selectedItem.addTimeText || '--'}}</view>
+					<view wx:if="{{selectedItem.QUEUE_STATUS === 3}}" class="detail-row">
+						<view class="detail-label">司机确认</view>
+						<view class="detail-value">{{selectedItem.driverConfirmed ? '已确认' : '未确认'}}</view>
 					</view>
-					<view class="detail-row">
+
+					<view wx:if="{{selectedItem.addTimeText}}" class="detail-row">
+						<view class="detail-label">创建时间</view>
+						<view class="detail-value">{{selectedItem.addTimeText}}</view>
+					</view>
+					<view wx:if="{{selectedItem.checkinTimeText}}" class="detail-row">
 						<view class="detail-label">签到时间</view>
-						<view class="detail-value">{{selectedItem.checkinTimeText || '--'}}</view>
+						<view class="detail-value">{{selectedItem.checkinTimeText}}</view>
 					</view>
-					<view class="detail-row">
+					<view wx:if="{{selectedItem.callTimeText}}" class="detail-row">
 						<view class="detail-label">叫号时间</view>
-						<view class="detail-value">{{selectedItem.callTimeText || '--'}}</view>
+						<view class="detail-value">{{selectedItem.callTimeText}}</view>
 					</view>
-					<view class="detail-row">
+					<view wx:if="{{selectedItem.confirmTimeText}}" class="detail-row">
 						<view class="detail-label">确认时间</view>
-						<view class="detail-value">{{selectedItem.confirmTimeText || '--'}}</view>
+						<view class="detail-value">{{selectedItem.confirmTimeText}}</view>
 					</view>
-					<view class="detail-row">
+					<view wx:if="{{selectedItem.finishTimeText}}" class="detail-row">
 						<view class="detail-label">完成时间</view>
-						<view class="detail-value">{{selectedItem.finishTimeText || '--'}}</view>
+						<view class="detail-value">{{selectedItem.finishTimeText}}</view>
 					</view>
-					<view class="detail-row">
-						<view class="detail-label">装卸凭证</view>
-						<view wx:if="{{selectedItem.QUEUE_PROOF}}" class="detail-link" bindtap="bindPreviewProofTap">点击查看</view>
-						<view wx:else class="detail-value">--</view>
+					<view wx:if="{{selectedItem.settleTimeText}}" class="detail-row">
+						<view class="detail-label">结算时间</view>
+						<view class="detail-value">{{selectedItem.settleTimeText}}</view>
 					</view>
-					<view class="detail-row">
-						<view class="detail-label">完成凭证</view>
-						<view wx:if="{{selectedItem.QUEUE_FINISH_PROOF}}" class="detail-link" bindtap="bindPreviewFinishProofTap">点击查看</view>
-						<view wx:else class="detail-value">--</view>
+					<view wx:if="{{selectedItem.payTimeText}}" class="detail-row">
+						<view class="detail-label">支付时间</view>
+						<view class="detail-value">{{selectedItem.payTimeText}}</view>
+					</view>
+
+					<view wx:if="{{selectedItem.QUEUE_FINISH_PROOF}}" class="detail-row">
+						<view class="detail-label">现场照片</view>
+						<view class="detail-link" bindtap="bindPreviewFinishProofTap">点击查看</view>
+					</view>
+					<view wx:if="{{selectedItem.QUEUE_FINISH_BILL_PROOF}}" class="detail-row">
+						<view class="detail-label">单据照片</view>
+						<view class="detail-link" bindtap="bindPreviewBillProofTap">点击查看</view>
 					</view>
 				</view>
 
-				<view class="detail-actions">
-					<view class="detail-btn primary" bindtap="bindEditTap">编辑成员</view>
+				<!-- 费用明细 -->
+				<view class="fee-box">
+					<view class="fee-box-title">费用明细</view>
+					<view wx:if="{{selectedItem.fees.length}}" class="fee-list">
+						<view wx:for="{{selectedItem.fees}}" wx:key="index" class="fee-line">
+							<view class="fee-line-name">{{item.name}}<text class="fee-line-type">{{item.typeDesc}}</text></view>
+							<view class="fee-line-amount">¥{{item.amountText}}</view>
+						</view>
+					</view>
+					<view wx:else class="fee-empty">暂无费用</view>
+					<view class="fee-total">合计：¥{{selectedItem.feeTotalText}}</view>
+				</view>
+
+				<view wx:if="{{selectedItem.QUEUE_STATUS >= 5}}" class="pay-box">支付状态：{{selectedItem.payStatusDesc}}</view>
+
+				<!-- 操作区 -->
+				<view wx:if="{{selectedItem.QUEUE_STATUS <= 2 || selectedItem.QUEUE_STATUS === 3 || selectedItem.QUEUE_STATUS === 4 || selectedItem.QUEUE_STATUS === 5 || selectedItem.QUEUE_STATUS === 6}}" class="detail-actions two">
+					<block wx:if="{{selectedItem.QUEUE_STATUS <= 2}}">
+						<view class="detail-btn primary" bindtap="bindEditTap">编辑信息</view>
+					</block>
+					<block wx:if="{{selectedItem.QUEUE_STATUS === 3 && !selectedItem.forkliftName}}">
+						<view class="detail-btn warn" bindtap="bindDetailAssignTap">派单</view>
+						<view class="detail-btn ghost" bindtap="bindDetailRecallTap">收回叫号</view>
+					</block>
+					<block wx:if="{{selectedItem.QUEUE_STATUS === 4}}">
+						<view class="detail-btn primary" bindtap="bindOpenFeeTap">修改费用</view>
+						<view class="detail-btn ghost" bindtap="bindDetailFinishTap">完成作业</view>
+					</block>
+					<block wx:if="{{selectedItem.QUEUE_STATUS === 5}}">
+						<view class="detail-btn primary" bindtap="bindOpenFeeTap">修改费用</view>
+						<view class="detail-btn warn" bindtap="bindSettleTap">确认结算</view>
+					</block>
+					<block wx:if="{{selectedItem.QUEUE_STATUS === 6}}">
+						<view class="detail-btn primary" bindtap="bindOpenFeeTap">修改费用</view>
+					</block>
 				</view>
 			</view>
 
+			<!-- 编辑模式 -->
 			<view wx:else class="edit-form">
-				<view class="form-group">
-					<view class="form-label">车牌号</view>
-					<input class="edit-input" value="{{editForm.plate}}" bindinput="bindPlateInput" maxlength="20" placeholder="请输入车牌号" />
+				<view wx:if="{{selectedItem.QUEUE_STATUS === 3}}" class="edit-tip">已叫号，仅可修改预估费用</view>
+				<block wx:if="{{selectedItem.QUEUE_STATUS !== 3}}">
+					<view class="form-group">
+						<view class="form-label">车牌号</view>
+						<input class="edit-input" value="{{editForm.plate}}" bindinput="bindPlateInput" maxlength="20" placeholder="请输入车牌号" />
+					</view>
+					<view class="form-group">
+						<view class="form-label">手机号</view>
+						<input class="edit-input" value="{{editForm.phone}}" bindinput="bindPhoneInput" type="number" maxlength="11" placeholder="请输入手机号" />
+					</view>
+					<view class="form-group">
+						<view class="form-label">业务类型</view>
+						<picker mode="selector" range="{{actions}}" range-key="name" value="{{actionEditIndex}}" bindchange="bindEditActionChange">
+							<view class="edit-input">{{actions[actionEditIndex].name}}</view>
+						</picker>
+					</view>
+					<view class="form-group">
+						<view class="form-label">货物名称</view>
+						<input class="edit-input" value="{{editForm.cargoName}}" bindinput="bindCargoNameInput" maxlength="50" placeholder="请输入货物名称" />
+					</view>
+					<view class="form-group">
+						<view class="form-label">备注（粘贴客户信息）</view>
+						<textarea class="edit-input remark-input" value="{{editForm.remark}}" bindinput="bindRemarkInput" maxlength="500" placeholder="客户发来的文本信息可直接粘贴到此处" />
+					</view>
+				</block>
+
+				<view class="form-label">预估费用</view>
+				<view class="fee-row" wx:for="{{editFees}}" wx:key="index">
+					<input wx:if="{{!item.fixed}}" class="fee-input name" value="{{item.name}}" data-index="{{index}}" bindinput="bindEditFeeNameInput" maxlength="20" placeholder="费用名称" />
+					<view wx:else class="fee-label-fixed">{{item.name}}</view>
+					<input class="fee-input amount" value="{{item.amountYuan}}" data-index="{{index}}" bindinput="bindEditFeeAmountInput" type="digit" placeholder="金额(元)" />
+					<view wx:if="{{!item.fixed}}" class="fee-remove" data-index="{{index}}" bindtap="bindEditFeeRemoveTap">✕</view>
 				</view>
-				<view class="form-group">
-					<view class="form-label">手机号</view>
-					<input class="edit-input" value="{{editForm.phone}}" bindinput="bindPhoneInput" type="number" maxlength="11" placeholder="请输入手机号" />
-				</view>
-				<view class="form-group">
-					<view class="form-label">业务类型</view>
-					<picker mode="selector" range="{{actions}}" range-key="name" value="{{actionEditIndex}}" bindchange="bindEditActionChange">
-						<view class="edit-input">{{actions[actionEditIndex].name}}</view>
-					</picker>
-				</view>
-				<view class="form-group">
-					<view class="form-label">货物名称</view>
-					<input class="edit-input" value="{{editForm.cargoName}}" bindinput="bindCargoNameInput" maxlength="50" placeholder="请输入货物名称" />
-				</view>
+				<view class="fee-add" bindtap="bindEditFeeAddTap">+ 添加自定义费用</view>
 
 				<view class="detail-actions two">
 					<view class="detail-btn ghost" bindtap="bindCancelEditTap">取消编辑</view>
@@ -244,10 +358,11 @@
 				</view>
 			</view>
 
-			<view class="cancel-box">
+			<!-- 取消任务（未开始执行前） -->
+			<view wx:if="{{selectedItem.QUEUE_STATUS <= 3 && !editMode}}" class="cancel-box">
 				<view class="form-label">删除/取消原因</view>
-				<textarea class="reason-input" value="{{cancelReason}}" bindinput="bindCancelReasonInput" maxlength="80" placeholder="请输入原因，将用于通知司机重新预约" />
-				<view class="danger-btn" bindtap="bindCancelQueueTap">{{submitting ? '处理中...' : '删除并取消预约'}}</view>
+				<textarea class="reason-input" value="{{cancelReason}}" bindinput="bindCancelReasonInput" maxlength="80" placeholder="请输入原因" />
+				<view class="danger-btn" bindtap="bindCancelQueueTap">{{submitting ? '处理中...' : '删除并取消任务'}}</view>
 			</view>
 		</view>
 	</view>

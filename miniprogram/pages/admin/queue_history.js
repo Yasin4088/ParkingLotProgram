@@ -1,11 +1,16 @@
 const AdminBiz = require('../../biz/admin_biz.js');
 const cloudHelper = require('../../helper/cloud_helper.js');
+const fileHelper = require('../../helper/file_helper.js');
 
 Page({
 	data: {
+		months: [],
+		monthIndex: 0,
+		yearMonth: '',
 		list: [],
 		total: 0,
 		loading: false,
+		exporting: false,
 		showDetail: false,
 		selectedItem: null,
 	},
@@ -16,6 +21,12 @@ Page({
 			backgroundColor: '#3B82E6',
 			frontColor: '#ffffff',
 		});
+
+		let months = this._buildMonths();
+		this.setData({
+			months,
+			yearMonth: months[0].value,
+		});
 		this.loadList();
 	},
 
@@ -23,10 +34,26 @@ Page({
 		if (AdminBiz.getAdminToken()) this.loadList();
 	},
 
+	/** 生成最近 12 个月选项（默认当月） */
+	_buildMonths: function () {
+		let months = [];
+		let now = new Date();
+		for (let i = 0; i < 12; i++) {
+			let d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+			let y = d.getFullYear();
+			let m = String(d.getMonth() + 1).padStart(2, '0');
+			months.push({ label: y + '年' + m + '月', value: y + '-' + m });
+		}
+		return months;
+	},
+
 	loadList: async function () {
+		if (!this.data.yearMonth) return;
 		this.setData({ loading: true });
 		try {
-			let data = await cloudHelper.callCloudData('admin/queue_history_list', {}, { title: '加载中' });
+			let data = await cloudHelper.callCloudData('admin/queue_history_list', {
+				yearMonth: this.data.yearMonth,
+			}, { title: '加载中' });
 			this.setData({
 				list: data && data.list ? data.list : [],
 				total: data && data.total ? data.total : 0,
@@ -35,6 +62,41 @@ Page({
 			console.log(e);
 		} finally {
 			this.setData({ loading: false });
+		}
+	},
+
+	bindMonthChange: function (e) {
+		let index = Number(e.detail.value);
+		let month = this.data.months[index];
+		if (!month) return;
+		this.setData({
+			monthIndex: index,
+			yearMonth: month.value,
+		});
+		this.loadList();
+	},
+
+	bindExportTap: async function () {
+		if (this.data.exporting || !this.data.yearMonth) return;
+
+		this.setData({ exporting: true });
+		try {
+			await cloudHelper.callCloudSumbit('admin/report_month', {
+				yearMonth: this.data.yearMonth,
+			}, { title: '生成报表中' });
+
+			let urlData = await cloudHelper.callCloudData('admin/report_url', {
+				yearMonth: this.data.yearMonth,
+			}, { title: '' });
+			if (!urlData || !urlData.url) {
+				wx.showToast({ title: '报表生成失败，请重试', icon: 'none' });
+				return;
+			}
+			fileHelper.openDoc('装卸月报', urlData.url, '.xlsx');
+		} catch (e) {
+			console.log(e);
+		} finally {
+			this.setData({ exporting: false });
 		}
 	},
 

@@ -5,20 +5,19 @@ const app = getApp();
 Page({
 	data: {
 		isLoad: false,
-		task: null,
+		pool: [],
+		myTask: null,
+		grabbingId: '',
 		loading: false,
-		accepting: false,
-		rejecting: false,
-		uploadingFinishProof: false,
+		uploading: false,
 		finishProof: '',
 		finishProofLocal: '',
+		billProof: '',
+		billProofLocal: '',
 		statusBar: 0,
 		customBar: 0,
 		navBarHeight: 0,
-		countdownText: '',
 	},
-
-	_countdownTimer: null,
 
 	onLoad: function () {
 		this._initNavMetrics();
@@ -33,27 +32,20 @@ Page({
 		}
 	},
 
-	onUnload: function () {
-		this._stopCountdown();
-	},
-
-	onHide: function () {
-		this._stopCountdown();
-	},
-
 	_loadTask: async function () {
 		try {
-			let task = await cloudHelper.callCloudData('forklift/my_task', {}, { title: '' });
-			let data = { task };
-			if (!task) {
-				data.finishProof = '';
-				data.finishProofLocal = '';
-				data.uploadingFinishProof = false;
-				this._stopCountdown();
-			} else {
-				this._startCountdown(task);
+			let data = await cloudHelper.callCloudData('forklift/my_task', {}, { title: '' });
+			data = data || { pool: [], my: null };
+			let myTask = (data.my && data.my.length) ? data.my[0] : null;
+			let setData = { pool: data.pool || [], myTask };
+			if (!myTask) {
+				setData.finishProof = '';
+				setData.finishProofLocal = '';
+				setData.billProof = '';
+				setData.billProofLocal = '';
+				setData.uploading = false;
 			}
-			this.setData(data);
+			this.setData(setData);
 		} catch (e) {
 			console.log(e);
 		}
@@ -77,93 +69,48 @@ Page({
 		});
 	},
 
-	// ========== 接单 / 拒单 ==========
+	// ========== 抢单 ==========
 
-	bindAcceptTap: async function () {
-		if (!this.data.task || this.data.accepting) return;
-		this.setData({ accepting: true });
-		try {
-			await cloudHelper.callCloudSumbit('forklift/accept', {
-				id: this.data.task._id,
-			}, { title: '接受中' });
-			wx.showToast({ title: '已接受任务', icon: 'success' });
-			this._loadTask();
-		} catch (e) {
-			console.log(e);
-		} finally {
-			this.setData({ accepting: false });
-		}
-	},
+	bindGrabTap: function (e) {
+		if (this.data.grabbingId) return;
+		let id = e.currentTarget.dataset.id;
+		let that = this;
 
-	bindRejectTap: function () {
-		if (!this.data.task || this.data.rejecting) return;
 		wx.showModal({
-			title: '确认拒绝',
-			content: '拒绝后需管理员重新指派叉车司机，确定拒绝？',
-			confirmColor: '#e53e3e',
+			title: '确认抢单',
+			content: '一单一人，抢单成功后需完成该任务。确定抢单？',
 			success: async res => {
 				if (!res.confirm) return;
-				this.setData({ rejecting: true });
+				that.setData({ grabbingId: id });
 				try {
-					await cloudHelper.callCloudSumbit('forklift/reject', {
-						id: this.data.task._id,
-					}, { title: '' });
-					wx.showToast({ title: '已拒绝任务', icon: 'none' });
-					this._loadTask();
-				} catch (e) {
-					console.log(e);
+					await cloudHelper.callCloudSumbit('forklift/grab', {
+						id,
+					}, { title: '抢单中' });
+					wx.showToast({ title: '抢单成功', icon: 'success' });
+					that._loadTask();
+				} catch (err) {
+					console.log(err);
+					that._loadTask(); // 可能已被其他叉车抢走，刷新任务池
 				} finally {
-					this.setData({ rejecting: false });
+					that.setData({ grabbingId: '' });
 				}
 			}
 		});
 	},
 
-	// ========== 倒计时（PENDING 状态 5 分钟） ==========
-
-	_startCountdown: function (task) {
-		this._stopCountdown();
-		if (!task || task.status !== 2) return; // 非 CALLED
-		if (!task.myAssignment || task.myAssignment.status !== 0) return; // 非 PENDING
-
-		let assignTime = task.myAssignment.assignTime || 0;
-		if (!assignTime) {
-			this.setData({ countdownText: '等待响应' });
-			return;
-		}
-
-		let deadline = assignTime + 5 * 60; // 5 分钟
-
-		let tick = () => {
-			let now = Math.floor(Date.now() / 1000);
-			let remain = deadline - now;
-			if (remain <= 0) {
-				this.setData({ countdownText: '已超时，请联系管理员' });
-				this._stopCountdown();
-				this._loadTask();
-				return;
-			}
-			let m = Math.floor(remain / 60);
-			let s = remain % 60;
-			this.setData({ countdownText: '剩余 ' + m + ' 分 ' + s + ' 秒' });
-		};
-
-		tick();
-		this._countdownTimer = setInterval(tick, 1000);
-	},
-
-	_stopCountdown: function () {
-		if (this._countdownTimer) {
-			clearInterval(this._countdownTimer);
-			this._countdownTimer = null;
-		}
-		this.setData({ countdownText: '' });
-	},
-
-	// ========== 完成 ==========
+	// ========== 双凭证上传 ==========
 
 	bindChooseFinishProof: function () {
-		if (!this.data.task || this.data.loading || this.data.uploadingFinishProof) return;
+		this._chooseImage('finishProof');
+	},
+
+	bindChooseBillProof: function () {
+		this._chooseImage('billProof');
+	},
+
+	_chooseImage: function (field) {
+		if (!this.data.myTask || this.data.loading || this.data.uploading) return;
+		let dir = field === 'finishProof' ? 'queue/finish-proof/' : 'queue/finish-bill/';
 
 		wx.chooseMedia({
 			count: 1,
@@ -172,51 +119,52 @@ Page({
 			success: async res => {
 				let filePath = res.tempFiles && res.tempFiles[0] ? res.tempFiles[0].tempFilePath : '';
 				if (!filePath) return;
-				this.setData({ uploadingFinishProof: true });
+				this.setData({ uploading: true });
 				try {
-					let cloudId = await cloudHelper.transTempPicOne(filePath, 'queue/finish-proof/', this.data.task._id, false);
+					let cloudId = await cloudHelper.transTempPicOne(filePath, dir, this.data.myTask._id, false);
 					if (!cloudId) return;
-					this.setData({
-						finishProof: cloudId,
-						finishProofLocal: filePath,
-					});
-					wx.showToast({ title: '凭证已上传', icon: 'success' });
+					let data = {};
+					data[field] = cloudId;
+					data[field + 'Local'] = filePath;
+					this.setData(data);
+					wx.showToast({ title: '图片已上传', icon: 'success' });
 				} catch (e) {
 					console.log(e);
 					wx.showToast({ title: '上传失败，请重试', icon: 'none' });
 				} finally {
-					this.setData({ uploadingFinishProof: false });
+					this.setData({ uploading: false });
 				}
 			}
 		});
 	},
 
-	bindCompleteTap: async function () {
-		if (!this.data.task || this.data.loading) return;
-		if (this.data.uploadingFinishProof) return wx.showToast({ title: '凭证上传中', icon: 'none' });
-		if (!this.data.finishProof) return wx.showToast({ title: '请先上传完成凭证', icon: 'none' });
+	// ========== 完成作业 ==========
 
+	bindCompleteTap: function () {
+		if (!this.data.myTask || this.data.loading) return;
+		if (this.data.uploading) return wx.showToast({ title: '图片上传中', icon: 'none' });
+		if (!this.data.finishProof) return wx.showToast({ title: '请先上传现场照片', icon: 'none' });
+		if (!this.data.billProof) return wx.showToast({ title: '请先上传单据照片', icon: 'none' });
+
+		let that = this;
 		wx.showModal({
 			title: '确认完成',
-			content: '确定已完成装卸任务，并提交完成作业凭证？',
+			content: '提交现场照片与单据照片后，任务将提交管理员结算。确定完成？',
 			success: async res => {
 				if (!res.confirm) return;
-				this.setData({ loading: true });
+				that.setData({ loading: true });
 				try {
 					await cloudHelper.callCloudSumbit('forklift/complete', {
-						id: this.data.task._id,
-						finishProof: this.data.finishProof,
+						id: that.data.myTask._id,
+						finishProof: that.data.finishProof,
+						billProof: that.data.billProof,
 					}, { title: '提交中' });
 					wx.showToast({ title: '任务已完成', icon: 'success' });
-					this.setData({
-						task: null,
-						finishProof: '',
-						finishProofLocal: '',
-					});
+					that._loadTask();
 				} catch (e) {
 					console.log(e);
 				} finally {
-					this.setData({ loading: false });
+					that.setData({ loading: false });
 				}
 			}
 		});

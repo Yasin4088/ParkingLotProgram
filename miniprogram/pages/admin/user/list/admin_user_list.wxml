@@ -1,10 +1,6 @@
 <block wx:if="{{isAdmin}}">
 	<cmpt-comm-list type="admin-meet" search="{{search}}" _menus="{{sortMenus}}" _items="{{sortItems}}" route="admin/user_list" sortMenusDefaultIndex="0" topBottom="50" placeholder="搜索" bind:list="bindCommListCmpt" sortMenusDefaultIndex="0">
 
-		<view slot="searchEnd">
-			<button bindtap="url" data-url="../export/admin_user_export?condition={{dataList.condition}}" class="btn mid radius bg-admin text-white margin-right-s"><text class="icon-down margin-right-xxs"></text>导出用户资料</button>
-		</view>
-
 		<!-- List Begin -->
 		<view class="admin-comm-list">
 			<view wx:if="{{dataList && dataList.total }}" class="load text-grey">共有{{dataList.total}}条符合条件记录 </view>
@@ -14,7 +10,7 @@
 					<view class="left text-cut">{{item.USER_NAME}}
 					</view>
 					<view class="right">
-						 
+						<text class="status-badge {{item.USER_STATUS === 9 ? 'off' : (item.USER_STATUS === 0 ? 'pending' : 'on')}}">{{item.USER_STATUS === 9 ? '已禁用' : (item.USER_STATUS === 0 ? '待审核' : '正常')}}</text>
 					</view>
 				</view>
 
@@ -51,7 +47,9 @@
 
 					<view class="oprt">
 
-						<view bindtap="bindDelTap" data-id="{{item.USER_MINI_OPENID}}" class="btn  margin-right-s"><text class="icon-delete margin-right-xxs text-orange"></text>删除</view>
+						<view bindtap="bindStatusTap" data-id="{{item._id}}" data-status="{{item.USER_STATUS === 9 ? 1 : 9}}" class="btn margin-right-s">{{item.USER_STATUS === 9 ? '启用' : '禁用'}}</view>
+
+						<view bindtap="bindDelTap" data-id="{{item._id}}" class="btn  margin-right-s"><text class="icon-delete margin-right-xxs text-orange"></text>删除</view>
 
 					</view>
 				</view>

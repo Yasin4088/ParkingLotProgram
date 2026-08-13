@@ -11,6 +11,7 @@
 		"pages/admin/driver/edit",
 		"pages/admin/forklift/list",
 		"pages/admin/forklift/edit",
+		"pages/admin/user/list/admin_user_list",
 		"pages/admin/index/home/admin_home",
 		"pages/admin/mgr/admin/list",
 		"pages/admin/mgr/admin/edit",

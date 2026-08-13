@@ -2,4 +2,25 @@
 
 page {
 	background-color: #f8f8f8;
-} 
+}
+
+.status-badge {
+	font-size: 22rpx;
+	padding: 4rpx 16rpx;
+	border-radius: 999rpx;
+}
+
+.status-badge.on {
+	color: #388e3c;
+	background: #e8f5e9;
+}
+
+.status-badge.pending {
+	color: #b26a00;
+	background: #fff3e0;
+}
+
+.status-badge.off {
+	color: #c62828;
+	background: #fbe9e7;
+}

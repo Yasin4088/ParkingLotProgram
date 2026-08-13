@@ -79,6 +79,11 @@
 	color: #f07818;
 }
 
+.status.topay {
+	background: #ffebee;
+	color: #c62828;
+}
+
 .queue-no {
 	font-size: 92rpx;
 	font-weight: bold;
@@ -137,6 +142,7 @@
 .primary-btn,
 .confirm-btn,
 .finish-btn,
+.pay-btn,
 .ghost-btn {
 	height: 84rpx;
 	line-height: 84rpx;
@@ -160,12 +166,44 @@
 	color: #fff;
 }
 
+.pay-btn {
+	background: #e53e3e;
+	color: #fff;
+}
+
 .ghost-btn {
 	background: #eef0ff;
 	color: #3B82E6;
 }
 
-.finish-proof {
+/* 叉车/状态提示框 */
+.forklift-info {
+	margin: 26rpx 0 20rpx;
+	padding: 24rpx;
+	border-radius: 18rpx;
+	background: #fff1e6;
+	text-align: left;
+}
+
+.forklift-info.confirmed {
+	background: #e3f2fd;
+}
+
+.fl-label {
+	font-size: 28rpx;
+	color: #102a43;
+	font-weight: 600;
+}
+
+.fl-tip {
+	margin-top: 8rpx;
+	font-size: 24rpx;
+	color: #7b8794;
+	line-height: 1.5;
+}
+
+/* 费用明细 */
+.fee-box {
 	margin: 26rpx 0 20rpx;
 	padding: 24rpx;
 	border-radius: 18rpx;
@@ -173,40 +211,75 @@
 	text-align: left;
 }
 
-.finish-title {
+.fee-box-title {
 	font-size: 28rpx;
 	color: #102a43;
 	font-weight: 600;
 }
 
-.finish-desc {
-	margin-top: 8rpx;
-	font-size: 24rpx;
+.fee-line {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 14rpx 0;
+	border-bottom: 1rpx solid #e8edf2;
+}
+
+.fee-line:last-child {
+	border-bottom: none;
+}
+
+.fee-line-name {
+	font-size: 27rpx;
+	color: #000;
+	display: flex;
+	align-items: center;
+	gap: 10rpx;
+}
+
+.fee-line-type {
+	font-size: 20rpx;
 	color: #7b8794;
-	line-height: 1.5;
+	background: #e8edf2;
+	padding: 2rpx 10rpx;
+	border-radius: 6rpx;
 }
 
-.upload {
-	width: 240rpx;
-	height: 170rpx;
-	margin-top: 18rpx;
-	border-radius: 16rpx;
-	background: #fff;
-	border: 2rpx dashed #cfd8d4;
-	overflow: hidden;
+.fee-line-amount {
+	font-size: 27rpx;
+	color: #000;
+	font-weight: 500;
 }
 
-.upload image {
-	width: 100%;
-	height: 100%;
-}
-
-.upload-empty {
-	height: 170rpx;
-	line-height: 170rpx;
-	text-align: center;
-	color: #789;
+.fee-empty {
 	font-size: 26rpx;
+	color: #999;
+	padding: 16rpx 0;
+}
+
+.fee-total {
+	margin-top: 14rpx;
+	text-align: right;
+	font-size: 30rpx;
+	font-weight: bold;
+	color: #e53e3e;
+}
+
+.pay-tip {
+	margin: 20rpx 0;
+	font-size: 26rpx;
+	color: #c62828;
+	background: #ffebee;
+	padding: 12rpx 20rpx;
+	border-radius: 12rpx;
+	text-align: center;
+}
+
+.lastdone-plate {
+	margin-top: 18rpx;
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #000;
 }
 
 .empty-title {

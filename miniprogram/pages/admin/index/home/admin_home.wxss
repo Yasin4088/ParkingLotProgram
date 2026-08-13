@@ -60,6 +60,19 @@
 	width: 16.66%;
 }
 
+/* 实时队列统计磁贴 */
+.stat-num {
+	font-size: 44rpx;
+	font-weight: bold;
+	color: #3B82E6;
+	line-height: 1.2;
+}
+
+.stat-label {
+	font-size: 24rpx;
+	color: #627d98;
+}
+
 .foot-bottom {
 	width: 100%;
 	display: flex;

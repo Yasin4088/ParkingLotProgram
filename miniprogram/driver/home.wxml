@@ -3,35 +3,23 @@
 		<view class="custom-nav-back" style="top: {{statusBar}}px; height: {{navBarHeight}}px;" bindtap="bindLogoutTap">
 			<view class="custom-nav-back-icon"></view>
 		</view>
-		<view class="custom-nav-title" style="height: {{navBarHeight}}px; line-height: {{navBarHeight}}px;">司机预约</view>
+		<view class="custom-nav-title" style="height: {{navBarHeight}}px; line-height: {{navBarHeight}}px;">认领任务</view>
 	</view>
 
 	<view class="header">
-		<view class="title">司机预约</view>
-		<view class="desc">选择装卸类型，填写信息后进入排队流程</view>
+		<view class="title">认领任务</view>
+		<view class="desc">管理员已预先创建任务，输入一致的车牌号即可认领，认领后到场签到排队</view>
 	</view>
 
 	<view class="card">
 		<view class="form-item">
-			<view class="label">业务类型</view>
-			<picker mode="selector" range="{{actions}}" range-key="name" value="{{actionIndex}}" bindchange="bindActionChange">
-				<view class="picker">{{actions.length ? actions[actionIndex].name : '请选择装货/卸货'}}</view>
-			</picker>
-		</view>
-
-		<view class="form-item">
 			<view class="label">车牌号</view>
-			<input value="{{plate}}" placeholder="例如：粤B12345" maxlength="20" bindinput="bindPlateInput" />
+			<input value="{{plate}}" placeholder="例如：粤B12345（需与任务车牌一致）" maxlength="20" bindinput="bindPlateInput" />
 		</view>
 
 		<view class="form-item">
 			<view class="label">手机号</view>
 			<input value="{{phone}}" placeholder="用于现场联系" type="number" maxlength="11" bindinput="bindPhoneInput" />
-		</view>
-
-		<view class="form-item">
-			<view class="label">货物名称</view>
-			<input value="{{cargoName}}" placeholder="请输入货物名称（选填）" maxlength="50" bindinput="bindCargoNameInput" />
 		</view>
 
 		<view class="form-item">
@@ -42,7 +30,7 @@
 			</view>
 		</view>
 
-		<button class="primary-btn" loading="{{submitting}}" bindtap="bindSubmitTap">提交预约</button>
+		<button class="primary-btn" loading="{{submitting}}" bindtap="bindSubmitTap">认领任务</button>
 	</view>
 
 	<view class="footer-actions">

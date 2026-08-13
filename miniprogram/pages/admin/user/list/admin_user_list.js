@@ -68,8 +68,8 @@ Page({
 					title: '删除中'
 				}
 				await cloudHelper.callCloudSumbit('admin/user_del', params, opts).then(res => {
-					
-					pageHelper.delListNode(id, this.data.dataList.list, 'USER_MINI_OPENID');
+
+					pageHelper.delListNode(id, this.data.dataList.list, '_id');
 					this.data.dataList.total--;
 					this.setData({
 						dataList: this.data.dataList
@@ -95,7 +95,7 @@ Page({
 		}
 		try {
 			await cloudHelper.callCloudSumbit('admin/user_status', params).then(res => {
-				pageHelper.modifyListNode(id, this.data.dataList.list, 'USER_STATUS', status, 'USER_MINI_OPENID');
+				pageHelper.modifyListNode(id, this.data.dataList.list, 'USER_STATUS', status, '_id');
 				this.setData({
 					dataList: this.data.dataList
 				});

@@ -5,11 +5,8 @@ const app = getApp();
 
 Page({
 	data: {
-		actions: [],
-		actionIndex: 0,
 		plate: '',
 		phone: '',
-		cargoName: '',
 		proof: '',
 		proofLocal: '',
 		submitting: false,
@@ -22,12 +19,13 @@ Page({
 		this._initNavMetrics();
 		this._checkLogin();
 		if (!await this._checkRegistration()) return;
-		this._loadOptions();
+		this._prefill();
 	},
 
 	onShow: async function () {
 		this._checkLogin();
 		if (!await this._checkRegistration()) return;
+		this._prefill();
 	},
 
 	_checkLogin: function () {
@@ -51,6 +49,24 @@ Page({
 		}
 	},
 
+	/** 预填注册时登记的车牌与手机号（可修改） */
+	_prefill: async function () {
+		try {
+			let driverInfo = await cloudHelper.callCloudData('driver/getInfo', {}, { title: '' });
+			if (!driverInfo) return;
+			let data = {};
+			if (!this.data.plate && driverInfo.USER_LICENSE_PLATE) {
+				data.plate = driverInfo.USER_LICENSE_PLATE.toUpperCase();
+			}
+			if (!this.data.phone && driverInfo.USER_MOBILE) {
+				data.phone = driverInfo.USER_MOBILE;
+			}
+			if (Object.keys(data).length) this.setData(data);
+		} catch (err) {
+			console.log(err);
+		}
+	},
+
 	_initNavMetrics: function () {
 		let statusBar = app.globalData.statusBar || 0;
 		let customBar = app.globalData.customBar || 0;
@@ -69,28 +85,12 @@ Page({
 		});
 	},
 
-	_loadOptions: async function () {
-		let data = await cloudHelper.callCloudData('queue/options', {}, { title: '加载中' });
-		if (!data) return;
-		this.setData({
-			actions: data.actions || [],
-		});
-	},
-
-	bindActionChange: function (e) {
-		this.setData({ actionIndex: Number(e.detail.value) });
-	},
-
 	bindPlateInput: function (e) {
 		this.setData({ plate: e.detail.value.toUpperCase() });
 	},
 
 	bindPhoneInput: function (e) {
 		this.setData({ phone: e.detail.value });
-	},
-
-	bindCargoNameInput: function (e) {
-		this.setData({ cargoName: e.detail.value });
 	},
 
 	bindChooseProof: function () {
@@ -112,22 +112,20 @@ Page({
 
 	bindSubmitTap: async function () {
 		if (this.data.submitting) return;
-		let action = this.data.actions[this.data.actionIndex];
 
-		if (!action) return wx.showToast({ title: '请选择装货或卸货', icon: 'none' });
-		if (!this.data.plate || this.data.plate.length < 3) return wx.showToast({ title: '请输入车牌号', icon: 'none' });
+		let plate = (this.data.plate || '').trim().toUpperCase();
+		if (!plate || plate.length < 3) return wx.showToast({ title: '请输入车牌号', icon: 'none' });
 		if (!/^1\d{10}$/.test(this.data.phone)) return wx.showToast({ title: '请输入正确手机号', icon: 'none' });
+
 		this.setData({ submitting: true });
 		try {
 			await cloudHelper.callCloudSumbit('queue/create', {
-				action: action.id,
-				plate: this.data.plate,
+				plate,
 				phone: this.data.phone,
 				proof: this.data.proof,
-				cargoName: this.data.cargoName.trim(),
-			}, { title: '预约中' });
+			}, { title: '认领中' });
 
-			wx.showToast({ title: '预约成功', icon: 'success' });
+			wx.showToast({ title: '认领成功', icon: 'success' });
 			setTimeout(() => {
 				wx.redirectTo({ url: '/driver/queue' });
 			}, 700);

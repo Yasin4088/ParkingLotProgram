@@ -7,7 +7,9 @@ Page({
 	/**
 	 * 页面的初始数据
 	 */
-	data: {},
+	data: {
+		stats: { total: 0, waiting: 0, executing: 0, topay: 0 },
+	},
 
 	/**
 	 * 生命周期函数--监听页面加载
@@ -15,67 +17,54 @@ Page({
 	onLoad: async function (options) {
 		if (!AdminBiz.isAdmin(this)) return;
 
-
-		this._loadDetail();
-	},
-
-	/**
-	 * 页面相关事件处理函数--监听用户下拉动作
-	 */
-	onPullDownRefresh: async function () {
-		await this._loadDetail();
-		wx.stopPullDownRefresh();
-	},
-
-	_loadDetail: async function () {
-
 		let admin = AdminBiz.getAdminToken();
 		this.setData({
 			isLoad: true,
 			admin
 		});
-
-		try {
-			let opts = {
-				title: 'bar'
-			}
-			let res = await cloudHelper.callCloudData('admin/home', {}, opts);
-			this.setData({
-
-				data: res
-			});
-
-		} catch (err) {
-			console.log(err);
-		}
-	},
-
-	/**
-	 * 生命周期函数--监听页面初次渲染完成
-	 */
-	onReady: function () {
-
 	},
 
 	/**
 	 * 生命周期函数--监听页面显示
 	 */
 	onShow: function () {
-
+		this._loadStats();
 	},
 
 	/**
-	 * 生命周期函数--监听页面隐藏
+	 * 页面相关事件处理函数--监听用户下拉动作
 	 */
-	onHide: function () {
-
+	onPullDownRefresh: async function () {
+		await this._loadStats();
+		wx.stopPullDownRefresh();
 	},
 
-	/**
-	 * 生命周期函数--监听页面卸载
-	 */
-	onUnload: function () {
+	/** 实时队列统计（由看板列表前端计数） */
+	_loadStats: async function () {
+		try {
+			let data = await cloudHelper.callCloudData('admin/queue_list', {}, { title: '' });
+			if (!data) return;
+			let stats = { total: 0, waiting: 0, executing: 0, topay: 0 };
+			(data.list || []).forEach(item => {
+				stats.total++;
+				if (item.QUEUE_STATUS === 2) stats.waiting++;
+				if (item.QUEUE_STATUS === 4) stats.executing++;
+				if (item.QUEUE_STATUS === 6) stats.topay++;
+			});
+			this.setData({ stats });
+		} catch (err) {
+			console.log(err);
+		}
+	},
 
+	/** 统计磁贴 → 回到叫号看板 */
+	bindStatsTap: function (e) {
+		let pages = getCurrentPages();
+		if (pages.length > 1) {
+			wx.navigateBack();
+		} else {
+			wx.navigateTo({ url: '/admin/queue' });
+		}
 	},
 
 	url: function (e) {

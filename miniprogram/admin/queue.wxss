@@ -38,6 +38,7 @@
 	flex-shrink: 0;
 }
 
+.create-task,
 .driver-mgr {
 	min-width: 148rpx;
 	height: 72rpx;
@@ -52,10 +53,47 @@
 	box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, .18), 0 6rpx 16rpx rgba(0, 0, 0, .08);
 }
 
+.create-task {
+	background: #fff;
+	color: #3B82E6;
+	font-weight: bold;
+}
+
 .summary {
 	font-size: 26rpx;
 	color: #7b8794;
 	margin-bottom: 18rpx;
+}
+
+/* 状态统计筛选条 */
+.chip-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 14rpx;
+	margin-bottom: 18rpx;
+}
+
+.chip {
+	font-size: 24rpx;
+	color: #627d98;
+	background: #fff;
+	padding: 10rpx 22rpx;
+	border-radius: 999rpx;
+	border: 1rpx solid #d9e2ec;
+}
+
+.chip.active {
+	color: #fff;
+	background: #3B82E6;
+	border-color: #3B82E6;
+	font-weight: bold;
+}
+
+/* 当前环节用时 */
+.elapsed {
+	font-size: 24rpx;
+	color: #9fb3c8;
+	margin-top: 8rpx;
 }
 
 .queue-card {
@@ -71,16 +109,33 @@
 	opacity: .82;
 }
 
-.queue-card.called {
+/* 状态配色（卡片左边条 + 徽标） */
+.queue-card.st-pending {
+	border-left-color: #7b8794;
+}
+
+.queue-card.st-booked {
+	border-left-color: #627d98;
+}
+
+.queue-card.st-waiting {
+	border-left-color: #3B82E6;
+}
+
+.queue-card.st-called {
 	border-left-color: #f07818;
 }
 
-.queue-card.confirmed {
+.queue-card.st-executing {
 	border-left-color: #2196F3;
 }
 
-.queue-card.booked {
-	border-left-color: #7b8794;
+.queue-card.st-settling {
+	border-left-color: #7c3aed;
+}
+
+.queue-card.st-topay {
+	border-left-color: #e53e3e;
 }
 
 .top {
@@ -103,29 +158,39 @@
 	border-radius: 999rpx;
 }
 
-.status.sts-called {
-	color: #f07818;
-	background: #fff1e6;
-}
-
-.status.sts-confirmed {
-	color: #1565C0;
-	background: #e3f2fd;
-}
-
-.called .status {
-	color: #f07818;
-	background: #fff1e6;
-}
-
-.confirmed .status {
-	color: #1565C0;
-	background: #e3f2fd;
-}
-
-.booked .status {
+.status.st-pending {
 	color: #627d98;
 	background: #f0f4f8;
+}
+
+.status.st-booked {
+	color: #486581;
+	background: #eef2f6;
+}
+
+.status.st-waiting {
+	color: #1565C0;
+	background: #e3f2fd;
+}
+
+.status.st-called {
+	color: #f07818;
+	background: #fff1e6;
+}
+
+.status.st-executing {
+	color: #1565C0;
+	background: #e3f2fd;
+}
+
+.status.st-settling {
+	color: #7c3aed;
+	background: #f3e8ff;
+}
+
+.status.st-topay {
+	color: #c62828;
+	background: #ffebee;
 }
 
 .plate {
@@ -141,214 +206,36 @@
 	line-height: 1.7;
 }
 
-/* 叉车司机标签 */
-.forklift-tag {
-	display: inline-block;
-	margin-top: 12rpx;
-	font-size: 24rpx;
-	color: #E67E22;
-	background: #fff3e0;
-	padding: 6rpx 16rpx;
-	border-radius: 8rpx;
-}
-
-/* ===== 多叉车标签组 ===== */
-.forklift-tags {
-	margin-top: 14rpx;
-	background: #f9fafb;
-	border-radius: 12rpx;
-	padding: 16rpx 18rpx;
-}
-
-.fl-tags-header {
+/* 卡片内操作按钮 */
+.card-actions {
+	margin-top: 20rpx;
 	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	font-size: 24rpx;
-	color: #627d98;
-	margin-bottom: 10rpx;
-}
-
-.fl-view-detail {
-	color: #3B82E6;
-	font-size: 24rpx;
-	padding: 4rpx 12rpx;
-}
-
-.fl-tags-row {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 10rpx;
-}
-
-.fl-tag {
-	font-size: 24rpx;
-	padding: 6rpx 16rpx;
-	border-radius: 8rpx;
-}
-
-.fl-tag.pending {
-	color: #627d98;
-	background: #f0f4f8;
-}
-
-.fl-tag.accepted {
-	color: #0e8c3a;
-	background: #e8f5e9;
-}
-
-.fl-tag.rejected {
-	color: #c62828;
-	background: #ffebee;
-}
-
-.fl-tag.timeout {
-	color: #e65100;
-	background: #fff3e0;
-}
-
-/* ===== 多选叉车列表 ===== */
-.forklift-check-list {
-	max-height: 320rpx;
-	background: #f7fafc;
-	border-radius: 14rpx;
-	padding: 8rpx 0;
-}
-
-.forklift-check-row {
-	display: flex;
-	align-items: center;
-	padding: 16rpx 22rpx;
-}
-
-.forklift-check-row:active {
-	background: #eef2f6;
-}
-
-.check-box {
-	width: 40rpx;
-	height: 40rpx;
-	border: 2rpx solid #cbd2d9;
-	border-radius: 8rpx;
-	margin-right: 18rpx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 24rpx;
-	color: #fff;
-	flex-shrink: 0;
-}
-
-.check-box.checked {
-	background: #3B82E6;
-	border-color: #3B82E6;
-}
-
-.check-name {
-	font-size: 28rpx;
-	color: #243b53;
-}
-
-/* ===== 接单状态弹窗 ===== */
-.assign-list {
-	background: #f7fafc;
-	border-radius: 14rpx;
-	padding: 6rpx 0;
-	margin-bottom: 20rpx;
-}
-
-.assign-row {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding: 20rpx 22rpx;
-	border-bottom: 1rpx solid #e8edf2;
-}
-
-.assign-row:last-child {
-	border-bottom: none;
-}
-
-.assign-info {
-	display: flex;
-	align-items: center;
 	gap: 16rpx;
 }
 
-.assign-name {
-	font-size: 30rpx;
-	color: #243b53;
-	font-weight: 500;
-}
-
-.assign-status {
-	font-size: 24rpx;
-	padding: 4rpx 14rpx;
-	border-radius: 6rpx;
-}
-
-.assign-status.ok {
-	color: #0e8c3a;
-	background: #e8f5e9;
-}
-
-.assign-status.wait {
-	color: #627d98;
-	background: #f0f4f8;
-}
-
-.assign-status.fail {
-	color: #c62828;
-	background: #ffebee;
-}
-
-.assign-empty {
+.card-btn {
+	flex: 1;
+	height: 68rpx;
+	line-height: 68rpx;
+	border-radius: 34rpx;
 	text-align: center;
-	color: #999;
-	padding: 30rpx;
 	font-size: 26rpx;
+	box-sizing: border-box;
 }
 
-.assign-driver-status {
-	margin-top: 16rpx;
-	padding: 16rpx 22rpx;
-	background: #f7fafc;
-	border-radius: 14rpx;
-	font-size: 28rpx;
-	color: #627d98;
-	display: flex;
-	align-items: center;
-	gap: 12rpx;
-}
-
-.assign-driver-status .ok {
-	color: #0e8c3a;
-	font-weight: bold;
-}
-
-.assign-driver-status .wait {
+.card-btn.orange {
+	background: #fff1e6;
 	color: #f07818;
-	font-weight: bold;
+	border: 1rpx solid #f07818;
 }
 
-.reassign-btn {
-	font-size: 24rpx;
-	color: #3B82E6;
-	padding: 8rpx 18rpx;
-	border: 1rpx solid #3B82E6;
-	border-radius: 8rpx;
-	flex-shrink: 0;
+.card-btn.ghost {
+	background: #f0f4f8;
+	color: #627d98;
+	border: 1rpx solid #d9e2ec;
 }
 
-.reassign-btn:active {
-	background: #e3f2fd;
-}
-
-.call-panel.small {
-	padding: 34rpx 30rpx 28rpx;
-}
-
-/* 等待确认提示 */
+/* 状态提示条 */
 .wait-confirm {
 	margin-top: 16rpx;
 	font-size: 26rpx;
@@ -357,6 +244,21 @@
 	padding: 12rpx 20rpx;
 	border-radius: 12rpx;
 	text-align: center;
+}
+
+.wait-confirm.blue {
+	color: #1565C0;
+	background: #e3f2fd;
+}
+
+.wait-confirm.red {
+	color: #c62828;
+	background: #ffebee;
+}
+
+.wait-confirm.gray {
+	color: #627d98;
+	background: #f0f4f8;
 }
 
 .call-btn {
@@ -395,7 +297,7 @@
 	padding: 34rpx 0;
 }
 
-/* ========== 叫号弹窗 ========== */
+/* ========== 弹窗通用 ========== */
 
 .call-mask {
 	position: fixed;
@@ -416,6 +318,10 @@
 	border-radius: 24rpx;
 	padding: 40rpx 34rpx 34rpx;
 	box-sizing: border-box;
+}
+
+.call-panel.small {
+	padding: 34rpx 30rpx 28rpx;
 }
 
 .call-head {
@@ -465,6 +371,16 @@
 	font-weight: 500;
 }
 
+.call-tip {
+	font-size: 25rpx;
+	color: #627d98;
+	background: #f7fafc;
+	border-radius: 12rpx;
+	padding: 16rpx 20rpx;
+	margin-bottom: 26rpx;
+	line-height: 1.6;
+}
+
 .call-forklift {
 	margin-bottom: 30rpx;
 }
@@ -500,6 +416,115 @@
 	background: #f07818;
 	color: #fff;
 	font-size: 32rpx;
+}
+
+/* ========== 表单（弹窗内） ========== */
+
+.form-group {
+	margin-bottom: 22rpx;
+}
+
+.form-label {
+	font-size: 25rpx;
+	color: #627d98;
+	margin-bottom: 12rpx;
+}
+
+.edit-input {
+	height: 78rpx;
+	line-height: 78rpx;
+	background: #fff;
+	border: 1rpx solid #d9e2ec;
+	border-radius: 14rpx;
+	padding: 0 20rpx;
+	box-sizing: border-box;
+	font-size: 28rpx;
+	color: #000;
+}
+
+/* 费用动态行 */
+.fee-row {
+	display: flex;
+	align-items: center;
+	gap: 14rpx;
+	margin-bottom: 14rpx;
+}
+
+.fee-input {
+	height: 76rpx;
+	line-height: 76rpx;
+	background: #fff;
+	border: 1rpx solid #d9e2ec;
+	border-radius: 12rpx;
+	padding: 0 18rpx;
+	box-sizing: border-box;
+	font-size: 28rpx;
+	color: #000;
+}
+
+.fee-input.name {
+	flex: 1.6;
+}
+
+.fee-input.amount {
+	flex: 1;
+}
+
+/* 固定费用项名称标签（与输入行对齐） */
+.fee-label-fixed {
+	flex: 1.6;
+	height: 76rpx;
+	line-height: 76rpx;
+	font-size: 28rpx;
+	color: #243b53;
+	font-weight: 500;
+	flex-shrink: 0;
+}
+
+/* 备注输入框 */
+.remark-input {
+	height: 160rpx;
+	width: 100%;
+	padding: 16rpx 20rpx;
+	font-size: 28rpx;
+	color: #000;
+	box-sizing: border-box;
+}
+
+/* 看板卡片备注（2 行截断） */
+.remark-clamp {
+	font-size: 24rpx;
+	color: #627d98;
+	margin-top: 8rpx;
+	line-height: 1.5;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	overflow: hidden;
+	word-break: break-all;
+}
+
+/* 详情备注（保留换行） */
+.remark-text {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.fee-remove {
+	width: 60rpx;
+	height: 76rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #c62828;
+	font-size: 30rpx;
+	flex-shrink: 0;
+}
+
+.fee-add {
+	font-size: 26rpx;
+	color: #3B82E6;
+	padding: 8rpx 0 26rpx;
 }
 
 /* ========== 详情弹窗 ========== */
@@ -608,9 +633,85 @@
 	color: #fff;
 }
 
+.detail-btn.warn {
+	background: #f07818;
+	color: #fff;
+}
+
 .detail-btn.ghost {
 	background: #f0f4f8;
 	color: #000;
+}
+
+/* 费用明细 */
+.fee-box {
+	margin-top: 24rpx;
+	background: #f7fafc;
+	border-radius: 18rpx;
+	padding: 20rpx 22rpx;
+}
+
+.fee-box-title {
+	font-size: 26rpx;
+	color: #627d98;
+	margin-bottom: 8rpx;
+}
+
+.fee-line {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 12rpx 0;
+	border-bottom: 1rpx solid #e8edf2;
+}
+
+.fee-line:last-child {
+	border-bottom: none;
+}
+
+.fee-line-name {
+	font-size: 27rpx;
+	color: #000;
+	display: flex;
+	align-items: center;
+	gap: 10rpx;
+}
+
+.fee-line-type {
+	font-size: 20rpx;
+	color: #7b8794;
+	background: #e8edf2;
+	padding: 2rpx 10rpx;
+	border-radius: 6rpx;
+}
+
+.fee-line-amount {
+	font-size: 27rpx;
+	color: #000;
+	font-weight: 500;
+}
+
+.fee-empty {
+	font-size: 26rpx;
+	color: #999;
+	padding: 16rpx 0;
+}
+
+.fee-total {
+	margin-top: 14rpx;
+	text-align: right;
+	font-size: 30rpx;
+	font-weight: bold;
+	color: #e53e3e;
+}
+
+.pay-box {
+	margin-top: 24rpx;
+	background: #fff1e6;
+	border-radius: 14rpx;
+	padding: 16rpx 22rpx;
+	font-size: 26rpx;
+	color: #f07818;
 }
 
 .edit-form {
@@ -619,26 +720,13 @@
 	padding: 24rpx;
 }
 
-.form-group {
-	margin-bottom: 22rpx;
-}
-
-.form-label {
-	font-size: 25rpx;
-	color: #627d98;
-	margin-bottom: 12rpx;
-}
-
-.edit-input {
-	height: 78rpx;
-	line-height: 78rpx;
-	background: #fff;
-	border: 1rpx solid #d9e2ec;
-	border-radius: 14rpx;
-	padding: 0 20rpx;
-	box-sizing: border-box;
-	font-size: 28rpx;
-	color: #000;
+.edit-tip {
+	background: #fff1e6;
+	color: #f07818;
+	font-size: 24rpx;
+	border-radius: 10rpx;
+	padding: 12rpx 16rpx;
+	margin-bottom: 18rpx;
 }
 
 .cancel-box {
