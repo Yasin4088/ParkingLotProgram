@@ -34,9 +34,14 @@ cloudfunctions/cloud/ # 云函数（单体）：config/route.js + project/{contr
 - 新路由在 `config/route.js` 注册；业务校验在 Service，Controller 只做参数校验与鉴权
 - 文案用中文，UI 用 rpx，缩进用 tab
 
+## 上线前清单（用户准备发布时，AI 必须主动逐项提醒）
+
+- **用户隐私保护指引**（GPS 签到依赖）：小程序后台 mp.weixin.qq.com → 设置 → 服务内容声明 → 用户隐私保护指引，声明「位置信息」及用途；未配置时真机上 wx.getLocation 会报隐私协议错误（开发者工具模拟器不受影响）
+- 微信支付接入完成后补充：商户号绑定、支付场景声明等（阶段 5 时追加）
+
 ## 当前状态与下一步
 
-- 当前（分支 dev-lizirui，尚未提交/部署）：任务制重构（认领→叫号→抢单→双凭证→结算→月报）+ 看板实时化 + 备注/固定费用已完成开发；云函数需重新部署后验证
-- 下一步：① 部署验证（重新部署云函数 → 初始化超管 → 预置叉车账号 → 端到端）；② 接入微信支付（Skill 已装，用「我要接入基础支付」开场）；候选场景：装卸服务费收款
+- 当前（分支 dev-lizirui）：任务制重构 + 看板实时化 + 备注/固定费用已部署；手机号授权（cloudID+getOpenData）与 GPS 签到（requiredPrivateInfos 声明）已修复；端到端测试进行中
+- 下一步：① 完成端到端验证；② 接入微信支付（Skill 已装，用「我要接入基础支付」开场）；候选场景：装卸服务费收款
 - 遗留：`projects/A00/` 模板页仍注册未清理；`behavior/`、`tpls/` 模板死引用待清
 - 注意：本机直连 GitHub 不稳定（2026-08 验证），克隆外部仓库用 ghfast.top 镜像；本机 Python 不可用（Microsoft Store 空壳），微信支付 Skill 的知识库同步需手动 curl 下载 wx.gtimg.com 上的 zip
