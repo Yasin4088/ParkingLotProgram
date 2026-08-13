@@ -14,22 +14,93 @@ class AdminQueueController extends BaseAdminController {
 		return await service.list();
 	}
 
-	/** 叫号（管理员指定车辆 + 多位叉车司机） */
+	/** 管理员创建任务 */
+	async createTask() {
+		await this.isAdmin();
+
+		let rules = {
+			plate: 'must|string|min:3|max:20|name=车牌号',
+			phone: 'must|mobile|name=司机手机号',
+			action: 'must|string|name=业务类型',
+			cargoName: 'string|max:50|name=货物名称',
+			remark: 'string|max:500|name=备注',
+			fees: 'array|name=预估费用',
+		};
+		let input = this.validateData(rules);
+
+		let service = new QueueService();
+		return await service.createTask(input.plate, input.action, input.cargoName, input.phone, input.fees, input.remark);
+	}
+
+	/** 叫号（任务进入叉车抢单池） */
 	async callSelected() {
 		await this.isAdmin();
 
 		let rules = {
 			id: 'must|string|name=排队记录',
-			forkliftIds: 'must|array|name=叉车司机',
 		};
 		let input = this.validateData(rules);
 
 		let service = new QueueService();
-		return await service.callDriver(input.id, input.forkliftIds);
+		return await service.callDriver(input.id);
 	}
 
 	async callNext() {
 		return await this.callSelected();
+	}
+
+	/** 管理员收回叫号 */
+	async recallCall() {
+		await this.isAdmin();
+
+		let rules = {
+			id: 'must|string|name=排队记录',
+		};
+		let input = this.validateData(rules);
+
+		let service = new QueueService();
+		return await service.recallCall(input.id);
+	}
+
+	/** 管理员手动派单（抢单兜底） */
+	async manualAssign() {
+		await this.isAdmin();
+
+		let rules = {
+			id: 'must|string|name=排队记录',
+			forkliftId: 'must|string|name=叉车司机',
+		};
+		let input = this.validateData(rules);
+
+		let service = new QueueService();
+		return await service.manualAssign(input.id, input.forkliftId);
+	}
+
+	/** 管理员整体保存现场费用（支付前可修改） */
+	async saveSceneFee() {
+		await this.isAdmin();
+
+		let rules = {
+			id: 'must|string|name=排队记录',
+			fees: 'array|name=费用',
+		};
+		let input = this.validateData(rules);
+
+		let service = new QueueService();
+		return await service.saveSceneFees(input.id, input.fees);
+	}
+
+	/** 管理员结算 */
+	async settle() {
+		await this.isAdmin();
+
+		let rules = {
+			id: 'must|string|name=排队记录',
+		};
+		let input = this.validateData(rules);
+
+		let service = new QueueService();
+		return await service.settle(input.id);
 	}
 
 	async detail() {
@@ -47,8 +118,13 @@ class AdminQueueController extends BaseAdminController {
 	async historyList() {
 		await this.isAdmin();
 
+		let rules = {
+			yearMonth: 'string|name=月份',
+		};
+		let input = this.validateData(rules);
+
 		let service = new QueueService();
-		return await service.historyList();
+		return await service.historyList(input.yearMonth);
 	}
 
 	async historyClear() {
@@ -79,6 +155,8 @@ class AdminQueueController extends BaseAdminController {
 			phone: 'must|string|name=手机号',
 			action: 'must|string|name=业务类型',
 			cargoName: 'string|max:50|name=货物名称',
+			remark: 'string|max:500|name=备注',
+			fees: 'array|name=预估费用',
 		};
 		let input = this.validateData(rules);
 
@@ -117,21 +195,6 @@ class AdminQueueController extends BaseAdminController {
 
 		let service = new QueueService();
 		return await service.getForkliftList();
-	}
-
-	/** 管理员重新分派叉车司机（替换拒绝/超时的） */
-	async reassignForklift() {
-		await this.isAdmin();
-
-		let rules = {
-			id: 'must|string|name=排队记录',
-			oldForkliftId: 'must|string|name=被替换叉车司机',
-			newForkliftId: 'must|string|name=新叉车司机',
-		};
-		let input = this.validateData(rules);
-
-		let service = new QueueService();
-		return await service.reassignForklift(input.id, input.oldForkliftId, input.newForkliftId);
 	}
 }
 

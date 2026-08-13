@@ -115,6 +115,39 @@ class AdminExportController extends BaseAdminController {
 	}
 
 
+	/************** 装卸月报导出 BEGIN ********************* */
+
+	/** 导出月度经营报表 */
+	async queueMonthExport() {
+		await this.isAdmin();
+
+		// 数据校验
+		let rules = {
+			yearMonth: 'must|string|name=月份',
+		};
+
+		// 取得数据
+		let input = this.validateData(rules);
+
+		let service = new AdminExportService();
+		return await service.exportQueueMonthExcel(input.yearMonth);
+	}
+
+	/** 获取月报下载地址 */
+	async queueMonthGet() {
+		await this.isAdmin();
+
+		// 数据校验
+		let rules = {
+			yearMonth: 'must|string|name=月份',
+		};
+
+		// 取得数据
+		let input = this.validateData(rules);
+
+		let service = new AdminExportService();
+		return await service.getQueueMonthURL(input.yearMonth);
+	}
 }
 
 module.exports = AdminExportController;

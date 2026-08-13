@@ -12,18 +12,17 @@ class QueueController extends BaseController {
 		return service.getOptions();
 	}
 
+	/** 司机认领任务（车牌匹配待认领任务） */
 	async create() {
 		let rules = {
-			action: 'must|string|name=业务类型',
 			plate: 'must|string|min:3|max:20|name=车牌号',
 			phone: 'must|mobile|name=手机号',
 			proof: 'string|name=单证图片',
-			cargoName: 'string|max:50|name=货物名称',
 		};
 		let input = this.validateData(rules);
 
 		let service = new QueueService();
-		return await service.create(this._token, this._userId, input.action, input.plate, input.phone, input.proof, input.cargoName);
+		return await service.claimTask(this._token, this._userId, input.plate, input.phone, input.proof);
 	}
 
 	async myCurrent() {
@@ -62,29 +61,6 @@ class QueueController extends BaseController {
 
 		let service = new QueueService();
 		return await service.driverConfirm(this._token, input.id);
-	}
-
-	/** 司机上传完成凭证并完成作业 */
-	async finish() {
-		let rules = {
-			id: 'must|string|name=排队记录',
-			finishProof: 'must|string|name=完成作业凭证',
-		};
-		let input = this.validateData(rules);
-
-		let service = new QueueService();
-		return await service.driverFinish(this._token, input.id, input.finishProof);
-	}
-
-	async driverLogin() {
-		let rules = {
-			username: 'must|string|min:2|max:30|name=用户名',
-			password: 'must|string|min:4|max:30|name=密码',
-		};
-		let input = this.validateData(rules);
-
-		let service = new QueueService();
-		return await service.driverLogin(input.username, input.password);
 	}
 }
 

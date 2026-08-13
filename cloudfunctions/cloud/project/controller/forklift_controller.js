@@ -18,47 +18,34 @@ class ForkliftController extends BaseController {
 		return await service.login(input.username, input.password);
 	}
 
+	/** 抢单池 + 我的任务 */
 	async myTask() {
 		let service = new ForkliftService();
 		return await service.getMyTask(this._token);
 	}
 
-	async myTasks() {
-		let service = new ForkliftService();
-		return await service.getMyTasks(this._token);
-	}
-
+	/** 叉车司机完成作业（现场照片 + 单据照片） */
 	async complete() {
 		let rules = {
 			id: 'must|string|name=任务记录',
-			finishProof: 'must|string|name=完成作业凭证',
+			finishProof: 'must|string|name=现场照片',
+			billProof: 'must|string|name=单据照片',
 		};
 		let input = this.validateData(rules);
 
 		let service = new ForkliftService();
-		return await service.completeTask(this._token, input.id, input.finishProof);
+		return await service.completeTask(this._token, input.id, input.finishProof, input.billProof);
 	}
 
-	/** 叉车司机接受任务 */
-	async accept() {
+	/** 叉车司机抢单 */
+	async grab() {
 		let rules = {
 			id: 'must|string|name=任务记录',
 		};
 		let input = this.validateData(rules);
 
 		let service = new ForkliftService();
-		return await service.acceptTask(this._token, input.id);
-	}
-
-	/** 叉车司机拒绝任务 */
-	async reject() {
-		let rules = {
-			id: 'must|string|name=任务记录',
-		};
-		let input = this.validateData(rules);
-
-		let service = new ForkliftService();
-		return await service.rejectTask(this._token, input.id);
+		return await service.grabTask(this._token, input.id);
 	}
 }
 

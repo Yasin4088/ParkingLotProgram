@@ -166,6 +166,25 @@ class AdminUserController extends BaseAdminController {
 
 		return {};
 	}
+
+	/** 设置用户状态（启用/禁用） */
+	async userStatus() {
+		await this.isAdmin();
+
+		let rules = {
+			id: 'required|id',
+			status: 'required|int',
+		};
+
+		let input = this.validateData(rules);
+
+		let name = await this.getNameBeforeLog('user', input.id);
+
+		let service = new AdminUserService();
+		await service.setUserStatus(input.id, input.status);
+
+		this.log('修改了用户「' + name + '」状态', LogModel.TYPE.USER);
+	}
 }
 
 module.exports = AdminUserController;

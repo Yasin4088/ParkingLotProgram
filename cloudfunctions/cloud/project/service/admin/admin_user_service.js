@@ -179,6 +179,21 @@ class AdminUserService extends BaseAdminService {
 		await UserModel.edit(id, data);
 	}
 
+	/** 设置用户状态（启用/禁用） */
+	async setUserStatus(id, status) {
+		// 状态值合法性校验（0=待审核,1=正常,9=已禁用）
+		if (![UserModel.STATUS.UNUSE, UserModel.STATUS.COMM, UserModel.STATUS.FORBID].includes(status)) {
+			this.AppError('非法的状态值');
+		}
+
+		let user = await UserModel.getOne(id, 'USER_STATUS');
+		if (!user) this.AppError('用户不存在');
+
+		await UserModel.edit(id, {
+			USER_STATUS: status
+		});
+	}
+
 	/** 删除用户 */
 	async delUser(id) {
 		await UserModel.del(id);
