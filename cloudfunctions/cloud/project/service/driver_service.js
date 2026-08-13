@@ -6,6 +6,7 @@
 
 const BaseService = require('./base_service.js');
 const UserModel = require('../model/user_model.js');
+const QueueModel = require('../model/queue_model.js');
 const timeUtil = require('../../framework/utils/time_util.js');
 
 class DriverService extends BaseService {
@@ -33,6 +34,7 @@ class DriverService extends BaseService {
 			});
 			return {
 				registered: false,
+				hasActiveQueue: false,
 				token: newUserId,
 				id: newUserId,
 				name: '',
@@ -52,8 +54,26 @@ class DriverService extends BaseService {
 		// 是否已完成注册：状态正常且有身份证号
 		let registered = (user.USER_STATUS === UserModel.STATUS.COMM && !!user.USER_IDCARD);
 
+		// 是否有进行中的排队/作业记录（有则登录后直达排队页）
+		let hasActiveQueue = false;
+		if (registered) {
+			let active = await QueueModel.getOne({
+				QUEUE_USER_ID: user._id,
+				QUEUE_STATUS: ['in', [
+					QueueModel.STATUS.BOOKED,
+					QueueModel.STATUS.WAITING,
+					QueueModel.STATUS.CALLED,
+					QueueModel.STATUS.EXECUTING,
+					QueueModel.STATUS.FINISHED,
+					QueueModel.STATUS.TO_PAY
+				]]
+			}, '_id');
+			hasActiveQueue = !!active;
+		}
+
 		return {
 			registered,
+			hasActiveQueue,
 			token: user._id,
 			id: user._id,
 			name: user.USER_NAME || '',
