@@ -50,7 +50,16 @@
 				<view class="label">登录次数</view>
 				<view class="readonly-val">{{loginCnt}}</view>
 			</view>
+
+			<view class="form-group">
+				<view class="label">微信绑定</view>
+				<view class="readonly-val">{{wxBound ? '已绑定本机微信' : '未绑定'}}</view>
+			</view>
 		</block>
+
+		<view wx:if="{{id && wxBound}}" class="clear-btn" bindtap="bindClearWxTap">
+			清除微信绑定（换设备登录）
+		</view>
 
 		<view class="submit-btn" bindtap="bindSubmitTap">
 			<view wx:if="{{submitting}}">提交中...</view>

@@ -25,6 +25,7 @@ Page({
 		addTime: '',
 		loginTime: '',
 		loginCnt: 0,
+		wxBound: false,
 
 		statusIndex: 1,
 		statusItems: ['待审核', '正常', '已禁用'],
@@ -68,6 +69,7 @@ Page({
 					addTime: user.USER_ADD_TIME || '',
 					loginTime: user.USER_LOGIN_TIME || '',
 					loginCnt: user.USER_LOGIN_CNT || 0,
+					wxBound: !!user.USER_WX_OPENID,
 				});
 			}
 		} catch (e) {
@@ -102,6 +104,39 @@ Page({
 			roleIndex: index,
 			role: this.data.roleValues[index],
 			roleDesc: this.data.roleItems[index],
+		});
+	},
+
+	/** 清除微信绑定：换设备登录用（先登先绑，清空后该账号可在新设备重新登录绑定） */
+	bindClearWxTap: function () {
+		if (this.data.submitting || !this.data.wxBound) return;
+
+		wx.showModal({
+			title: '清除微信绑定',
+			content: '清除后该账号可在任意微信重新登录并绑定新设备，原设备将无法继续操作。确定清除吗？',
+			confirmText: '清除',
+			confirmColor: '#E64340',
+			success: async r => {
+				if (!r.confirm) return;
+				this.setData({ submitting: true });
+				try {
+					await cloudHelper.callCloudSumbit('admin/user_edit', {
+						id: this.data.id,
+						username: this.data.username.trim(),
+						password: '',
+						phone: this.data.phone.trim(),
+						status: this.data.status,
+						role: this.data.role,
+						wxClear: 1,
+					}, { title: '处理中' });
+					this.setData({ wxBound: false });
+					wx.showToast({ title: '已清除绑定', icon: 'success', duration: 1500 });
+				} catch (e) {
+					console.log(e);
+				} finally {
+					this.setData({ submitting: false });
+				}
+			}
 		});
 	},
 
