@@ -287,28 +287,30 @@ class StorageService extends BaseService {
 			STORAGE_STATUS: ['in', StorageModel.FETCH_ACTIVE]
 		}, '*', { STORAGE_FETCH_TIME: 'desc' }, 50);
 
+		// 排队位次：有 WAITING 记录时各取一次排队列表，内存计算 ahead，避免每条记录一次 count（N+1）
+		let hasStoreWait = (storeList || []).some(x => x.STORAGE_STATUS === StorageModel.STATUS.STORE_WAITING);
+		let hasFetchWait = (fetchList || []).some(x => x.STORAGE_STATUS === StorageModel.STATUS.FETCH_WAITING);
+		let waitStore = hasStoreWait ? await StorageModel.getAll({
+			STORAGE_STATUS: StorageModel.STATUS.STORE_WAITING
+		}, 'STORAGE_QUEUE_TIME', { STORAGE_QUEUE_TIME: 'asc' }, 500) : [];
+		let waitFetch = hasFetchWait ? await StorageModel.getAll({
+			STORAGE_STATUS: StorageModel.STATUS.FETCH_WAITING
+		}, 'STORAGE_QUEUE_TIME', { STORAGE_QUEUE_TIME: 'asc' }, 500) : [];
+		let aheadStore = ts => (waitStore || []).filter(x => x.STORAGE_QUEUE_TIME < ts).length;
+		let aheadFetch = ts => (waitFetch || []).filter(x => x.STORAGE_QUEUE_TIME < ts).length;
+
 		let list = [];
 		let seen = {};
 		for (let item of (storeList || [])) {
 			seen[item._id] = true;
-			let ahead = 0;
-			if (item.STORAGE_STATUS === StorageModel.STATUS.STORE_WAITING) {
-				ahead = await StorageModel.count({
-					STORAGE_STATUS: StorageModel.STATUS.STORE_WAITING,
-					STORAGE_QUEUE_TIME: ['<', item.STORAGE_QUEUE_TIME]
-				});
-			}
+			let ahead = item.STORAGE_STATUS === StorageModel.STATUS.STORE_WAITING
+				? aheadStore(item.STORAGE_QUEUE_TIME) : 0;
 			list.push(this._formatStorageItem(item, ahead));
 		}
 		for (let item of (fetchList || [])) {
 			if (seen[item._id]) continue; // 同一单既是存柜人又是取柜人时去重
-			let ahead = 0;
-			if (item.STORAGE_STATUS === StorageModel.STATUS.FETCH_WAITING) {
-				ahead = await StorageModel.count({
-					STORAGE_STATUS: StorageModel.STATUS.FETCH_WAITING,
-					STORAGE_QUEUE_TIME: ['<', item.STORAGE_QUEUE_TIME]
-				});
-			}
+			let ahead = item.STORAGE_STATUS === StorageModel.STATUS.FETCH_WAITING
+				? aheadFetch(item.STORAGE_QUEUE_TIME) : 0;
 			list.push(this._formatStorageItem(item, ahead));
 		}
 		list.sort((a, b) => (b.STORAGE_ADD_TIME - a.STORAGE_ADD_TIME));

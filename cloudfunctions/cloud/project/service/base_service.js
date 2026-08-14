@@ -15,6 +15,8 @@ const config = require('../../config/config.js');
 
 // 集合兜底执行开关（云函数热实例内只检查一次，每次部署后首个请求会重新触发）
 let collectionsChecked = false;
+// setup 初始化数据开关：热实例内首次确认 ax_setup 已有数据后短路，避免每个请求 2 次 DB 读
+let setupReady = false;
 
 class BaseService {
 	constructor() {
@@ -101,10 +103,14 @@ class BaseService {
 			}
 		}
 
-		if (await dbUtil.isExistCollection('ax_setup')) {
-			let setupCnt = await SetupModel.count({});
-			if (setupCnt > 0) return;
+		// 已初始化环境热实例内只判定一次，之后直接短路（默认数据写入仅在全新环境触发）
+		if (!setupReady) {
+			if (await dbUtil.isExistCollection('ax_setup')) {
+				let setupCnt = await SetupModel.count({});
+				if (setupCnt > 0) setupReady = true;
+			}
 		}
+		if (setupReady) return;
 
 		console.log('### initSetup...');
 

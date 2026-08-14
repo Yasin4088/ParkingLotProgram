@@ -206,12 +206,12 @@ Page({
 
 			wx.showModal({
 				title: '存柜登记成功',
-				content: '存柜码：' + res.STORAGE_CODE + '\n排队号：' + res.STORAGE_NO + '\n\n请保存存柜码，取柜时凭码登记缴费',
+				content: '存柜码：' + res.data.STORAGE_CODE + '\n排队号：' + res.data.STORAGE_NO + '\n\n请保存存柜码，取柜时凭码登记缴费',
 				confirmText: '复制存柜码',
 				success: r => {
 					if (r.confirm) {
 						wx.setClipboardData({
-							data: res.STORAGE_CODE,
+							data: res.data.STORAGE_CODE,
 							success: () => wx.showToast({ title: '存柜码已复制', icon: 'success' })
 						});
 					}
@@ -278,7 +278,7 @@ Page({
 
 			if (this.data.wxpayEnable && payMode === 1) {
 				// 在线支付：下单 → 拉起微信支付 → 支付回调推进排队
-				await this._doPay(res._id);
+				await this._doPay(res.data._id);
 			} else {
 				wx.showToast({ title: '登记成功，请现场缴费', icon: 'none' });
 				setTimeout(() => {
@@ -295,12 +295,12 @@ Page({
 	/** 在线支付：storage/pay 下单 + wx.requestPayment（查单兜底发现已支付时不再拉起支付） */
 	_doPay: async function (id) {
 		let payRes = await cloudHelper.callCloudSumbit('storage/pay', { id }, { title: '下单中' });
-		if (payRes.paid) {
+		if (payRes.data.paid) {
 			wx.showToast({ title: '已支付，进入排队', icon: 'success' });
 		} else {
 			await new Promise((resolve, reject) => {
 				wx.requestPayment({
-					...payRes.payParams,
+					...payRes.data.payParams,
 					success: resolve,
 					fail: err => {
 						if (err && err.errMsg && err.errMsg.indexOf('cancel') > -1) {

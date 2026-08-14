@@ -90,13 +90,13 @@ Page({
 		this.setData({ paying: true });
 		try {
 			let payRes = await cloudHelper.callCloudSumbit('storage/pay', { id }, { title: '下单中' });
-			if (payRes.paid) {
+			if (payRes.data.paid) {
 				// 查单兜底：此前已支付成功，直接刷新状态
 				wx.showToast({ title: '已支付，进入排队', icon: 'success' });
 			} else {
 				await new Promise((resolve, reject) => {
 					wx.requestPayment({
-						...payRes.payParams,
+						...payRes.data.payParams,
 						success: resolve,
 						fail: err => {
 							if (err && err.errMsg && err.errMsg.indexOf('cancel') > -1) {
