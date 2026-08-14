@@ -134,10 +134,6 @@ Page({
 		});
 	},
 
-	bindTabTap: function (e) {
-		this.setData({ tab: e.currentTarget.dataset.tab });
-	},
-
 	bindPlateInput: function (e) {
 		this.setData({ plate: e.detail.value.toUpperCase() });
 	},

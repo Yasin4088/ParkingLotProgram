@@ -56,31 +56,6 @@
 	line-height: 1.6;
 }
 
-.tab-bar {
-	display: flex;
-	background: #eef1f6;
-	border-radius: 999rpx;
-	padding: 8rpx;
-	margin-bottom: 28rpx;
-}
-
-.tab-item {
-	flex: 1;
-	height: 72rpx;
-	line-height: 72rpx;
-	text-align: center;
-	border-radius: 999rpx;
-	color: #52606d;
-	font-size: 28rpx;
-}
-
-.tab-item.active {
-	background: #fff;
-	color: #3B82E6;
-	font-weight: 600;
-	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, .06);
-}
-
 .card {
 	background: #fff;
 	border-radius: 24rpx;

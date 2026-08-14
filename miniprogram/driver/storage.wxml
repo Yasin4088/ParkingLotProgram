@@ -7,13 +7,8 @@
 	</view>
 
 	<view class="header">
-		<view class="title">存取柜服务</view>
-		<view class="desc">存柜免费登记并生成存柜码；取柜按天计费，缴费后才进入取柜排队</view>
-	</view>
-
-	<view class="tab-bar">
-		<view class="tab-item {{tab === 'store' ? 'active' : ''}}" bindtap="bindTabTap" data-tab="store">我要存柜</view>
-		<view class="tab-item {{tab === 'fetch' ? 'active' : ''}}" bindtap="bindTabTap" data-tab="fetch">我要取柜</view>
+		<view class="title">{{tab === 'store' ? '我要存柜' : '我要取柜'}}</view>
+		<view class="desc">{{tab === 'store' ? '存柜免费登记并生成存柜码，登记后等待叫号，吊柜司机开始存柜' : '取柜按天计费，输入存柜码查询费用并缴费，缴费后进入取柜排队'}}</view>
 	</view>
 
 	<!-- 存柜登记 -->
