@@ -12,6 +12,9 @@ const NewsModel = require('../model/news_model.js');
 const MeetModel = require('../model/meet_model.js');
 const config = require('../../config/config.js');
 
+// 集合兜底执行开关（云函数热实例内只检查一次，每次部署后首个请求会重新触发）
+let collectionsChecked = false;
+
 class BaseService {
 	constructor() {
 		// 当前时间戳
@@ -37,19 +40,26 @@ class BaseService {
 
 
 	async initSetup() {
+		// 集合兜底：热实例内首次调用补齐配置中缺失的集合。
+		// 即使超级管理员早已初始化（ax_setup 非空），新增集合也会在重新部署后的首个请求里自动创建。
+		// 探测改为并行：避免冷启动首个请求被串行查询拖到超时（云函数默认超时仅 3 秒）
+		if (!collectionsChecked) {
+			collectionsChecked = true;
+			let arr = config.COLLECTION_NAME.split('|');
+			let existsList = await Promise.all(arr.map(name => dbUtil.isExistCollection(name)));
+			for (let k in arr) {
+				if (!existsList[k]) {
+					await dbUtil.createCollection(arr[k]);
+				}
+			}
+		}
+
 		if (await dbUtil.isExistCollection('ax_setup')) {
 			let setupCnt = await SetupModel.count({});
 			if (setupCnt > 0) return;
 		}
 
 		console.log('### initSetup...');
-
-		let arr = config.COLLECTION_NAME.split('|');
-		for (let k in arr) {
-			if (!await dbUtil.isExistCollection(arr[k])) {
-				await dbUtil.createCollection(arr[k]);
-			}
-		} 
 
 		if (await dbUtil.isExistCollection('ax_news')) {
 			let newsCnt = await NewsModel.count({});

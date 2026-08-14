@@ -42,7 +42,7 @@ Page({
 	/** 实时队列统计（由看板列表前端计数） */
 	_loadStats: async function () {
 		try {
-			let data = await cloudHelper.callCloudData('admin/queue_list', {}, { title: '' });
+			let data = await cloudHelper.callCloudData('admin/queue_list', {}, { title: '', hint: false });
 			if (!data) return;
 			let stats = { total: 0, waiting: 0, executing: 0, topay: 0 };
 			(data.list || []).forEach(item => {
@@ -70,6 +70,17 @@ Page({
 	url: function (e) {
 		pageHelper.url(e, this);
 	},
+
+	// 底部工作区切换（当前页高亮，无操作）
+	bindNavQueueTap: function () {
+		wx.redirectTo({ url: '/admin/queue' });
+	},
+
+	bindNavStorageTap: function () {
+		wx.redirectTo({ url: '/admin/storage' });
+	},
+
+	bindNavAdminTap: function () {},
 
 	bindExitTap: function (e) {
 

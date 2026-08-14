@@ -11,6 +11,7 @@ const util = require('../../framework/utils/util.js');
 const AppError = require('../../framework/core/app_error.js');
 const appCode = require('../../framework/core/app_code.js');
 const BaseService = require('../service/base_service.js');
+const UserModel = require('../model/user_model.js');
 
 global.PID = 'unknown';
 
@@ -74,6 +75,18 @@ class BaseController extends Controller {
 	async initSetup() {
 		let service = new BaseService();
 		await service.initSetup();
+	}
+
+	/** 工作台鉴权：token 对应用户必须是指定角色（forklift/crane）且账号正常，保证叉车/吊柜两工作台互不通用 */
+	async checkWorkRole(role) {
+		if (!this._token) this.AppError('未登录，请重新登录');
+		let user = await UserModel.getOne({
+			_id: this._token,
+			USER_ROLE: role,
+			USER_STATUS: UserModel.STATUS.COMM
+		}, '_id');
+		if (!user) this.AppError('账号无操作权限或已被禁用');
+		return user;
 	}
 }
 

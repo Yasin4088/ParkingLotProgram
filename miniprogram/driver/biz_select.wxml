@@ -1,0 +1,32 @@
+<view class="page">
+	<view class="custom-nav" style="height: {{customBar}}px; padding-top: {{statusBar}}px;">
+		<view class="custom-nav-title" style="height: {{navBarHeight}}px; line-height: {{navBarHeight}}px;">选择业务</view>
+	</view>
+
+	<view class="tiles">
+		<view class="tile tile-load" bindtap="bindLoadTap">
+			<view class="tile-icon">🚚</view>
+			<view class="tile-name">装卸货
+				<text class="tile-badge" wx:if="{{hasActiveQueue}}">进行中</text>
+			</view>
+			<view class="tile-arrow"></view>
+		</view>
+
+		<view class="tile tile-store" bindtap="bindStoreTap">
+			<view class="tile-icon">📦</view>
+			<view class="tile-name">存柜</view>
+			<view class="tile-arrow"></view>
+		</view>
+
+		<view class="tile tile-fetch" bindtap="bindFetchTap">
+			<view class="tile-icon">🔓</view>
+			<view class="tile-name">取柜</view>
+			<view class="tile-arrow"></view>
+		</view>
+	</view>
+
+	<view class="bottom-links">
+		<view bindtap="bindProfileTap">个人信息修改</view>
+		<view bindtap="bindLogoutTap">退出登录</view>
+	</view>
+</view>

@@ -21,6 +21,11 @@ Page({
 	onLoad: async function () {
 		this._initNavMetrics();
 		if (!ForkliftBiz.isForklift(this)) return;
+		if (ForkliftBiz.getWorkRole() === 'crane') {
+			// 吊柜身份进吊柜工作台，两界面不互通
+			wx.redirectTo({ url: '/pages/storage_forklift/home' });
+			return;
+		}
 		this.setData({ isLoad: true });
 		await this._loadTask(true);
 		this._loaded = true;

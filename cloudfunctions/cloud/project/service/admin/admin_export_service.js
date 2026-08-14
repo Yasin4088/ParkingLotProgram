@@ -13,6 +13,7 @@ const UserModel = require('../../model/user_model.js');
 
 const DataService = require('./../data_service');
 const QueueService = require('./../queue_service.js');
+const AdminStorageService = require('./admin_storage_service.js');
 
 // 导出报名数据KEY
 const EXPORT_JOIN_DATA_KEY = 'join_data';
@@ -22,6 +23,9 @@ const EXPORT_USER_DATA_KEY = 'user_data';
 
 // 导出装卸月报KEY
 const EXPORT_QUEUE_MONTH_KEY = 'queue_month_';
+
+// 导出存取柜月报KEY
+const EXPORT_STORAGE_MONTH_KEY = 'storage_month_';
 
 class AdminExportService extends BaseAdminService {
 	// #####################导出报名数据
@@ -98,8 +102,7 @@ class AdminExportService extends BaseAdminService {
 		let header = [
 			'状态', '排队号', '车牌号', '业务类型', '货物名称', '备注', '手机号',
 			'叉车司机', '接单方式', '费用明细', '总费用(元)', '支付状态',
-			'创建时间', '签到时间', '叫号时间', '确认时间', '完成时间',
-			'结算时间', '支付时间', '取消时间', '取消原因'
+			'创建日期', '取消原因'
 		];
 
 		let rows = [header];
@@ -122,14 +125,7 @@ class AdminExportService extends BaseAdminService {
 				feeText,
 				item.feeTotalText || '0.00',
 				item.payStatusDesc || '',
-				item.addTimeText || '',
-				item.checkinTimeText || '',
-				item.callTimeText || '',
-				item.confirmTimeText || '',
-				item.finishTimeText || '',
-				item.settleTimeText || '',
-				item.payTimeText || '',
-				item.cancelTimeText || '',
+				item.QUEUE_ADD_TIME ? timeUtil.timestamp2Time(item.QUEUE_ADD_TIME, 'Y-M-D') : '',
 				item.QUEUE_CANCEL_REASON || ''
 			]);
 			feeTotal += Number(item.feeTotal) || 0;
@@ -138,14 +134,77 @@ class AdminExportService extends BaseAdminService {
 		}
 
 		let empty = ['', '', '', '', '', '', '', '', ''];
-		rows.push(empty.concat(['', '合计费用(元)', (feeTotal / 100).toFixed(2), '']).concat(['', '', '', '', '', '', '', '', '']));
-		rows.push(empty.concat(['', '已支付(元)', (paidTotal / 100).toFixed(2), '']).concat(['', '', '', '', '', '', '', '', '']));
-		rows.push(empty.concat(['', '记账(元)', (accountTotal / 100).toFixed(2), '']).concat(['', '', '', '', '', '', '', '', '']));
+		rows.push(empty.concat(['', '合计费用(元)', (feeTotal / 100).toFixed(2), '']).concat(['']));
+		rows.push(empty.concat(['', '已支付(元)', (paidTotal / 100).toFixed(2), '']).concat(['']));
+		rows.push(empty.concat(['', '记账(元)', (accountTotal / 100).toFixed(2), '']).concat(['']));
 
 		let dataService = new DataService();
 		return await dataService.exportDataExcel(
 			EXPORT_QUEUE_MONTH_KEY + yearMonth,
 			'装卸经营月报' + yearMonth,
+			list.length,
+			rows
+		);
+	}
+
+
+	// ##################### 存取柜月报 #####################
+
+	/**获取存取柜月报下载地址 */
+	async getStorageMonthURL(yearMonth) {
+		let dataService = new DataService();
+		return await dataService.getExportDataURL(EXPORT_STORAGE_MONTH_KEY + yearMonth);
+	}
+
+	/**导出存取柜月度经营报表（该月已取柜/已取消记录） */
+	async exportStorageMonthExcel(yearMonth) {
+		let adminStorageService = new AdminStorageService();
+		let history = await adminStorageService.historyList(yearMonth);
+		let list = history.list || [];
+
+		let header = [
+			'状态', '排队号', '存柜码', '车牌号', '柜型', '柜号',
+			'存柜登记时间', '存柜完成时间', '取柜登记时间', '计费天数',
+			'单价(元/天)', '费用(元)', '支付状态', '吊柜司机', '取柜登记手机号'
+		];
+
+		let rows = [header];
+		let feeTotal = 0;
+		let paidTotal = 0;
+		let confirmedTotal = 0;
+
+		for (let item of list) {
+			rows.push([
+				item.statusDesc || '',
+				item.STORAGE_NO || '',
+				item.STORAGE_CODE || '',
+				item.STORAGE_PLATE || '',
+				item.STORAGE_CABINET_NAME || '',
+				item.STORAGE_CABINET_NO || '',
+				item.STORAGE_ADD_TIME ? timeUtil.timestamp2Time(item.STORAGE_ADD_TIME) : '',
+				item.STORAGE_FINISH_TIME ? timeUtil.timestamp2Time(item.STORAGE_FINISH_TIME) : '',
+				item.STORAGE_FETCH_TIME ? timeUtil.timestamp2Time(item.STORAGE_FETCH_TIME) : '',
+				item.STORAGE_DAYS || 0,
+				item.priceDailyText || '0.00',
+				item.feeTotalText || '0.00',
+				item.payStatusDesc || '',
+				item.forkliftName || '',
+				item.STORAGE_FETCH_PHONE || ''
+			]);
+			feeTotal += Number(item.feeTotal) || 0;
+			if (Number(item.STORAGE_PAY_STATUS) === 1) paidTotal += Number(item.feeTotal) || 0;
+			if (Number(item.STORAGE_PAY_STATUS) === 3) confirmedTotal += Number(item.feeTotal) || 0;
+		}
+
+		let empty = ['', '', '', '', '', '', '', '', '', '', '', '', ''];
+		rows.push(empty.concat(['', '合计费用(元)', (feeTotal / 100).toFixed(2), '']).concat(['']));
+		rows.push(empty.concat(['', '已支付(元)', (paidTotal / 100).toFixed(2), '']).concat(['']));
+		rows.push(empty.concat(['', '已确认收款(元)', (confirmedTotal / 100).toFixed(2), '']).concat(['']));
+
+		let dataService = new DataService();
+		return await dataService.exportDataExcel(
+			EXPORT_STORAGE_MONTH_KEY + yearMonth,
+			'存取柜经营月报' + yearMonth,
 			list.length,
 			rows
 		);

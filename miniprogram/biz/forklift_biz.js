@@ -1,5 +1,5 @@
 /**
- * Notes: 叉车司机业务
+ * Notes: 叉车/吊柜司机业务（共用登录态；身份由登录返回的 role 区分：forklift=叉车,crane=吊柜）
  */
 
 const cacheHelper = require('../helper/cache_helper.js');
@@ -35,6 +35,12 @@ function getForkliftToken() {
 	return cacheHelper.get(constants.CACHE_FORKLIFT);
 }
 
+/** 当前登录账号的工作身份：'forklift' 叉车 / 'crane' 吊柜 */
+function getWorkRole() {
+	let forklift = cacheHelper.get(constants.CACHE_FORKLIFT);
+	return (forklift && forklift.role) || '';
+}
+
 function clearForkliftToken() {
 	cacheHelper.remove(constants.CACHE_FORKLIFT);
 }
@@ -43,5 +49,6 @@ module.exports = {
 	isForklift,
 	forkliftLogin,
 	getForkliftToken,
+	getWorkRole,
 	clearForkliftToken
 };

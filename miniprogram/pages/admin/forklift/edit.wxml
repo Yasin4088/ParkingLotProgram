@@ -18,6 +18,14 @@
 			<input placeholder="请输入手机号" placeholder-class="ph" type="number" value="{{phone}}" bindinput="bindPhoneInput" maxlength="11" />
 		</view>
 
+		<view class="form-group">
+			<view class="label">工作身份</view>
+			<picker mode="selector" range="{{roleItems}}" value="{{roleIndex}}" bindchange="bindRoleChange">
+				<view class="picker-val">{{roleDesc}}</view>
+			</picker>
+		</view>
+		<view class="form-hint">身份决定登录后进入的工作台：叉车司机进装卸货叉车工作台，吊柜司机进存取柜吊柜工作台，两工作台互不通用。修改后立即生效。</view>
+
 		<view wx:if="{{id}}" class="form-group">
 			<view class="label">账号状态</view>
 			<picker mode="selector" range="{{statusItems}}" value="{{statusIndex}}" bindchange="bindStatusChange">

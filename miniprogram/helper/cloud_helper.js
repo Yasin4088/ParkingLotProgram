@@ -302,7 +302,9 @@
  	for (let i = 0; i < imgList.length; i++) {
 
  		let filePath = imgList[i];
- 		let ext = filePath.match(/\.[^.]+?$/)[0];
+ 		// 相机拍摄的临时路径可能无扩展名，兜底 .jpg 避免 match()[0] 抛错
+ 		let m = filePath.match(/\.[^.]+?$/);
+ 		let ext = m ? m[0] : '.jpg';
 
  		// 是否为临时文件
  		if (filePath.includes('tmp') || filePath.includes('temp') || filePath.includes('wxfile')) {
@@ -313,8 +315,9 @@
  			}).then(res => {
  				imgList[i] = res.fileID;
  			}).catch(error => {
- 				// handle error TODO:剔除图片
+ 				// 上传失败：剔除该图（置空返回，避免把本地临时路径当 fileID 返回给页面）
  				console.error(error);
+ 				imgList[i] = '';
  			})
  		}
  	}

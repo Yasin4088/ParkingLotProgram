@@ -148,6 +148,41 @@ class AdminExportController extends BaseAdminController {
 		let service = new AdminExportService();
 		return await service.getQueueMonthURL(input.yearMonth);
 	}
+
+
+	/************** 存取柜月报导出 BEGIN ********************* */
+
+	/** 导出存取柜月度经营报表 */
+	async storageMonthExport() {
+		await this.isAdmin();
+
+		// 数据校验
+		let rules = {
+			yearMonth: 'must|string|name=月份',
+		};
+
+		// 取得数据
+		let input = this.validateData(rules);
+
+		let service = new AdminExportService();
+		return await service.exportStorageMonthExcel(input.yearMonth);
+	}
+
+	/** 获取存取柜月报下载地址 */
+	async storageMonthGet() {
+		await this.isAdmin();
+
+		// 数据校验
+		let rules = {
+			yearMonth: 'must|string|name=月份',
+		};
+
+		// 取得数据
+		let input = this.validateData(rules);
+
+		let service = new AdminExportService();
+		return await service.getStorageMonthURL(input.yearMonth);
+	}
 }
 
 module.exports = AdminExportController;

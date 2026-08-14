@@ -20,12 +20,14 @@ class ForkliftController extends BaseController {
 
 	/** 抢单池 + 我的任务 */
 	async myTask() {
+		await this.checkWorkRole('forklift');
 		let service = new ForkliftService();
 		return await service.getMyTask(this._token);
 	}
 
 	/** 叉车司机完成作业（单据照片） */
 	async complete() {
+		await this.checkWorkRole('forklift');
 		let rules = {
 			id: 'must|string|name=任务记录',
 			billProof: 'must|string|name=单据照片',
@@ -38,6 +40,7 @@ class ForkliftController extends BaseController {
 
 	/** 叉车司机抢单 */
 	async grab() {
+		await this.checkWorkRole('forklift');
 		let rules = {
 			id: 'must|string|name=任务记录',
 		};

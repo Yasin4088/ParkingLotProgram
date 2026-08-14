@@ -109,7 +109,7 @@ class AdminUserController extends BaseAdminController {
 			role: input.role || 'driver',
 		});
 
-		let roleLabel = input.role === 'forklift' ? '叉车司机' : '司机';
+		let roleLabel = input.role === 'crane' ? '吊柜司机' : (input.role === 'forklift' ? '叉车司机' : '司机');
 		this.log('新增了' + roleLabel + '「' + input.username + '」', LogModel.TYPE.USER);
 
 		return { id };

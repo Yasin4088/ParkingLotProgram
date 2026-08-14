@@ -101,12 +101,20 @@ Page({
 			sourceType: ['camera', 'album'],
 			success: async res => {
 				let filePath = res.tempFiles[0].tempFilePath;
-				let cloudId = await cloudHelper.transTempPicOne(filePath, 'queue/proof/', '');
-				if (!cloudId) return;
-				this.setData({
-					proof: cloudId,
-					proofLocal: filePath,
-				});
+				try {
+					let cloudId = await cloudHelper.transTempPicOne(filePath, 'queue/proof/', '', false);
+					if (!cloudId) {
+						wx.showToast({ title: '上传失败，请重试', icon: 'none' });
+						return;
+					}
+					this.setData({
+						proof: cloudId,
+						proofLocal: filePath,
+					});
+				} catch (e) {
+					console.log(e);
+					wx.showToast({ title: '上传失败，请重试', icon: 'none' });
+				}
 			}
 		});
 	},
@@ -141,12 +149,7 @@ Page({
 		wx.navigateTo({ url: '/driver/queue' });
 	},
 
-	bindProfileTap: function () {
-		wx.navigateTo({ url: '/pages/driver/register/register?mode=edit' });
-	},
-
-	bindLogoutTap: function () {
-		cacheHelper.remove(constants.CACHE_TOKEN);
-		wx.redirectTo({ url: '/pages/login/login' });
+	bindBackTap: function () {
+		wx.redirectTo({ url: '/driver/biz_select' });
 	},
 });

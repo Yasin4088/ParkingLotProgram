@@ -161,7 +161,7 @@ Page({
 		if (this._refreshing) return;
 		this._refreshing = true;
 		try {
-			let data = await cloudHelper.callCloudData('admin/queue_list', {}, { title: '' });
+			let data = await cloudHelper.callCloudData('admin/queue_list', {}, { title: '', hint: false });
 			if (!data) return;
 			let list = (data.list || []).map(item => {
 				item.statusClass = STATUS_CLASS[item.QUEUE_STATUS] || 'st-booked';
@@ -457,7 +457,7 @@ Page({
 
 	_assign: async function (item) {
 		try {
-			let rawList = await cloudHelper.callCloudData('admin/forklift_list', {}, { title: '' });
+			let rawList = await cloudHelper.callCloudData('admin/forklift_list', {}, { title: '', hint: false });
 			if (!rawList || !rawList.length) {
 				wx.showToast({ title: '暂无可用叉车司机，请先添加', icon: 'none' });
 				return;
@@ -946,7 +946,14 @@ Page({
 		this.loadList();
 	},
 
-	bindAdminHomeTap: function () {
-		wx.navigateTo({ url: '/pages/admin/index/home/admin_home' });
+	// 底部工作区切换（当前页高亮，无操作）
+	bindNavQueueTap: function () {},
+
+	bindNavStorageTap: function () {
+		wx.redirectTo({ url: '/admin/storage' });
+	},
+
+	bindNavAdminTap: function () {
+		wx.redirectTo({ url: '/pages/admin/index/home/admin_home' });
 	},
 });

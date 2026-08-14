@@ -1,0 +1,71 @@
+/**
+ * Notes: 存取柜司机端控制器
+ */
+
+const BaseController = require('./base_controller.js');
+const StorageService = require('../service/storage_service.js');
+
+class StorageController extends BaseController {
+
+	async options() {
+		let service = new StorageService();
+		return await service.getOptions();
+	}
+
+	/** 司机登记存柜 */
+	async storeRegister() {
+		let rules = {
+			plate: 'must|string|min:3|max:20|name=车牌号',
+			phone: 'must|mobile|name=手机号',
+			cabinetId: 'must|string|name=柜型',
+			cabinetNo: 'must|string|max:20|name=柜号',
+			doorProof: 'must|string|name=柜门照片',
+		};
+		let input = this.validateData(rules);
+
+		let service = new StorageService();
+		return await service.registerStore(this._token, this._userId, input.phone, input.plate, input.cabinetId, input.cabinetNo, input.doorProof);
+	}
+
+	/** 取柜费用预览 */
+	async fetchCalc() {
+		let rules = {
+			code: 'must|string|name=存柜码',
+		};
+		let input = this.validateData(rules);
+
+		let service = new StorageService();
+		return await service.fetchCalc(input.code);
+	}
+
+	/** 司机登记取柜（锁定费用，进入待缴费） */
+	async fetchRegister() {
+		let rules = {
+			code: 'must|string|name=存柜码',
+			phone: 'must|mobile|name=手机号',
+			payMode: 'int|name=支付方式',
+		};
+		let input = this.validateData(rules);
+
+		let service = new StorageService();
+		return await service.registerFetch(this._token, this._userId, input.phone, input.code, input.payMode);
+	}
+
+	/** 在线支付下单 */
+	async pay() {
+		let rules = {
+			id: 'must|string|name=存取柜记录',
+		};
+		let input = this.validateData(rules);
+
+		let service = new StorageService();
+		return await service.pay(this._token, input.id);
+	}
+
+	async myCurrent() {
+		let service = new StorageService();
+		return await service.myCurrent(this._token);
+	}
+}
+
+module.exports = StorageController;

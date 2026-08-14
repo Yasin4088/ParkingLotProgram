@@ -1,0 +1,333 @@
+<view class="page">
+	<!-- 顶部操作：柜型管理 -->
+	<view class="top-bar">
+		<view class="top-btn" bindtap="bindOpenCabinetTap">柜型管理</view>
+	</view>
+
+	<!-- 状态统计 + 筛选 -->
+	<view class="chip-bar">
+		<view class="chip {{filterStatus === '' ? 'active' : ''}}" data-key="" bindtap="bindFilterTap">全部 {{total}}</view>
+		<view wx:for="{{stats}}" wx:key="key" class="chip {{filterStatus === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="bindFilterTap">{{item.label}} {{item.count}}</view>
+	</view>
+
+	<view class="summary">{{filterStatus === '' ? '当前看板 ' + total + ' 单' : '已筛选 ' + displayList.length + ' / ' + total + ' 单'}}</view>
+
+	<view wx:if="{{displayList.length}}">
+		<view wx:for="{{displayList}}" wx:key="_id" data-id="{{item._id}}" bindtap="bindItemTap" class="queue-card {{item.statusClass}}">
+			<view class="top">
+				<view class="no">{{item.STORAGE_NO || item.typeName}}</view>
+				<view class="status {{item.statusClass}}">{{item.statusDesc}}</view>
+			</view>
+			<view class="plate">{{item.STORAGE_PLATE}}</view>
+			<view class="meta">{{item.typeName}} · {{item.STORAGE_CABINET_NAME}} {{item.STORAGE_CABINET_NO}} · 码{{item.STORAGE_CODE}}</view>
+			<view class="meta">登记：{{item.addTimeText || '--'}}</view>
+			<view wx:if="{{item.callTimeText}}" class="meta">叫号：{{item.callTimeText}}</view>
+			<view wx:if="{{item.elapsedText}}" class="elapsed">用时 {{item.elapsedText}}</view>
+
+			<!-- 吊柜司机 -->
+			<view wx:if="{{item.forkliftName}}" class="meta">
+				吊柜：{{item.forkliftName}}<text wx:if="{{item.grabTypeDesc}}">（{{item.grabTypeDesc}}）</text>
+			</view>
+
+			<!-- 取柜费用 -->
+			<view wx:if="{{item.STORAGE_STATUS >= 4}}" class="meta">
+				费用：¥{{item.feeTotalText}}（{{item.STORAGE_DAYS}}天） · {{item.payStatusDesc}}
+			</view>
+
+			<!-- 待叫号 → 叫号 -->
+			<button wx:if="{{item.STORAGE_STATUS === 0 || item.STORAGE_STATUS === 5}}" class="call-btn" data-id="{{item._id}}" catchtap="bindCallTap">叫号</button>
+
+			<!-- 已叫号 → 吊柜未接单：派单/收回 -->
+			<view wx:if="{{(item.STORAGE_STATUS === 1 || item.STORAGE_STATUS === 6) && !item.forkliftName}}" class="card-actions">
+				<view class="card-btn orange" data-id="{{item._id}}" catchtap="bindAssignTap">派单</view>
+				<view class="card-btn ghost" data-id="{{item._id}}" catchtap="bindRecallTap">收回叫号</view>
+			</view>
+
+			<!-- 取柜待缴费 → 确认收款 -->
+			<button wx:if="{{item.STORAGE_STATUS === 4}}" class="finish-btn" data-id="{{item._id}}" catchtap="bindConfirmPayTap">确认收款</button>
+		</view>
+	</view>
+
+	<view wx:else class="empty">{{filterStatus === '' ? '暂无存取柜记录' : '该状态下暂无记录'}}</view>
+
+	<view class="bottom-links">
+		<view bindtap="bindHistoryTap">历史记录</view>
+		<view bindtap="bindRefreshTap">刷新列表</view>
+	</view>
+
+	<!-- 叫号确认弹窗 -->
+	<view wx:if="{{showCallModal}}" class="call-mask" bindtap="bindCloseCallModal">
+		<view class="call-panel" catchtap="bindNoop">
+			<view class="call-head">
+				<view class="call-title">叫号确认</view>
+				<view class="call-close" bindtap="bindCloseCallModal">取消</view>
+			</view>
+
+			<view class="call-info">
+				<view class="call-row">
+					<text class="call-label">车牌号</text>
+					<text class="call-value">{{callTarget.STORAGE_PLATE}}</text>
+				</view>
+				<view class="call-row">
+					<text class="call-label">排队号</text>
+					<text class="call-value">{{callTarget.STORAGE_NO}}</text>
+				</view>
+				<view class="call-row">
+					<text class="call-label">业务</text>
+					<text class="call-value">{{callTarget.typeName}}</text>
+				</view>
+				<view class="call-row">
+					<text class="call-label">柜型 / 柜号</text>
+					<text class="call-value">{{callTarget.STORAGE_CABINET_NAME}} {{callTarget.STORAGE_CABINET_NO}}</text>
+				</view>
+			</view>
+
+			<view class="call-tip">叫号后记录进入吊柜抢单池，吊柜司机自行抢单，一单一车；无人抢单时可手动派单。</view>
+
+			<button class="call-confirm-btn" loading="{{callLoading}}" bindtap="bindConfirmCall">确认叫号</button>
+		</view>
+	</view>
+
+	<!-- 手动派单弹窗 -->
+	<view wx:if="{{showAssignModal}}" class="call-mask" bindtap="bindCloseAssignModal">
+		<view class="call-panel small" catchtap="bindNoop">
+			<view class="call-head">
+				<view class="call-title">手动派单</view>
+				<view class="call-close" bindtap="bindCloseAssignModal">取消</view>
+			</view>
+
+			<view class="call-forklift">
+				<view class="call-label">为 {{assignTarget.STORAGE_PLATE}} 指定吊柜司机</view>
+				<picker mode="selector" range="{{assignForkliftList}}" range-key="USER_NAME" value="{{assignIndex}}" bindchange="bindAssignChange">
+					<view class="forklift-picker">{{assignForkliftList[assignIndex].USER_NAME}}</view>
+				</picker>
+			</view>
+
+			<button class="call-confirm-btn" loading="{{assignLoading}}" bindtap="bindConfirmAssign">确认派单</button>
+		</view>
+	</view>
+
+	<!-- 柜型管理弹窗 -->
+	<view wx:if="{{showCabinetModal}}" class="call-mask" bindtap="bindCloseCabinetTap">
+		<view class="call-panel" catchtap="bindNoop">
+			<view class="call-head">
+				<view class="call-title">{{cabinetEdit ? '编辑柜型' : '柜型管理'}}</view>
+				<view class="call-close" bindtap="bindCloseCabinetTap">关闭</view>
+			</view>
+
+			<!-- 列表模式 -->
+			<view wx:if="{{!cabinetEdit}}">
+				<view class="call-tip">柜型按天计费，改价对新登记的取柜生效，历史记录按登记时单价快照。</view>
+
+				<view wx:if="{{!cabinets.length && !cabinetLoading}}" class="cabinet-empty">暂无柜型，点击下方按钮新增</view>
+				<view wx:for="{{cabinets}}" wx:key="_id" class="cabinet-item">
+					<view class="cabinet-info">
+						<view class="cabinet-name">{{item.name}}<text class="cabinet-status {{item.status === 9 ? 'forbid' : ''}}">{{item.statusDesc}}</text></view>
+						<view class="cabinet-price">¥{{item.priceDailyText}}/天 · 排序 {{item.order}}</view>
+					</view>
+					<view class="cabinet-actions">
+						<view class="card-btn orange" data-id="{{item._id}}" bindtap="bindCabinetEditTap">编辑</view>
+						<view class="card-btn ghost" data-id="{{item._id}}" bindtap="bindCabinetDelTap">删除</view>
+					</view>
+				</view>
+
+				<button class="call-confirm-btn" loading="{{cabinetLoading}}" bindtap="bindCabinetAddTap">+ 新增柜型</button>
+			</view>
+
+			<!-- 编辑表单模式 -->
+			<view wx:else>
+				<view class="form-group">
+					<view class="form-label">柜型名称</view>
+					<input class="edit-input" value="{{cabinetForm.name}}" bindinput="bindCabinetNameInput" maxlength="20" placeholder="例如：20尺柜" />
+				</view>
+				<view class="form-group">
+					<view class="form-label">每日单价（元）</view>
+					<input class="edit-input" value="{{cabinetForm.priceDailyYuan}}" bindinput="bindCabinetPriceInput" type="digit" placeholder="例如：50" />
+				</view>
+				<view class="form-group">
+					<view class="form-label">状态</view>
+					<picker mode="selector" range="{{cabinetStatusOptions}}" range-key="name" value="{{cabinetForm.statusIndex}}" bindchange="bindCabinetStatusChange">
+						<view class="edit-input">{{cabinetStatusOptions[cabinetForm.statusIndex].name}}</view>
+					</picker>
+				</view>
+				<view class="form-group">
+					<view class="form-label">排序（越小越靠前）</view>
+					<input class="edit-input" value="{{cabinetForm.order}}" bindinput="bindCabinetOrderInput" type="number" placeholder="默认 9999" />
+				</view>
+
+				<view class="detail-actions two">
+					<view class="detail-btn ghost" bindtap="bindCabinetFormBackTap">返回列表</view>
+					<view class="detail-btn primary" bindtap="bindCabinetSaveTap">{{cabinetSaveLoading ? '保存中...' : '保存'}}</view>
+				</view>
+			</view>
+		</view>
+	</view>
+
+	<!-- 详情弹窗 -->
+	<view wx:if="{{showDetail}}" class="detail-mask" bindtap="bindCloseDetailTap">
+		<view class="detail-panel" catchtap="bindNoop">
+			<view class="detail-head">
+				<view>
+					<view class="detail-title">存取柜详情</view>
+					<view class="detail-sub">{{selectedItem.STORAGE_NO || '--'}} · {{selectedItem.statusDesc}}</view>
+				</view>
+				<view class="detail-close" bindtap="bindCloseDetailTap">关闭</view>
+			</view>
+
+			<view class="detail-grid">
+				<view class="detail-row">
+					<view class="detail-label">车牌号</view>
+					<view class="detail-value">{{selectedItem.STORAGE_PLATE || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">存柜手机号</view>
+					<view class="detail-value">{{selectedItem.STORAGE_PHONE || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">业务</view>
+					<view class="detail-value">{{selectedItem.typeName}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">柜型 / 柜号</view>
+					<view class="detail-value">{{selectedItem.STORAGE_CABINET_NAME}} · {{selectedItem.STORAGE_CABINET_NO}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">存柜码</view>
+					<view class="detail-value">{{selectedItem.STORAGE_CODE}}</view>
+				</view>
+				<view wx:if="{{selectedItem.driverInfo}}" class="detail-row">
+					<view class="detail-label">司机姓名</view>
+					<view class="detail-value">{{selectedItem.driverInfo.name || '--'}}</view>
+				</view>
+				<view wx:if="{{selectedItem.driverInfo && selectedItem.driverInfo.idCard}}" class="detail-row">
+					<view class="detail-label">身份证号</view>
+					<view class="detail-value">{{selectedItem.driverInfo.idCard}}</view>
+				</view>
+				<view wx:if="{{selectedItem.driverInfo && selectedItem.driverInfo.driverLicenseImg}}" class="detail-row">
+					<view class="detail-label">驾驶证</view>
+					<view class="detail-link" data-field="driverLicenseImg" bindtap="bindPreviewDriverImgTap">点击查看</view>
+				</view>
+				<view wx:if="{{selectedItem.driverInfo && selectedItem.driverInfo.vehicleRegImg}}" class="detail-row">
+					<view class="detail-label">行驶证</view>
+					<view class="detail-link" data-field="vehicleRegImg" bindtap="bindPreviewDriverImgTap">点击查看</view>
+				</view>
+				<view wx:if="{{selectedItem.driverInfo && selectedItem.driverInfo.idCardImg}}" class="detail-row">
+					<view class="detail-label">身份证照</view>
+					<view class="detail-link" data-field="idCardImg" bindtap="bindPreviewDriverImgTap">点击查看</view>
+				</view>
+				<view wx:if="{{selectedItem.fetchUserInfo}}" class="detail-row">
+					<view class="detail-label">取柜登记人</view>
+					<view class="detail-value">{{selectedItem.fetchUserInfo.name || '--'}} {{selectedItem.fetchUserInfo.mobile || ''}}</view>
+				</view>
+				<view wx:if="{{selectedItem.STORAGE_FETCH_PHONE}}" class="detail-row">
+					<view class="detail-label">取柜手机号</view>
+					<view class="detail-value">{{selectedItem.STORAGE_FETCH_PHONE}}</view>
+				</view>
+				<view wx:if="{{selectedItem.STORAGE_CABINET_DOOR_PROOF}}" class="detail-row">
+					<view class="detail-label">柜门照片</view>
+					<view class="detail-link" data-field="STORAGE_CABINET_DOOR_PROOF" bindtap="bindPreviewProofTap">点击查看</view>
+					<view class="detail-link" data-field="STORAGE_CABINET_DOOR_PROOF" bindtap="bindSaveProofTap">保存</view>
+				</view>
+				<view wx:if="{{selectedItem.STORAGE_EXEC_PROOF}}" class="detail-row">
+					<view class="detail-label">存柜完成照</view>
+					<view class="detail-link" data-field="STORAGE_EXEC_PROOF" bindtap="bindPreviewProofTap">点击查看</view>
+					<view class="detail-link" data-field="STORAGE_EXEC_PROOF" bindtap="bindSaveProofTap">保存</view>
+				</view>
+				<view wx:if="{{selectedItem.STORAGE_FETCH_PROOF}}" class="detail-row">
+					<view class="detail-label">取柜完成照</view>
+					<view class="detail-link" data-field="STORAGE_FETCH_PROOF" bindtap="bindPreviewProofTap">点击查看</view>
+					<view class="detail-link" data-field="STORAGE_FETCH_PROOF" bindtap="bindSaveProofTap">保存</view>
+				</view>
+				<view wx:if="{{selectedItem.forkliftName}}" class="detail-row">
+					<view class="detail-label">吊柜司机</view>
+					<view class="detail-value">{{selectedItem.forkliftName}}<text wx:if="{{selectedItem.grabTypeDesc}}">（{{selectedItem.grabTypeDesc}}）</text></view>
+				</view>
+				<view wx:if="{{selectedItem.STORAGE_STATUS >= 4}}" class="detail-row">
+					<view class="detail-label">支付方式</view>
+					<view class="detail-value">{{selectedItem.payModeDesc || '--'}}</view>
+				</view>
+				<view wx:if="{{selectedItem.STORAGE_STATUS >= 4}}" class="detail-row">
+					<view class="detail-label">支付状态</view>
+					<view class="detail-value">{{selectedItem.payStatusDesc}}</view>
+				</view>
+
+				<view wx:if="{{selectedItem.addTimeText}}" class="detail-row">
+					<view class="detail-label">存柜登记</view>
+					<view class="detail-value">{{selectedItem.addTimeText}}</view>
+				</view>
+				<view wx:if="{{selectedItem.queueTimeText}}" class="detail-row">
+					<view class="detail-label">排队时间</view>
+					<view class="detail-value">{{selectedItem.queueTimeText}}</view>
+				</view>
+				<view wx:if="{{selectedItem.callTimeText}}" class="detail-row">
+					<view class="detail-label">叫号时间</view>
+					<view class="detail-value">{{selectedItem.callTimeText}}</view>
+				</view>
+				<view wx:if="{{selectedItem.grabTimeText}}" class="detail-row">
+					<view class="detail-label">接单时间</view>
+					<view class="detail-value">{{selectedItem.grabTimeText}}</view>
+				</view>
+				<view wx:if="{{selectedItem.finishTimeText}}" class="detail-row">
+					<view class="detail-label">存柜完成（计费起点）</view>
+					<view class="detail-value">{{selectedItem.finishTimeText}}</view>
+				</view>
+				<view wx:if="{{selectedItem.fetchTimeText}}" class="detail-row">
+					<view class="detail-label">取柜登记</view>
+					<view class="detail-value">{{selectedItem.fetchTimeText}}</view>
+				</view>
+				<view wx:if="{{selectedItem.payTimeText}}" class="detail-row">
+					<view class="detail-label">支付时间</view>
+					<view class="detail-value">{{selectedItem.payTimeText}}</view>
+				</view>
+				<view wx:if="{{selectedItem.payConfirmTimeText}}" class="detail-row">
+					<view class="detail-label">收款确认</view>
+					<view class="detail-value">{{selectedItem.payConfirmTimeText}}（{{selectedItem.STORAGE_PAY_CONFIRM_OPERATOR || '管理员'}}）</view>
+				</view>
+				<view wx:if="{{selectedItem.fetchDoneTimeText}}" class="detail-row">
+					<view class="detail-label">取柜完成</view>
+					<view class="detail-value">{{selectedItem.fetchDoneTimeText}}</view>
+				</view>
+				<view wx:if="{{selectedItem.cancelTimeText}}" class="detail-row">
+					<view class="detail-label">取消时间</view>
+					<view class="detail-value">{{selectedItem.cancelTimeText}}</view>
+				</view>
+			</view>
+
+			<!-- 取柜费用 -->
+			<view wx:if="{{selectedItem.STORAGE_STATUS >= 4}}" class="fee-box">
+				<view class="fee-box-title">取柜费用</view>
+				<view class="fee-line">
+					<view class="fee-line-name">{{selectedItem.STORAGE_DAYS}} 天 × ¥{{selectedItem.priceDailyText}}/天</view>
+					<view class="fee-line-amount">¥{{selectedItem.feeTotalText}}</view>
+				</view>
+				<view class="fee-total">合计：¥{{selectedItem.feeTotalText}}</view>
+			</view>
+
+			<!-- 操作区 -->
+			<view wx:if="{{selectedItem.STORAGE_STATUS === 0 || selectedItem.STORAGE_STATUS === 5}}" class="detail-actions two">
+				<view class="detail-btn warn" bindtap="bindDetailCallTap">叫号</view>
+			</view>
+			<view wx:if="{{(selectedItem.STORAGE_STATUS === 1 || selectedItem.STORAGE_STATUS === 6) && !selectedItem.forkliftName}}" class="detail-actions two">
+				<view class="detail-btn warn" bindtap="bindDetailAssignTap">派单</view>
+				<view class="detail-btn ghost" bindtap="bindDetailRecallTap">收回叫号</view>
+			</view>
+			<view wx:if="{{selectedItem.STORAGE_STATUS === 4}}" class="detail-actions two">
+				<view class="detail-btn warn" bindtap="bindDetailConfirmPayTap">确认收款</view>
+			</view>
+
+			<!-- 取消（看板所有状态均可删除） -->
+			<view wx:if="{{selectedItem.STORAGE_STATUS <= 7}}" class="cancel-box">
+				<view class="form-label">删除/取消原因</view>
+				<textarea class="reason-input" value="{{cancelReason}}" bindinput="bindCancelReasonInput" maxlength="80" placeholder="请输入原因" />
+				<view class="danger-btn" bindtap="bindCancelTap">{{submitting ? '处理中...' : '删除并取消'}}</view>
+			</view>
+		</view>
+	</view>
+
+	<!-- 底部工作区切换：装卸货 / 存取柜 / 后台 -->
+	<view class="bottom-nav">
+		<view class="bottom-nav-item" bindtap="bindNavQueueTap">装卸货</view>
+		<view class="bottom-nav-item active" bindtap="bindNavStorageTap">存取柜</view>
+		<view class="bottom-nav-item" bindtap="bindNavAdminTap">后台</view>
+	</view>
+</view>

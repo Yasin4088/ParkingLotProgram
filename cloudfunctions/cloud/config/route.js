@@ -18,10 +18,21 @@ module.exports = {
 	'driver/getinfo': 'driver_controller@getMyDetail',
 	'driver/updateinfo': 'driver_controller@updateInfo',
 
+	'storage/options': 'storage_controller@options',
+	'storage/store_register': 'storage_controller@storeRegister',
+	'storage/fetch_calc': 'storage_controller@fetchCalc',
+	'storage/fetch_register': 'storage_controller@fetchRegister',
+	'storage/my_current': 'storage_controller@myCurrent',
+	'storage/pay': 'storage_controller@pay',
+
 	'forklift/login': 'forklift_controller@login',
 	'forklift/my_task': 'forklift_controller@myTask',
 	'forklift/complete': 'forklift_controller@complete',
 	'forklift/grab': 'forklift_controller@grab',
+
+	'storage_forklift/my_task': 'storage_forklift_controller@myTask',
+	'storage_forklift/grab': 'storage_forklift_controller@grab',
+	'storage_forklift/complete': 'storage_forklift_controller@complete',
 
 	'admin/login': 'admin/admin_home_controller@adminLogin',
 	'admin/check_setup': 'admin/admin_home_controller@checkSetup',
@@ -44,8 +55,25 @@ module.exports = {
 	'admin/queue_finish': 'admin/admin_queue_controller@finish',
 	'admin/forklift_list': 'admin/admin_queue_controller@forkliftList',
 
+	'admin/storage_list': 'admin/admin_storage_controller@list',
+	'admin/storage_detail': 'admin/admin_storage_controller@detail',
+	'admin/storage_call': 'admin/admin_storage_controller@call',
+	'admin/storage_recall': 'admin/admin_storage_controller@recall',
+	'admin/storage_assign': 'admin/admin_storage_controller@assign',
+	'admin/storage_confirm_pay': 'admin/admin_storage_controller@confirmPay',
+	'admin/storage_cancel': 'admin/admin_storage_controller@cancel',
+	'admin/storage_history_list': 'admin/admin_storage_controller@historyList',
+	'admin/storage_history_clear': 'admin/admin_storage_controller@historyClear',
+	'admin/storage_history_clear_all': 'admin/admin_storage_controller@historyClearAll',
+	'admin/storage_cabinet_list': 'admin/admin_storage_controller@cabinetList',
+	'admin/storage_cabinet_save': 'admin/admin_storage_controller@cabinetSave',
+	'admin/storage_cabinet_del': 'admin/admin_storage_controller@cabinetDel',
+	'admin/storage_forklift_list': 'admin/admin_storage_controller@forkliftList',
+
 	'admin/report_month': 'admin/admin_export_controller@queueMonthExport',
 	'admin/report_url': 'admin/admin_export_controller@queueMonthGet',
+	'admin/report_storage_month': 'admin/admin_export_controller@storageMonthExport',
+	'admin/report_storage_url': 'admin/admin_export_controller@storageMonthGet',
 
 	'admin/user_list': 'admin/admin_user_controller@getUserList',
 	'admin/user_detail': 'admin/admin_user_controller@getUserDetailById',

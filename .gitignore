@@ -3,6 +3,7 @@
 .cloudbase/
 .cursor/
 node_modules/
+*.pem
 **.md
 !README.md
 !CLAUDE.md

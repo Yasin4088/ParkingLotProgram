@@ -138,7 +138,9 @@ Page({
 			}, { title: '登录中' });
 
 			ForkliftBiz.forkliftLogin(res.data);
-			wx.redirectTo({ url: '/pages/forklift/home' });
+			// 按账号身份直达对应工作台：叉车→叉车工作台，吊柜→吊柜工作台（两界面不互通）
+			let target = res.data.role === 'crane' ? '/pages/storage_forklift/home' : '/pages/forklift/home';
+			wx.redirectTo({ url: target });
 
 		} catch (e) {
 			console.log(e);
@@ -158,8 +160,8 @@ Page({
 			cacheHelper.set(constants.CACHE_TOKEN, res.data, 86400);
 
 			if (res.data.registered) {
-				// 有进行中的排队/作业记录 → 直达排队页；否则去认领页
-				wx.redirectTo({ url: res.data.hasActiveQueue ? '/driver/queue' : '/driver/home' });
+				// 登录后第一页为业务选择页（装卸货/存柜/取柜）；进行中任务以角标提示
+				wx.redirectTo({ url: '/driver/biz_select' });
 			} else {
 				wx.redirectTo({ url: '/pages/driver/register/register' });
 			}

@@ -7,7 +7,8 @@ Page({
 
 	data: {
 		search: '',
-		forkliftParams: { role: 'forklift' },
+		// 叉车与吊柜司机合并列表（后端按逗号分隔多角色过滤）
+		forkliftParams: { role: 'forklift,crane' },
 	},
 
 	onLoad: function (options) {
@@ -45,7 +46,7 @@ Page({
 				console.log(err);
 			}
 		};
-		pageHelper.showConfirm('确认删除该叉车司机？', callback);
+		pageHelper.showConfirm('确认删除该叉车/吊柜司机？', callback);
 	},
 
 	bindCommListCmpt: function (e) {

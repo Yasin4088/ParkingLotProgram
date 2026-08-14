@@ -43,20 +43,13 @@
 
 	<view class="comm-list grid col-4">
 		<view class="item" bindtap="url" data-url="../../driver/list"> <text class="icon-peoplefill text-orange"></text> <text class="text-black">司机管理</text></view>
-		<view class="item" bindtap="url" data-url="../../forklift/list"> <text class="icon-peoplefill text-orange"></text> <text class="text-black">叉车司机管理</text></view>
+		<view class="item" bindtap="url" data-url="../../forklift/list"> <text class="icon-peoplefill text-orange"></text> <text class="text-black">叉车/吊柜司机管理</text></view>
 		<view class="item" bindtap="url" data-url="../../queue_history"> <text class="icon-footprint text-blue"></text> <text class="text-black">历史记录</text></view>
-		<view class="item" bindtap="url" data-url="../../user/list/admin_user_list"> <text class="icon-peoplefill text-green"></text> <text class="text-black">用户管理</text></view>
+		<view wx:if="{{admin.type==1}}" class="item" bindtap="url" data-url="../../mgr/admin/list"> <text class="icon-peoplefill text-blue"></text> <text class="text-black">管理员管理</text></view>
 	</view>
 
 	<!-- BOTTOM begin -->
 	<view class="comm-list menu  margin-top">
-		<view wx:if="{{admin.type==1}}" class="item arrow" bindtap="url" data-url='../../mgr/admin/list'>
-			<view class="content">
-				<text class="icon-peoplefill text-blue"></text>
-				<text class="text-black">管理员管理</text>
-			</view>
-		</view>
-
 		<view class="item arrow" bindtap="bindSettingTap">
 			<view class="content">
 				<text class="icon-settings text-grey"></text>
@@ -67,5 +60,12 @@
 
 	<!-- BOTTOM END -->
 	<button bindtap="bindExitTap" class="btn-admin">退出登录</button>
+
+	<!-- 底部工作区切换：装卸货 / 存取柜 / 后台 -->
+	<view class="bottom-nav">
+		<view class="bottom-nav-item" bindtap="bindNavQueueTap">装卸货</view>
+		<view class="bottom-nav-item" bindtap="bindNavStorageTap">存取柜</view>
+		<view class="bottom-nav-item active" bindtap="bindNavAdminTap">后台</view>
+	</view>
 
 </view>

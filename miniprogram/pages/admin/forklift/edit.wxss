@@ -62,6 +62,13 @@
 	color: #bbb;
 }
 
+.form-hint {
+	font-size: 22rpx;
+	color: #999;
+	line-height: 1.6;
+	margin: -10rpx 0 24rpx 150rpx;
+}
+
 .picker-val {
 	width: auto;
 	height: 88rpx;

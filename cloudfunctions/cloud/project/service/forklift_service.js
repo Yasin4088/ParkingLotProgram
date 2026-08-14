@@ -10,12 +10,12 @@ const timeUtil = require('../../framework/utils/time_util.js');
 
 class ForkliftService extends BaseService {
 
-	/** 叉车司机登录 */
+	/** 叉车/吊柜司机登录（身份由 USER_ROLE 决定：forklift=叉车,crane=吊柜） */
 	async login(username, password) {
 		let user = await UserModel.getOne({
 			USER_NAME: username,
-			USER_ROLE: 'forklift'
-		}, '_id,USER_NAME,USER_MOBILE,USER_PASSWORD,USER_STATUS,USER_LOGIN_CNT');
+			USER_ROLE: ['in', 'forklift,crane']
+		}, '_id,USER_NAME,USER_MOBILE,USER_PASSWORD,USER_STATUS,USER_ROLE,USER_LOGIN_CNT');
 
 		if (!user) {
 			this.AppError('用户名或密码不正确');
@@ -40,7 +40,7 @@ class ForkliftService extends BaseService {
 			token: user._id,
 			name: user.USER_NAME,
 			phone: user.USER_MOBILE || '',
-			role: 'forklift'
+			role: user.USER_ROLE
 		};
 	}
 

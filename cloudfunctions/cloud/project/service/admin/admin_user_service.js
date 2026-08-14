@@ -43,9 +43,13 @@ class AdminUserService extends BaseAdminService {
 		page = page || 1;
 		size = size || 20;
 
-		let where = {
-			USER_ROLE: role,
-		};
+		let where = {};
+		if (String(role).includes(',')) {
+			// 多角色查询（如 forklift,crane：叉车/吊柜司机合并列表）
+			where.USER_ROLE = ['in', role];
+		} else {
+			where.USER_ROLE = role;
+		}
 		if (sortType && util.isDefined(sortVal)) {
 			switch (sortType) {
 				case 'status':
@@ -74,9 +78,9 @@ class AdminUserService extends BaseAdminService {
 		// 搜索兜底：司机和叉车司机都按姓名、手机号、车牌过滤。
 		if (search) {
 			let kw = String(search).toLowerCase();
-			let allByRole = await UserModel.getAll({
-				USER_ROLE: role,
-			}, fields, orderBy, 500);
+			let allByRole = await UserModel.getAll(
+				role.includes(',') ? { USER_ROLE: ['in', role] } : { USER_ROLE: role },
+				fields, orderBy, 500);
 			let allList = allByRole || [];
 
 			if (role === 'driver' && allList.length == 0) {

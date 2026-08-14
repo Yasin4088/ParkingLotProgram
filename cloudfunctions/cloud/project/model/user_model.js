@@ -21,7 +21,7 @@ UserModel.DB_STRUCTURE = {
 	USER_NAME: 'string|false|comment=用户姓名',
 	USER_MOBILE: 'string|false|comment=联系电话',
 	USER_PASSWORD: 'string|false|comment=MD5密码',
-	USER_ROLE: 'string|false|default=driver|comment=角色 driver=司机,admin=管理员',
+	USER_ROLE: 'string|false|default=driver|comment=角色 driver=司机,admin=管理员,forklift=叉车司机,crane=吊柜司机',
 
 	USER_WORK: 'string|false|comment=所在单位',
 	USER_CITY: 'string|false|comment=所在城市',

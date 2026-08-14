@@ -1,0 +1,123 @@
+<view class="page">
+	<view class="custom-nav" style="height: {{customBar}}px; padding-top: {{statusBar}}px;">
+		<view class="custom-nav-back" style="top: {{statusBar}}px; height: {{navBarHeight}}px;" bindtap="bindBackTap">
+			<view class="custom-nav-back-icon"></view>
+		</view>
+		<view class="custom-nav-title" style="height: {{navBarHeight}}px; line-height: {{navBarHeight}}px;">存取柜服务</view>
+	</view>
+
+	<view class="header">
+		<view class="title">存取柜服务</view>
+		<view class="desc">存柜免费登记并生成存柜码；取柜按天计费，缴费后才进入取柜排队</view>
+	</view>
+
+	<view class="tab-bar">
+		<view class="tab-item {{tab === 'store' ? 'active' : ''}}" bindtap="bindTabTap" data-tab="store">我要存柜</view>
+		<view class="tab-item {{tab === 'fetch' ? 'active' : ''}}" bindtap="bindTabTap" data-tab="fetch">我要取柜</view>
+	</view>
+
+	<!-- 存柜登记 -->
+	<view wx:if="{{tab === 'store'}}" class="card">
+		<view class="form-item">
+			<view class="label">车牌号</view>
+			<input value="{{plate}}" placeholder="例如：粤B12345" maxlength="20" bindinput="bindPlateInput" />
+		</view>
+
+		<view class="form-item">
+			<view class="label">手机号</view>
+			<input value="{{phone}}" placeholder="用于现场联系" type="number" maxlength="11" bindinput="bindPhoneInput" />
+		</view>
+
+		<view class="form-item">
+			<view class="label">柜型</view>
+			<picker range="{{cabinets}}" range-key="text" value="{{cabinetIndex}}" bindchange="bindCabinetChange">
+				<view class="picker">{{cabinetIndex >= 0 ? cabinets[cabinetIndex].text : '请选择柜型'}}</view>
+			</picker>
+		</view>
+
+		<view class="form-item">
+			<view class="label">柜号</view>
+			<input value="{{cabinetNo}}" placeholder="例如：A-101" maxlength="20" bindinput="bindCabinetNoInput" />
+		</view>
+
+		<view class="form-item">
+			<view class="label">柜门照片（必传）</view>
+			<view class="upload" bindtap="bindChooseDoorProof">
+				<image wx:if="{{doorProofLocal}}" src="{{doorProofLocal}}" mode="aspectFill"></image>
+				<view wx:else class="upload-empty">拍照/上传柜门照片</view>
+			</view>
+		</view>
+
+		<view class="tips">登记后自动记录时间并生成存柜码，等待管理员叫号后吊柜司机开始存柜</view>
+
+		<button class="primary-btn" loading="{{submitting}}" bindtap="bindStoreSubmit">登记存柜</button>
+
+		<!-- 我的存柜（取出前一直可见，防止忘记存柜码） -->
+		<view class="my-storage">
+			<view class="my-storage-title">我的存柜</view>
+			<view wx:if="{{!myList.length}}" class="my-storage-empty">暂无进行中的存柜</view>
+			<view wx:for="{{myList}}" wx:key="_id" class="my-storage-item" bindtap="bindMyTap">
+				<view class="my-storage-head">
+					<text class="my-storage-code">存柜码 {{item.STORAGE_CODE}}</text>
+					<text class="my-storage-status">{{item.statusDesc}}</text>
+				</view>
+				<view class="my-storage-meta">{{item.typeName}} · {{item.STORAGE_CABINET_NAME}} · 柜号 {{item.STORAGE_CABINET_NO}}</view>
+				<view class="my-storage-meta" wx:if="{{item.ahead > 0}}">前面还有 {{item.ahead}} 人排队</view>
+			</view>
+		</view>
+	</view>
+
+	<!-- 取柜登记 -->
+	<view wx:else class="card">
+		<view class="form-item">
+			<view class="label">存柜码</view>
+			<input value="{{fetchCode}}" placeholder="存柜时生成的 6 位数字码" type="number" maxlength="6" bindinput="bindFetchCodeInput" />
+		</view>
+
+		<view class="form-item">
+			<view class="label">手机号</view>
+			<input value="{{phone}}" placeholder="用于现场联系" type="number" maxlength="11" bindinput="bindPhoneInput" />
+		</view>
+
+		<button class="ghost-btn" loading="{{calcLoading}}" bindtap="bindFetchCalc">查询费用</button>
+
+		<view wx:if="{{calc}}" class="calc-box">
+			<view class="calc-row">
+				<text>柜型 / 柜号</text>
+				<text>{{calc.cabinetName}} · {{calc.cabinetNo}}</text>
+			</view>
+			<view class="calc-row">
+				<text>车牌</text>
+				<text>{{calc.plate}}</text>
+			</view>
+			<view class="calc-row">
+				<text>存柜时间</text>
+				<text>{{calc.finishTimeText}}</text>
+			</view>
+			<view class="calc-row">
+				<text>计费</text>
+				<text>{{calc.days}} 天 × ¥{{calc.priceDailyText}}/天（不足1天按1天）</text>
+			</view>
+			<view class="calc-total">合计：¥{{calc.feeTotalText}}</view>
+		</view>
+
+		<!-- 支付（暂未开放，占位按键） -->
+		<button wx:if="{{calc}}" class="primary-btn" bindtap="bindPayTap">支付 ¥{{calc.feeTotalText}}</button>
+
+		<view wx:if="{{calc}}" class="form-item">
+			<view class="label">支付方式</view>
+			<picker range="{{payModes}}" range-key="label" value="{{payModeIndex}}" bindchange="bindPayModeChange">
+				<view class="picker">{{payModes[payModeIndex].label}}</view>
+			</picker>
+		</view>
+
+		<view wx:if="{{calc}}" class="tips">{{wxpayEnable ? '在线支付完成后自动进入取柜排队' : '提交后请到现场缴费，管理员确认收款后进入排队'}}</view>
+
+		<button wx:if="{{calc}}" class="primary-btn" loading="{{submitting}}" bindtap="bindFetchSubmit">提交取柜登记</button>
+	</view>
+
+	<!-- 入口只在存柜页展示（取柜页入口已移除） -->
+	<view class="footer-actions" wx:if="{{tab === 'store'}}">
+		<view bindtap="bindMyTap">查看我的存柜</view>
+	</view>
+</view>

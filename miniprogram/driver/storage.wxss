@@ -1,0 +1,258 @@
+.page {
+	min-height: 100vh;
+	background: #f5f7f8;
+	padding: 0 28rpx calc(80rpx + env(safe-area-inset-bottom));
+	box-sizing: border-box;
+}
+
+.custom-nav {
+	margin: 0 -28rpx 28rpx;
+	background: #3B82E6;
+	color: #fff;
+	box-sizing: border-box;
+	position: relative;
+}
+
+.custom-nav-back {
+	position: absolute;
+	left: 32rpx;
+	width: 64rpx;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+}
+
+.custom-nav-back-icon {
+	width: 22rpx;
+	height: 22rpx;
+	border-left: 4rpx solid #fff;
+	border-bottom: 4rpx solid #fff;
+	transform: rotate(45deg);
+}
+
+.custom-nav-title {
+	text-align: center;
+	font-size: 32rpx;
+	font-weight: 600;
+}
+
+.header {
+	background: linear-gradient(135deg, #3B82E6 0%, #5A9CF0 100%);
+	border-radius: 24rpx;
+	color: #fff;
+	padding: 42rpx 34rpx;
+	margin-bottom: 28rpx;
+}
+
+.title {
+	font-size: 42rpx;
+	font-weight: bold;
+}
+
+.desc {
+	font-size: 26rpx;
+	opacity: .9;
+	margin-top: 16rpx;
+	line-height: 1.6;
+}
+
+.tab-bar {
+	display: flex;
+	background: #eef1f6;
+	border-radius: 999rpx;
+	padding: 8rpx;
+	margin-bottom: 28rpx;
+}
+
+.tab-item {
+	flex: 1;
+	height: 72rpx;
+	line-height: 72rpx;
+	text-align: center;
+	border-radius: 999rpx;
+	color: #52606d;
+	font-size: 28rpx;
+}
+
+.tab-item.active {
+	background: #fff;
+	color: #3B82E6;
+	font-weight: 600;
+	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, .06);
+}
+
+.card {
+	background: #fff;
+	border-radius: 24rpx;
+	padding: 32rpx;
+	box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, .06);
+}
+
+.form-item {
+	margin-bottom: 30rpx;
+}
+
+.label {
+	font-size: 28rpx;
+	color: #333;
+	font-weight: 600;
+	margin-bottom: 14rpx;
+}
+
+.picker,
+input {
+	height: 84rpx;
+	line-height: 84rpx;
+	background: #f7f8fa;
+	border-radius: 14rpx;
+	padding: 0 22rpx;
+	font-size: 28rpx;
+	color: #333;
+	box-sizing: border-box;
+}
+
+.upload {
+	width: 220rpx;
+	height: 160rpx;
+	border-radius: 16rpx;
+	background: #f7f8fa;
+	border: 2rpx dashed #cfd8d4;
+	overflow: hidden;
+}
+
+.upload image {
+	width: 100%;
+	height: 100%;
+}
+
+.upload-empty {
+	height: 160rpx;
+	line-height: 160rpx;
+	text-align: center;
+	color: #789;
+	font-size: 26rpx;
+}
+
+.tips {
+	color: #52606d;
+	font-size: 26rpx;
+	line-height: 1.6;
+	margin: 20rpx 0;
+}
+
+/* 费用预览 */
+.calc-box {
+	margin: 26rpx 0;
+	padding: 24rpx;
+	border-radius: 18rpx;
+	background: #f7fafc;
+}
+
+.calc-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 14rpx 0;
+	border-bottom: 1rpx solid #e8edf2;
+	font-size: 27rpx;
+	color: #000;
+}
+
+.calc-row:last-child {
+	border-bottom: none;
+}
+
+.calc-row text:first-child {
+	color: #7b8794;
+}
+
+.calc-total {
+	margin-top: 14rpx;
+	text-align: right;
+	font-size: 32rpx;
+	font-weight: bold;
+	color: #e53e3e;
+}
+
+.primary-btn,
+.ghost-btn {
+	height: 88rpx;
+	line-height: 88rpx;
+	border-radius: 44rpx;
+	font-size: 32rpx;
+	margin-top: 14rpx;
+}
+
+.primary-btn {
+	background: #3B82E6;
+	color: #fff;
+}
+
+.ghost-btn {
+	background: #eef0ff;
+	color: #3B82E6;
+}
+
+.footer-actions {
+	display: flex;
+	justify-content: center;
+	gap: 48rpx;
+	color: #3B82E6;
+	font-size: 26rpx;
+	padding: 34rpx 0;
+}
+
+/* ========== 我的存柜（存柜页内展示） ========== */
+
+.my-storage {
+	margin-top: 34rpx;
+	padding-top: 30rpx;
+	border-top: 1rpx solid #e8edf2;
+}
+
+.my-storage-title {
+	font-size: 30rpx;
+	font-weight: bold;
+	color: #102a43;
+	margin-bottom: 20rpx;
+}
+
+.my-storage-empty {
+	text-align: center;
+	color: #8a99a8;
+	font-size: 26rpx;
+	padding: 24rpx 0;
+}
+
+.my-storage-item {
+	background: #f7fafc;
+	border-radius: 16rpx;
+	padding: 22rpx;
+	margin-bottom: 16rpx;
+}
+
+.my-storage-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.my-storage-code {
+	font-size: 32rpx;
+	font-weight: bold;
+	color: #1565C0;
+	letter-spacing: 2rpx;
+}
+
+.my-storage-status {
+	font-size: 22rpx;
+	color: #627d98;
+	background: #eef2f6;
+	padding: 4rpx 14rpx;
+	border-radius: 999rpx;
+}
+
+.my-storage-meta {
+	margin-top: 10rpx;
+	font-size: 26rpx;
+	color: #627d98;
+}

@@ -1,6 +1,6 @@
 <view class="page">
 	<view class="custom-nav" style="height: {{customBar}}px; padding-top: {{statusBar}}px;">
-		<view class="custom-nav-back" style="top: {{statusBar}}px; height: {{navBarHeight}}px;" bindtap="bindLogoutTap">
+		<view class="custom-nav-back" style="top: {{statusBar}}px; height: {{navBarHeight}}px;" bindtap="bindBackTap">
 			<view class="custom-nav-back-icon"></view>
 		</view>
 		<view class="custom-nav-title" style="height: {{navBarHeight}}px; line-height: {{navBarHeight}}px;">认领任务</view>
@@ -35,6 +35,5 @@
 
 	<view class="footer-actions">
 		<view bindtap="bindQueueTap">查看我的排队</view>
-		<view bindtap="bindProfileTap">个人信息填写</view>
 	</view>
 </view>

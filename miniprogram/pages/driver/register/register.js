@@ -256,7 +256,7 @@ Page({
 
         wx.showToast({ title: isEdit ? '保存成功' : '注册成功', icon: 'success', duration: 1500 });
         setTimeout(function () {
-          wx.redirectTo({ url: '/driver/home' });
+          wx.redirectTo({ url: '/driver/biz_select' });
         }, 1500);
       }
     } catch (err) {

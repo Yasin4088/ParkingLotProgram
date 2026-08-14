@@ -1,0 +1,79 @@
+<view wx:if="{{isLoad}}" class="page">
+	<view class="custom-nav" style="height: {{customBar}}px; padding-top: {{statusBar}}px;">
+		<view class="custom-nav-back" style="top: {{statusBar}}px; height: {{navBarHeight}}px;" bindtap="bindLogoutTap">
+			<view class="custom-nav-back-icon"></view>
+		</view>
+		<view class="custom-nav-title" style="height: {{navBarHeight}}px; line-height: {{navBarHeight}}px;">吊柜司机</view>
+	</view>
+
+	<view class="header">
+		<view class="desc">存取柜任务池抢单 · 存柜/取柜执行</view>
+	</view>
+
+	<!-- 我的任务 -->
+	<view wx:if="{{myTask}}" class="task-card">
+		<view class="task-status">{{myTask.statusDesc}}</view>
+
+		<view class="task-grid">
+			<view class="task-row">
+				<view class="t-label">业务</view>
+				<view class="t-value">{{myTask.typeName}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">存柜码</view>
+				<view class="t-value">{{myTask.STORAGE_CODE}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">车牌号</view>
+				<view class="t-value">{{myTask.STORAGE_PLATE}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">柜型 / 柜号</view>
+				<view class="t-value">{{myTask.STORAGE_CABINET_NAME}} · {{myTask.STORAGE_CABINET_NO}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">排队号</view>
+				<view class="t-value">{{myTask.STORAGE_NO || '--'}}</view>
+			</view>
+			<view class="task-row">
+				<view class="t-label">叫号时间</view>
+				<view class="t-value">{{myTask.callTimeText || '--'}}</view>
+			</view>
+		</view>
+
+		<!-- 执行中 → 执行照片上传 + 完成 -->
+		<block wx:if="{{myTask.STORAGE_STATUS === 2 || myTask.STORAGE_STATUS === 7}}">
+			<view class="finish-proof">
+				<view class="finish-title">{{myTask.STORAGE_STATUS === 2 ? '存柜完成照片（必传）' : '取柜完成照片（必传）'}}</view>
+				<view class="finish-desc">{{myTask.STORAGE_STATUS === 2 ? '拍照上传存柜完成照片，提交后开始计费' : '拍照上传取柜完成照片，提交后该单完成'}}</view>
+				<view class="upload" bindtap="bindChooseExecProof">
+					<image wx:if="{{execProofLocal}}" src="{{execProofLocal}}" mode="aspectFill"></image>
+					<view wx:else class="upload-empty">{{uploadingField === 'execProof' ? '上传中...' : '拍照/上传'}}</view>
+				</view>
+			</view>
+
+			<button class="complete-btn" loading="{{loading || uploading}}" bindtap="bindCompleteTap">提交完成</button>
+		</block>
+	</view>
+
+	<!-- 任务池 -->
+	<view wx:if="{{pool.length}}" class="pool-section">
+		<view class="pool-title">任务池（{{pool.length}}）</view>
+		<view wx:for="{{pool}}" wx:key="_id" class="pool-card">
+			<view class="pool-top">
+				<view class="pool-plate">{{item.STORAGE_PLATE}}</view>
+				<view class="pool-time">{{item.callTimeText}}</view>
+			</view>
+			<view class="pool-meta">{{item.typeName}} · {{item.STORAGE_CABINET_NAME}} {{item.STORAGE_CABINET_NO}}<text wx:if="{{item.STORAGE_NO}}"> · {{item.STORAGE_NO}}号</text> · 码{{item.STORAGE_CODE}}</view>
+			<button class="grab-btn" data-id="{{item._id}}" loading="{{grabbingId === item._id}}" bindtap="bindGrabTap">抢单</button>
+		</view>
+	</view>
+
+	<!-- 无任务且任务池为空 -->
+	<view wx:if="{{!myTask && !pool.length}}" class="empty-card">
+		<view class="empty-title">暂无任务</view>
+		<view class="empty-desc">管理员叫号后，存取柜任务会出现在抢单池中</view>
+	</view>
+
+	<view class="refresh" bindtap="bindRefreshTap">刷新列表</view>
+</view>

@@ -80,3 +80,29 @@
 	align-items: center;
 	bottom: 50rpx;
 }
+/* 底部工作区切换（装卸货 / 存取柜 / 后台） */
+.bottom-nav {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	background: #fff;
+	box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, .08);
+	padding-bottom: env(safe-area-inset-bottom);
+	z-index: 90;
+}
+
+.bottom-nav-item {
+	flex: 1;
+	height: 100rpx;
+	line-height: 100rpx;
+	text-align: center;
+	font-size: 30rpx;
+	color: #627d98;
+}
+
+.bottom-nav-item.active {
+	color: #3B82E6;
+	font-weight: bold;
+}

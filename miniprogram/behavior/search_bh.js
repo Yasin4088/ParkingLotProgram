@@ -42,7 +42,7 @@ module.exports = Behavior({
 
 			let titleMap = {
 				'admin-driver': '司机管理',
-				'admin-forklift': '叉车管理',
+				'admin-forklift': '叉车/吊柜管理',
 			};
 			if (titleMap[type]) wx.setNavigationBarTitle({ title: titleMap[type] });
 		},

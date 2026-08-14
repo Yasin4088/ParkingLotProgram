@@ -153,7 +153,7 @@ Page({
 	},
 
 	bindHomeTap: function () {
-		wx.redirectTo({ url: '/driver/home' });
+		wx.redirectTo({ url: '/driver/biz_select' });
 	},
 
 	bindRefreshTap: function () {

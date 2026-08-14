@@ -47,6 +47,15 @@
 	line-height: 1.5;
 }
 
+.storage-entry {
+	display: inline-block;
+	margin-top: 20rpx;
+	padding: 12rpx 28rpx;
+	background: rgba(255, 255, 255, 0.18);
+	border-radius: 999rpx;
+	font-size: 26rpx;
+}
+
 .task-card {
 	background: #fff;
 	margin: 30rpx 20rpx;

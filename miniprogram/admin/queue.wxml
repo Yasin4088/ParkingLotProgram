@@ -1,13 +1,7 @@
 <view class="page">
-	<view class="header">
-		<view>
-			<view class="title">管理员</view>
-			<view class="desc">建任务 · 叫号 · 派单 · 现场费用 · 结算</view>
-		</view>
-		<view class="header-actions">
-			<view class="create-task" bindtap="bindOpenCreateTap">新建任务</view>
-			<view class="driver-mgr" bindtap="bindAdminHomeTap">后台管理</view>
-		</view>
+	<!-- 顶部操作：新建任务 -->
+	<view class="top-bar">
+		<view class="top-btn" bindtap="bindOpenCreateTap">＋ 新建任务</view>
 	</view>
 
 	<!-- 状态统计 + 筛选 -->
@@ -73,7 +67,7 @@
 		</view>
 	</view>
 
-	<view wx:else class="empty">{{filterStatus === '' ? '暂无任务，点击右上角「新建任务」创建' : '该状态下暂无任务'}}</view>
+	<view wx:else class="empty">{{filterStatus === '' ? '暂无任务，点击上方「新建任务」创建' : '该状态下暂无任务'}}</view>
 
 	<view class="refresh" bindtap="bindRefreshTap">刷新列表</view>
 
@@ -404,5 +398,12 @@
 				<view class="danger-btn" bindtap="bindCancelQueueTap">{{submitting ? '处理中...' : '删除并取消任务'}}</view>
 			</view>
 		</view>
+	</view>
+
+	<!-- 底部工作区切换：装卸货 / 存取柜 / 后台 -->
+	<view class="bottom-nav">
+		<view class="bottom-nav-item active" bindtap="bindNavQueueTap">装卸货</view>
+		<view class="bottom-nav-item" bindtap="bindNavStorageTap">存取柜</view>
+		<view class="bottom-nav-item" bindtap="bindNavAdminTap">后台</view>
 	</view>
 </view>

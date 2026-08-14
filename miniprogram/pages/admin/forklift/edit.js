@@ -13,6 +13,13 @@ Page({
 		password: '',
 		phone: '',
 
+		// 工作身份：叉车→叉车工作台，吊柜→吊柜工作台（两界面不互通）
+		role: 'forklift',
+		roleDesc: '叉车司机',
+		roleIndex: 0,
+		roleItems: ['叉车司机', '吊柜司机'],
+		roleValues: ['forklift', 'crane'],
+
 		status: 1,
 		statusDesc: '正常',
 		addTime: '',
@@ -33,7 +40,7 @@ Page({
 
 		let id = this.data.id;
 		if (id) {
-			wx.setNavigationBarTitle({ title: '编辑叉车司机' });
+			wx.setNavigationBarTitle({ title: '编辑叉车/吊柜司机' });
 			await this._loadDetail(id);
 		}
 		this.setData({ isLoad: true });
@@ -46,9 +53,15 @@ Page({
 				let statusIndex = this.data.statusValues.indexOf(user.USER_STATUS);
 				if (statusIndex < 0) statusIndex = 1;
 
+				let roleIndex = this.data.roleValues.indexOf(user.USER_ROLE);
+				if (roleIndex < 0) roleIndex = 0;
+
 				this.setData({
 					username: user.USER_NAME || '',
 					phone: user.USER_MOBILE || '',
+					role: this.data.roleValues[roleIndex],
+					roleDesc: this.data.roleItems[roleIndex],
+					roleIndex: roleIndex,
 					status: user.USER_STATUS,
 					statusDesc: user.USER_STATUS_DESC || this.data.statusItems[statusIndex],
 					statusIndex: statusIndex,
@@ -83,6 +96,15 @@ Page({
 		});
 	},
 
+	bindRoleChange: function (e) {
+		let index = Number(e.detail.value);
+		this.setData({
+			roleIndex: index,
+			role: this.data.roleValues[index],
+			roleDesc: this.data.roleItems[index],
+		});
+	},
+
 	bindSubmitTap: async function () {
 		if (this.data.submitting) return;
 
@@ -107,6 +129,7 @@ Page({
 					password: password,
 					phone: phone,
 					status: status,
+					role: this.data.role,
 				}, { title: '保存中' });
 				wx.showToast({ title: '修改成功', icon: 'success', duration: 1500 });
 			} else {
@@ -114,7 +137,7 @@ Page({
 					username: username,
 					password: password,
 					phone: phone,
-					role: 'forklift',
+					role: this.data.role,
 				}, { title: '保存中' });
 				wx.showToast({ title: '添加成功', icon: 'success', duration: 1500 });
 			}

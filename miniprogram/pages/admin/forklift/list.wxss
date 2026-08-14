@@ -25,6 +25,19 @@
 	color: #333;
 }
 
+.d-role {
+	font-size: 22rpx;
+	padding: 4rpx 16rpx;
+	border-radius: 20rpx;
+	background: #fff3e0;
+	color: #e65100;
+}
+
+.d-role.crane {
+	background: #e8f5e9;
+	color: #2e7d32;
+}
+
 .d-status {
 	font-size: 22rpx;
 	padding: 4rpx 16rpx;
