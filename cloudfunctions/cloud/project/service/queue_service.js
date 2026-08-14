@@ -134,6 +134,17 @@ class QueueService extends BaseService {
 			ret.lastDone = last ? this._formatQueueItem(last) : null;
 		}
 
+		// 剥离内部字段（用户 _id/叉车 _id/单证照等不可下发，防止伪造身份）
+		for (let obj of [ret.item, ret.lastDone]) {
+			if (!obj) continue;
+			delete obj.QUEUE_USER_ID;
+			delete obj.QUEUE_OPENID;
+			delete obj.QUEUE_FORKLIFT_ID;
+			delete obj.QUEUE_PROOF;
+			delete obj.QUEUE_CHECKIN_LAT;
+			delete obj.QUEUE_CHECKIN_LNG;
+		}
+
 		return ret;
 	}
 

@@ -127,7 +127,18 @@ class StorageService extends BaseService {
 		});
 		if (!updated) this.AppError('该柜已被取走或状态已变更');
 
-		return await this.detail(item._id);
+		// 仅返回取柜单据最小信息，不附带存柜人注册信息（身份证/三证照等 PII 不下发）
+		return {
+			_id: item._id,
+			code: item.STORAGE_CODE,
+			cabinetName: item.STORAGE_CABINET_NAME,
+			cabinetNo: item.STORAGE_CABINET_NO,
+			plate: item.STORAGE_PLATE,
+			days: fee.days,
+			feeTotal: fee.feeTotal,
+			feeTotalText: this._fmtMoney(fee.feeTotal),
+			payMode: mode,
+		};
 	}
 
 	/** 在线支付下单：返回 payParams 供 wx.requestPayment 调起；查单兜底发现已支付时返回 {paid:true} */
@@ -287,6 +298,23 @@ class StorageService extends BaseService {
 			}, '*', { STORAGE_ADD_TIME: 'desc' });
 			let last = (last1 && last2) ? (last1.STORAGE_ADD_TIME >= last2.STORAGE_ADD_TIME ? last1 : last2) : (last1 || last2);
 			ret.lastDone = last ? this._formatStorageItem(last) : null;
+		}
+
+		// 剥离内部字段（用户 _id/吊柜 _id/照片/支付订单号等不可下发，防止伪造身份）
+		let stripAll = [].concat(ret.list || [], ret.lastDone || []);
+		for (let obj of stripAll) {
+			if (!obj) continue;
+			delete obj.STORAGE_USER_ID;
+			delete obj.STORAGE_OPENID;
+			delete obj.STORAGE_FETCH_USER_ID;
+			delete obj.STORAGE_FETCH_OPENID;
+			delete obj.STORAGE_FORKLIFT_ID;
+			delete obj.STORAGE_CABINET_DOOR_PROOF;
+			delete obj.STORAGE_EXEC_PROOF;
+			delete obj.STORAGE_FETCH_PROOF;
+			delete obj.STORAGE_PAY_OUT_TRADE_NO;
+			delete obj.STORAGE_PAY_TRANSACTION_ID;
+			delete obj.STORAGE_PAY_AMOUNT;
 		}
 
 		return ret;

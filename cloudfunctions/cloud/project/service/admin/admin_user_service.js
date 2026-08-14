@@ -150,7 +150,8 @@ class AdminUserService extends BaseAdminService {
 		password,
 		phone,
 		status,
-		role
+		role,
+		wxClear
 	}) {
 		// 检查用户名是否被其他用户占用
 		let exist = await UserModel.getOne({
@@ -178,6 +179,11 @@ class AdminUserService extends BaseAdminService {
 		// 如果传了角色，则更新
 		if (role) {
 			data.USER_ROLE = role;
+		}
+
+		// 清除微信绑定（叉车/吊柜换设备登录用）
+		if (wxClear === 1) {
+			data.USER_WX_OPENID = '';
 		}
 
 		await UserModel.edit(id, data);

@@ -15,7 +15,7 @@ class ForkliftController extends BaseController {
 		let input = this.validateData(rules);
 
 		let service = new ForkliftService();
-		return await service.login(input.username, input.password);
+		return await service.login(input.username, input.password, this._userId);
 	}
 
 	/** 抢单池 + 我的任务 */

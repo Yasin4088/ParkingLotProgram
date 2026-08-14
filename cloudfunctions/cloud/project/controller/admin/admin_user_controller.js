@@ -65,6 +65,15 @@ class AdminUserController extends BaseAdminController {
 			list[k].USER_STATUS_DESC = UserModel.getDesc('STATUS', list[k].USER_STATUS);
 			list[k].USER_ADD_TIME = timeUtil.timestamp2Time(list[k].USER_ADD_TIME);
 			list[k].USER_LOGIN_TIME = list[k].USER_LOGIN_TIME ? timeUtil.timestamp2Time(list[k].USER_LOGIN_TIME) : '未登录';
+
+			// 敏感字段脱敏：密码哈希/openid/身份证/三证照不下发给前端
+			delete list[k].USER_PASSWORD;
+			delete list[k].USER_MINI_OPENID;
+			delete list[k].USER_IDCARD;
+			delete list[k].USER_DRIVER_LICENSE_IMG;
+			delete list[k].USER_VEHICLE_REG_IMG;
+			delete list[k].USER_IDCARD_IMG;
+			delete list[k].USER_WX_OPENID;
 		}
 		result.list = list;
 		return result;
@@ -149,6 +158,7 @@ class AdminUserController extends BaseAdminController {
 			phone: 'string|max:20|name=手机号',
 			status: 'int|name=状态',
 			role: 'string|name=角色',
+			wxClear: 'int|name=清除微信绑定',
 		};
 
 		let input = this.validateData(rules);
@@ -160,6 +170,7 @@ class AdminUserController extends BaseAdminController {
 			phone: input.phone || '',
 			status: input.status,
 			role: input.role || '',
+			wxClear: Number(input.wxClear) === 1 ? 1 : 0,
 		});
 
 		this.log('编辑了用户「' + input.username + '」', LogModel.TYPE.USER);

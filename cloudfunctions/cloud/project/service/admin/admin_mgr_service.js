@@ -10,6 +10,8 @@ const util = require('../../../framework/utils/util.js');
 const bcrypt = require('bcryptjs');
 const AdminModel = require('../../model/admin_model.js');
 const LogModel = require('../../model/log_model.js');
+const cloudBase = require('../../../framework/cloud/cloud_base.js');
+const timeUtil = require('../../../framework/utils/time_util.js');
 
 
 class AdminMgrService extends BaseAdminService {
@@ -57,7 +59,7 @@ class AdminMgrService extends BaseAdminService {
 		return result;
 	}
 
-	/** 初始化创建超级管理员（仅当无管理员时可用） */
+	/** 初始化创建超级管理员（仅当无管理员时可用；事务+哨兵文档防并发建双超管） */
 	async setupAdmin(name, password) {
 		let adminCnt = await AdminModel.count({});
 		if (adminCnt > 0) {
@@ -71,7 +73,23 @@ class AdminMgrService extends BaseAdminService {
 			ADMIN_TYPE: AdminModel.TYPE.SUPER,
 			ADMIN_STATUS: AdminModel.STATUS.ON,
 		};
-		let id = await AdminModel.insert(data);
+
+		const db = cloudBase.getCloud().database();
+		let lockId = 'SETUP_ADMIN_' + global.PID;
+		let id = await db.runTransaction(async t => {
+			let lock = null;
+			try {
+				lock = await t.collection('ax_setup').doc(lockId).get();
+			} catch (e) {
+				lock = null; // 文档不存在
+			}
+			if (lock && lock.data) this.AppError('系统已初始化，无法重复设置');
+			await t.collection('ax_setup').doc(lockId).set({
+				data: { _pid: global.PID, SETUP_ADMIN_TIME: timeUtil.time() }
+			});
+			let res = await t.collection('ax_admin').add({ data });
+			return res._id;
+		});
 
 		// 写入初始化日志
 		await this.insertLog('系统初始化，创建了超级管理员「' + name + '」', {

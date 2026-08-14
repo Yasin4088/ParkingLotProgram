@@ -61,7 +61,7 @@ class AdminHomeService extends BaseAdminService {
 		let admin = await AdminModel.getOne(where, fields);
 
 		if (!admin) {
-			this.AppError('管理员账号或密码不正确');
+			this.AppError('用户名或密码不正确');
 		}
 
 		// 检查是否被锁定（15分钟内连续失败5次）
@@ -71,8 +71,8 @@ class AdminHomeService extends BaseAdminService {
 		let lockDuration = 15 * 60 * 1000; // 15分钟（毫秒）
 
 		if (failCnt >= 5 && (now - failTime) < lockDuration) {
-			let remainMin = Math.ceil((lockDuration - (now - failTime)) / 60000);
-			this.AppError('账号已被锁定，请' + remainMin + '分钟后重试');
+			// 提示不暴露锁定态，防账号枚举
+			this.AppError('用户名或密码不正确');
 		}
 
 		// bcrypt密码比对
@@ -84,12 +84,7 @@ class AdminHomeService extends BaseAdminService {
 			};
 			await AdminModel.edit(admin._id, updateData);
 
-			let remainAttempts = 5 - (failCnt + 1);
-			if (remainAttempts > 0) {
-				this.AppError('管理员账号或密码不正确，还剩' + remainAttempts + '次尝试机会');
-			} else {
-				this.AppError('账号已被锁定，请15分钟后重试');
-			}
+			this.AppError('用户名或密码不正确');
 		}
 
 		// 登录成功：重置失败计数

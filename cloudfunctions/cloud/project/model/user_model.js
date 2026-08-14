@@ -20,8 +20,12 @@ UserModel.DB_STRUCTURE = {
 
 	USER_NAME: 'string|false|comment=用户姓名',
 	USER_MOBILE: 'string|false|comment=联系电话',
-	USER_PASSWORD: 'string|false|comment=MD5密码',
+	USER_PASSWORD: 'string|false|comment=bcrypt密码',
 	USER_ROLE: 'string|false|default=driver|comment=角色 driver=司机,admin=管理员,forklift=叉车司机,crane=吊柜司机',
+
+	USER_WX_OPENID: 'string|false|comment=工作台(forklift/crane)账号绑定的微信openid，首登绑定，管理员可清除换设备',
+	USER_LOGIN_FAIL_CNT: 'int|true|default=0|comment=工作台登录连续失败次数',
+	USER_LOGIN_FAIL_TIME: 'int|false|comment=工作台最近登录失败时间',
 
 	USER_WORK: 'string|false|comment=所在单位',
 	USER_CITY: 'string|false|comment=所在城市',

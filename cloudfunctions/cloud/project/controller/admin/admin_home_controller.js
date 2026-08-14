@@ -28,6 +28,8 @@ class AdminHomeController extends BaseAdminController {
 
 	// 清除缓存
 	async clearCache() {
+		await this.isAdmin();
+
 		let service = new AdminHomeService();
 		await service.clearCache();
 	}

@@ -10,12 +10,13 @@ const timeUtil = require('../../framework/utils/time_util.js');
 
 class ForkliftService extends BaseService {
 
-	/** 叉车/吊柜司机登录（身份由 USER_ROLE 决定：forklift=叉车,crane=吊柜） */
-	async login(username, password) {
+	/** 叉车/吊柜司机登录（身份由 USER_ROLE 决定：forklift=叉车,crane=吊柜）
+	 * 失败锁定：15 分钟内连续 5 次失败锁定；成功首登绑定本机微信 OPENID（换设备由管理员清除绑定） */
+	async login(username, password, openId) {
 		let user = await UserModel.getOne({
 			USER_NAME: username,
 			USER_ROLE: ['in', 'forklift,crane']
-		}, '_id,USER_NAME,USER_MOBILE,USER_PASSWORD,USER_STATUS,USER_ROLE,USER_LOGIN_CNT');
+		}, '_id,USER_NAME,USER_MOBILE,USER_PASSWORD,USER_STATUS,USER_ROLE,USER_LOGIN_CNT,USER_LOGIN_FAIL_CNT,USER_LOGIN_FAIL_TIME,USER_WX_OPENID');
 
 		if (!user) {
 			this.AppError('用户名或密码不正确');
@@ -25,15 +26,39 @@ class ForkliftService extends BaseService {
 			this.AppError('您的账户已被禁用，请联系管理员');
 		}
 
-		if (!bcrypt.compareSync(password, user.USER_PASSWORD)) {
+		// 失败锁定检查（15 分钟内连续失败 5 次；提示不暴露锁定态，防账号枚举）
+		let now = timeUtil.time();
+		let failCnt = user.USER_LOGIN_FAIL_CNT || 0;
+		let failTime = user.USER_LOGIN_FAIL_TIME || 0;
+		if (failCnt >= 5 && (now - failTime) < 15 * 60 * 1000) {
 			this.AppError('用户名或密码不正确');
 		}
 
+		if (!bcrypt.compareSync(password, user.USER_PASSWORD)) {
+			await UserModel.edit(user._id, {
+				USER_LOGIN_FAIL_CNT: failCnt + 1,
+				USER_LOGIN_FAIL_TIME: now
+			});
+			this.AppError('用户名或密码不正确');
+		}
+
+		// 已绑定其他微信：拒绝登录（先登先绑，换设备需管理员清除绑定）
+		if (user.USER_WX_OPENID && user.USER_WX_OPENID !== openId) {
+			this.AppError('该账号已绑定其他微信，如需更换设备请联系管理员解绑');
+		}
+
 		let cnt = (user.USER_LOGIN_CNT || 0) + 1;
-		await UserModel.edit(user._id, {
+		let editData = {
 			USER_LOGIN_CNT: cnt,
-			USER_LOGIN_TIME: timeUtil.time()
-		});
+			USER_LOGIN_TIME: now,
+			USER_LOGIN_FAIL_CNT: 0,
+			USER_LOGIN_FAIL_TIME: 0,
+		};
+		// 首次登录绑定本机微信（先登先绑；管理员可清除后换设备）
+		if (!user.USER_WX_OPENID) {
+			editData.USER_WX_OPENID = openId;
+		}
+		await UserModel.edit(user._id, editData);
 
 		return {
 			id: user._id,

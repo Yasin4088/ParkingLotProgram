@@ -21,13 +21,15 @@ class QueueController extends BaseController {
 		};
 		let input = this.validateData(rules);
 
+		let driver = await this.getDriverId();
 		let service = new QueueService();
-		return await service.claimTask(this._token, this._userId, input.plate, input.phone, input.proof);
+		return await service.claimTask(driver._id, this._userId, input.plate, input.phone, input.proof);
 	}
 
 	async myCurrent() {
+		let driver = await this.getDriverId();
 		let service = new QueueService();
-		return await service.myCurrent(this._token);
+		return await service.myCurrent(driver._id);
 	}
 
 	async checkin() {
@@ -38,8 +40,9 @@ class QueueController extends BaseController {
 		};
 		let input = this.validateData(rules);
 
+		let driver = await this.getDriverId();
 		let service = new QueueService();
-		return await service.checkin(this._token, input.id, input.lat, input.lng);
+		return await service.checkin(driver._id, input.id, input.lat, input.lng);
 	}
 
 	async subscribe() {
@@ -48,8 +51,9 @@ class QueueController extends BaseController {
 		};
 		let input = this.validateData(rules);
 
+		let driver = await this.getDriverId();
 		let service = new QueueService();
-		await service.subscribe(this._token, input.id);
+		await service.subscribe(driver._id, input.id);
 	}
 
 	/** 司机确认收到叫号 */
@@ -59,8 +63,9 @@ class QueueController extends BaseController {
 		};
 		let input = this.validateData(rules);
 
+		let driver = await this.getDriverId();
 		let service = new QueueService();
-		return await service.driverConfirm(this._token, input.id);
+		return await service.driverConfirm(driver._id, input.id);
 	}
 }
 

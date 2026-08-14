@@ -23,8 +23,9 @@ class StorageController extends BaseController {
 		};
 		let input = this.validateData(rules);
 
+		let driver = await this.getDriverId();
 		let service = new StorageService();
-		return await service.registerStore(this._token, this._userId, input.phone, input.plate, input.cabinetId, input.cabinetNo, input.doorProof);
+		return await service.registerStore(driver._id, this._userId, input.phone, input.plate, input.cabinetId, input.cabinetNo, input.doorProof);
 	}
 
 	/** 取柜费用预览 */
@@ -63,8 +64,9 @@ class StorageController extends BaseController {
 	}
 
 	async myCurrent() {
+		let driver = await this.getDriverId();
 		let service = new StorageService();
-		return await service.myCurrent(this._token);
+		return await service.myCurrent(driver._id);
 	}
 }
 
