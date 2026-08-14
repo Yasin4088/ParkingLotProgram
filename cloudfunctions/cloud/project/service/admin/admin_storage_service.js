@@ -49,10 +49,15 @@ class AdminStorageService extends BaseAdminService {
 			? StorageModel.STATUS.STORE_CALLED
 			: StorageModel.STATUS.FETCH_CALLED;
 
-		await StorageModel.edit(item._id, {
+		let now = timeUtil.time();
+		let updated = await StorageModel.edit({
+			_id: item._id,
+			STORAGE_STATUS: item.STORAGE_STATUS
+		}, {
 			STORAGE_STATUS: newStatus,
-			STORAGE_CALL_TIME: timeUtil.time(),
+			STORAGE_CALL_TIME: now,
 		});
+		if (!updated) this.AppError('该记录状态已变化，请刷新后重试');
 
 		return await this.detail(id);
 	}
@@ -70,10 +75,15 @@ class AdminStorageService extends BaseAdminService {
 			? StorageModel.STATUS.STORE_WAITING
 			: StorageModel.STATUS.FETCH_WAITING;
 
-		await StorageModel.edit(item._id, {
+		let updated = await StorageModel.edit({
+			_id: item._id,
+			STORAGE_STATUS: item.STORAGE_STATUS,
+			STORAGE_FORKLIFT_ID: ''
+		}, {
 			STORAGE_STATUS: newStatus,
 			STORAGE_CALL_TIME: 0,
 		});
+		if (!updated) this.AppError('该记录状态已变化，请刷新后重试');
 
 		return await this.detail(id);
 	}
@@ -99,13 +109,18 @@ class AdminStorageService extends BaseAdminService {
 			: StorageModel.STATUS.FETCH_EXECUTING;
 
 		let now = timeUtil.time();
-		await StorageModel.edit(item._id, {
+		let updated = await StorageModel.edit({
+			_id: item._id,
+			STORAGE_STATUS: item.STORAGE_STATUS,
+			STORAGE_FORKLIFT_ID: ''
+		}, {
 			STORAGE_STATUS: newStatus,
 			STORAGE_FORKLIFT_ID: forkliftId,
 			STORAGE_FORKLIFT_NAME: forklift.USER_NAME,
 			STORAGE_FORKLIFT_GRAB_TIME: now,
 			STORAGE_FORKLIFT_GRAB_TYPE: StorageModel.GRAB_TYPE.ASSIGN,
 		});
+		if (!updated) this.AppError('该记录已被吊柜司机接单或状态已变化，请刷新');
 
 		return await this.detail(id);
 	}
@@ -121,7 +136,11 @@ class AdminStorageService extends BaseAdminService {
 		let now = timeUtil.time();
 		let queueNo = await StorageService.makeStorageNo(now);
 
-		await StorageModel.edit(item._id, {
+		// 条件更新：仍为待缴费才确认（与 payNotify 回调互斥，防双发排队号）
+		let updated = await StorageModel.edit({
+			_id: item._id,
+			STORAGE_STATUS: StorageModel.STATUS.FETCH_TO_PAY
+		}, {
 			STORAGE_STATUS: StorageModel.STATUS.FETCH_WAITING,
 			STORAGE_PAY_MODE: StorageModel.PAY_MODE.ONSITE,
 			STORAGE_PAY_STATUS: StorageModel.PAY_STATUS.CONFIRMED,
@@ -130,6 +149,7 @@ class AdminStorageService extends BaseAdminService {
 			STORAGE_NO: queueNo,
 			STORAGE_QUEUE_TIME: now,
 		});
+		if (!updated) this.AppError('该记录状态已变化（可能已在线支付入队），请刷新后重试');
 
 		return await this.detail(id);
 	}
@@ -145,12 +165,16 @@ class AdminStorageService extends BaseAdminService {
 		reason = (reason || '').trim();
 		if (!reason) this.AppError('请输入取消原因');
 
-		await StorageModel.edit(item._id, {
+		let updated = await StorageModel.edit({
+			_id: item._id,
+			STORAGE_STATUS: item.STORAGE_STATUS
+		}, {
 			STORAGE_STATUS: StorageModel.STATUS.CANCEL,
 			STORAGE_CANCEL_TIME: timeUtil.time(),
 			STORAGE_CANCEL_REASON: reason,
 			STORAGE_CANCEL_OPERATOR: operator
 		});
+		if (!updated) this.AppError('该记录状态已变化，请刷新后重试');
 	}
 
 	/** 历史记录（已取柜/已取消，可按月筛选） */

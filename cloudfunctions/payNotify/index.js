@@ -110,6 +110,14 @@ function todayStart() {
 	return d.getTime();
 }
 
+/** 本机日期字符串 Y-M-D（与 cloud 函数 timeUtil.timestamp2Time(now, 'Y-M-D') 口径一致） */
+function todayStr() {
+	let d = new Date();
+	let m = String(d.getMonth() + 1).padStart(2, '0');
+	let day = String(d.getDate()).padStart(2, '0');
+	return d.getFullYear() + '-' + m + '-' + day;
+}
+
 /** 商户订单号查单（官方 4012791859；签名规则 4012365337，仅定时兜底用） */
 function queryOrder(outTradeNo) {
 	return new Promise((resolve, reject) => {
@@ -154,7 +162,7 @@ function queryOrder(outTradeNo) {
 	});
 }
 
-/** 支付成功落库（回调与定时查单共用）：金额校验 + 条件更新 4→5 + 生成排队号，幂等
+/** 支付成功落库（回调与定时查单共用）：金额校验 + 事务内「状态 4→5 + 发号」原子完成，幂等
  *  返回：'paid' 本次落库成功 / 'already' 已处理过（幂等，无需动作）/ 'amount_mismatch' 金额不符需人工介入 */
 async function markPaid(record, order) {
 	if (Number(order.amount && order.amount.total) !== Number(record.STORAGE_FEE_TOTAL)) {
@@ -162,34 +170,60 @@ async function markPaid(record, order) {
 		return 'amount_mismatch';
 	}
 
-	let updated = await db.collection('ax_storage').where({
-		_id: record._id,
-		STORAGE_STATUS: 4,
-		STORAGE_PAY_OUT_TRADE_NO: order.out_trade_no
-	}).update({
-		data: {
-			STORAGE_STATUS: 5,
-			STORAGE_PAY_STATUS: 1,
-			STORAGE_PAY_TIME: order.success_time ? new Date(order.success_time).getTime() : Date.now(),
-			STORAGE_PAY_AMOUNT: Number(order.amount && order.amount.total) || 0,
-			STORAGE_PAY_TRANSACTION_ID: order.transaction_id || '',
+	// 事务：doc 读改写，重复通知/定时兜底/管理员确认并发时只入队一次、只发一次号
+	return await db.runTransaction(async t => {
+		let doc = null;
+		try {
+			doc = await t.collection('ax_storage').doc(record._id).get();
+		} catch (e) {
+			doc = null;
 		}
-	});
+		if (!doc || !doc.data) return 'already';
+		let d = doc.data;
+		// 幂等：状态已流转或订单号已更换则不再处理
+		if (d.STORAGE_STATUS !== 4 || d.STORAGE_PAY_OUT_TRADE_NO !== order.out_trade_no) return 'already';
 
-	if (!(updated.stats && updated.stats.updated)) return 'already'; // 已处理过（幂等）
-
-	// 生成排队号（与 storage_service.makeStorageNo 同算法；云函数间无法共享代码，各自维护，改动需同步）
-	let cnt = await db.collection('ax_storage').where({
-		STORAGE_QUEUE_TIME: _.gte(todayStart())
-	}).count();
-	let queueNo = String(cnt.total + 1).padStart(3, '0');
-	await db.collection('ax_storage').doc(record._id).update({
-		data: {
-			STORAGE_NO: queueNo,
-			STORAGE_QUEUE_TIME: Date.now(),
+		// 发号：与 cloud 函数 base_service.nextDayNo 同算法副本（ax_counter 文档
+		// _id = CNT_{PID}_STORAGE_NO_{day}）；云函数间无法共享代码，改动需同步
+		let pid = d._pid || 'A00';
+		let day = todayStr();
+		let docId = 'CNT_' + pid + '_STORAGE_NO_' + day;
+		let cnt = null;
+		try {
+			cnt = await t.collection('ax_counter').doc(docId).get();
+		} catch (e) {
+			cnt = null;
 		}
+		let queueNo = '';
+		if (cnt && cnt.data) {
+			let val = Number(cnt.data.CNT_VAL) + 1;
+			await t.collection('ax_counter').doc(docId).update({ data: { CNT_VAL: val } });
+			queueNo = String(val).padStart(3, '0');
+		} else {
+			// 首次创建：种子=当日已有记录数（老算法口径，保证号码衔接）
+			let baseRes = await db.collection('ax_storage').where({
+				STORAGE_QUEUE_TIME: _.gte(todayStart())
+			}).count();
+			let val = (Number(baseRes.total) || 0) + 1;
+			await t.collection('ax_counter').doc(docId).set({
+				data: { _pid: pid, CNT_PREFIX: 'STORAGE_NO', CNT_DAY: day, CNT_VAL: val }
+			});
+			queueNo = String(val).padStart(3, '0');
+		}
+
+		await t.collection('ax_storage').doc(record._id).update({
+			data: {
+				STORAGE_STATUS: 5,
+				STORAGE_PAY_STATUS: 1,
+				STORAGE_PAY_TIME: order.success_time ? new Date(order.success_time).getTime() : Date.now(),
+				STORAGE_PAY_AMOUNT: Number(order.amount && order.amount.total) || 0,
+				STORAGE_PAY_TRANSACTION_ID: order.transaction_id || '',
+				STORAGE_NO: queueNo,
+				STORAGE_QUEUE_TIME: Date.now(),
+			}
+		});
+		return 'paid';
 	});
-	return 'paid';
 }
 
 /** 定时兜底：扫描待缴费在线单，查单发现已支付则落库入队 */

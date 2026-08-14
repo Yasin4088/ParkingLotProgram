@@ -77,6 +77,7 @@ class StorageService extends BaseService {
 			STORAGE_FORKLIFT_NAME: '',
 			STORAGE_PAY_MODE: 0,
 			STORAGE_PAY_STATUS: StorageModel.PAY_STATUS.FREE,
+			STORAGE_PAY_OUT_TRADE_NO: '',
 		});
 
 		return this._formatStorageItem(ret);
@@ -124,6 +125,7 @@ class StorageService extends BaseService {
 			STORAGE_PRICE_DAILY: fee.priceDaily,
 			STORAGE_PAY_MODE: mode,
 			STORAGE_PAY_STATUS: StorageModel.PAY_STATUS.UNPAID,
+			STORAGE_PAY_OUT_TRADE_NO: '',
 		});
 		if (!updated) this.AppError('该柜已被取走或状态已变更');
 
@@ -165,17 +167,43 @@ class StorageService extends BaseService {
 			// NOTPAY/CLOSED：换新订单号重新下单
 		}
 
-		// 生成并保存商户订单号；并发重复下单时以库内最新值为准，避免两笔订单都有效
+		// 生成并保存商户订单号；条件更新把旧订单号（含空串）纳入 where，
+		// 并发重复下单时仅先到者成功，避免两笔订单同时有效导致支付后不入队
 		let outTradeNo = WxPayLib.genOutTradeNo(item._id);
-		await StorageModel.edit({
+		let updated = await StorageModel.edit({
 			_id: item._id,
 			STORAGE_STATUS: StorageModel.STATUS.FETCH_TO_PAY,
-			STORAGE_PAY_STATUS: StorageModel.PAY_STATUS.UNPAID
+			STORAGE_PAY_STATUS: StorageModel.PAY_STATUS.UNPAID,
+			STORAGE_PAY_OUT_TRADE_NO: item.STORAGE_PAY_OUT_TRADE_NO || ''
 		}, {
 			STORAGE_PAY_OUT_TRADE_NO: outTradeNo
 		});
-		let fresh = await StorageModel.getOne({ _id: item._id }, 'STORAGE_PAY_OUT_TRADE_NO');
-		outTradeNo = fresh.STORAGE_PAY_OUT_TRADE_NO || outTradeNo;
+		if (!updated) {
+			if (!item.STORAGE_PAY_OUT_TRADE_NO) {
+				// 历史数据兜底：老记录缺少订单号字段时条件匹配不到，补写一次并收敛到库内最新值
+				await StorageModel.edit({
+					_id: item._id,
+					STORAGE_STATUS: StorageModel.STATUS.FETCH_TO_PAY,
+					STORAGE_PAY_STATUS: StorageModel.PAY_STATUS.UNPAID
+				}, {
+					STORAGE_PAY_OUT_TRADE_NO: outTradeNo
+				});
+				let fresh = await StorageModel.getOne({ _id: item._id }, 'STORAGE_PAY_OUT_TRADE_NO');
+				outTradeNo = fresh.STORAGE_PAY_OUT_TRADE_NO || outTradeNo;
+			} else {
+				// 并发下单被抢先：以库内最新订单号查单兜底，已支付直接入队
+				let fresh = await StorageModel.getOne({ _id: item._id }, 'STORAGE_PAY_OUT_TRADE_NO');
+				let existNo = fresh && fresh.STORAGE_PAY_OUT_TRADE_NO;
+				if (existNo) {
+					let existOrder = await this._queryWxOrder(existNo);
+					if (existOrder && existOrder.trade_state === 'SUCCESS') {
+						await this._confirmPaid(item._id, existOrder);
+						return { paid: true, id: item._id };
+					}
+				}
+				this.AppError('订单处理中，请稍后重试');
+			}
+		}
 
 		try {
 			let prepay = await WxPayLib.jsapiPrepay({
@@ -398,13 +426,14 @@ class StorageService extends BaseService {
 		this.AppError('存柜码生成失败，请重试');
 	}
 
-	/** 排队号：存取柜当天全局序号（存柜登记/取柜缴费确认各分配一次） */
+	/** 排队号：存取柜当天全局序号（存柜登记/取柜缴费确认各分配一次；事务计数器防并发撞号） */
 	static async makeStorageNo(now) {
 		let day = timeUtil.timestamp2Time(now, 'Y-M-D');
-		let cnt = await StorageModel.count({
-			STORAGE_QUEUE_TIME: ['>=', timeUtil.time2Timestamp(day + ' 00:00:00')]
+		return await new BaseService().nextDayNo('STORAGE_NO', now, async () => {
+			return await StorageModel.count({
+				STORAGE_QUEUE_TIME: ['>=', timeUtil.time2Timestamp(day + ' 00:00:00')]
+			});
 		});
-		return String(cnt + 1).padStart(3, '0');
 	}
 
 	_fmtMoney(amount) {

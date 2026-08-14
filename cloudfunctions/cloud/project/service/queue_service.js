@@ -158,13 +158,19 @@ class QueueService extends BaseService {
 
 		let now = timeUtil.time();
 		let queueNo = await this._makeQueueNo(now);
-		await QueueModel.edit(item._id, {
+		// 条件更新：并发签到/过期清理时只有一方成功（号码已发，失败时当日号码留空号，可接受）
+		let updated = await QueueModel.edit({
+			_id: item._id,
+			QUEUE_USER_ID: userId,
+			QUEUE_STATUS: QueueModel.STATUS.BOOKED
+		}, {
 			QUEUE_NO: queueNo,
 			QUEUE_STATUS: QueueModel.STATUS.WAITING,
 			QUEUE_CHECKIN_LAT: Number(lat) || 0,
 			QUEUE_CHECKIN_LNG: Number(lng) || 0,
 			QUEUE_CHECKIN_TIME: now,
 		});
+		if (!updated) this.AppError('预约状态已变化，请刷新后重试');
 
 		return await this.myCurrent(userId);
 	}
@@ -177,7 +183,12 @@ class QueueService extends BaseService {
 		}, '_id');
 		if (!item) this.AppError('未找到排队记录');
 
-		await QueueModel.edit(item._id, { QUEUE_SUBSCRIBE: 1 });
+		// 订阅为非关键动作：状态已变时静默忽略，不报错
+		await QueueModel.edit({
+			_id: item._id,
+			QUEUE_USER_ID: userId,
+			QUEUE_STATUS: ['in', ACTIVE_STATUS]
+		}, { QUEUE_SUBSCRIBE: 1 });
 	}
 
 	/** 管理员叫号（任务进入叉车抢单池） */
@@ -221,9 +232,17 @@ class QueueService extends BaseService {
 		});
 		if (!item) this.AppError('未找到待确认的叫号记录');
 
-		await QueueModel.edit(item._id, {
+		let updated = await QueueModel.edit({
+			_id: item._id,
+			QUEUE_USER_ID: userId,
+			QUEUE_STATUS: QueueModel.STATUS.CALLED
+		}, {
 			QUEUE_DRIVER_CONFIRMED: 1,
 		});
+		if (!updated) {
+			// 重复确认/状态已流转：直接读取最新状态返回
+			return await this._tryExecuting(queueId);
+		}
 
 		return await this._tryExecuting(queueId);
 	}
@@ -316,7 +335,11 @@ class QueueService extends BaseService {
 			editData.QUEUE_SETTLE_TIME = 0;
 		}
 
-		await QueueModel.edit(item._id, editData);
+		let updated = await QueueModel.edit({
+			_id: item._id,
+			QUEUE_STATUS: item.QUEUE_STATUS
+		}, editData);
+		if (!updated) this.AppError('该记录状态已变化，请刷新后重试');
 
 		return await this.detail(queueId);
 	}
@@ -337,9 +360,15 @@ class QueueService extends BaseService {
 
 		let now = timeUtil.time();
 		let total = this._sumFees(item.QUEUE_FEES || []);
+		// 条件更新：状态仍为 FINISHED 才允许结算，防并发重复结算
+		let settleWhere = {
+			_id: item._id,
+			QUEUE_STATUS: QueueModel.STATUS.FINISHED
+		};
+		let updated = false;
 		if (total > 0 && mode === 1) {
 			// 客户记账：视为已完成，后台留支付方式记录
-			await QueueModel.edit(item._id, {
+			updated = await QueueModel.edit(settleWhere, {
 				QUEUE_FEE_TOTAL: total,
 				QUEUE_PAY_MODE: 1,
 				QUEUE_STATUS: QueueModel.STATUS.DONE,
@@ -349,7 +378,7 @@ class QueueService extends BaseService {
 				QUEUE_DONE_TIME: now,
 			});
 		} else if (total > 0) {
-			await QueueModel.edit(item._id, {
+			updated = await QueueModel.edit(settleWhere, {
 				QUEUE_FEE_TOTAL: total,
 				QUEUE_PAY_MODE: 0,
 				QUEUE_STATUS: QueueModel.STATUS.TO_PAY,
@@ -357,7 +386,7 @@ class QueueService extends BaseService {
 				QUEUE_SETTLE_OPERATOR: operator,
 			});
 		} else {
-			await QueueModel.edit(item._id, {
+			updated = await QueueModel.edit(settleWhere, {
 				QUEUE_FEE_TOTAL: 0,
 				QUEUE_PAY_MODE: mode,
 				QUEUE_STATUS: QueueModel.STATUS.DONE,
@@ -367,6 +396,7 @@ class QueueService extends BaseService {
 				QUEUE_DONE_TIME: now,
 			});
 		}
+		if (!updated) this.AppError('该记录状态已变化，请刷新后重试');
 
 		return await this.detail(queueId);
 	}
@@ -379,10 +409,14 @@ class QueueService extends BaseService {
 		});
 		if (!item) this.AppError('仅可完成执行中的记录');
 
-		await QueueModel.edit(item._id, {
+		let updated = await QueueModel.edit({
+			_id: item._id,
+			QUEUE_STATUS: QueueModel.STATUS.EXECUTING
+		}, {
 			QUEUE_STATUS: QueueModel.STATUS.FINISHED,
 			QUEUE_FINISH_TIME: timeUtil.time(),
 		});
+		if (!updated) this.AppError('该记录状态已变化，请刷新后重试');
 	}
 
 	/** 管理员列表（单一堆场，无需按停车场筛选） */
@@ -458,7 +492,11 @@ class QueueService extends BaseService {
 		}, '_id', { QUEUE_ADD_TIME: 'asc' }, 200);
 
 		for (let item of expiredClaim) {
-			await QueueModel.edit(item._id, {
+			// 条件更新：并发认领时认领方优先，清理方跳过
+			await QueueModel.edit({
+				_id: item._id,
+				QUEUE_STATUS: QueueModel.STATUS.CLAIM_PENDING
+			}, {
 				QUEUE_STATUS: QueueModel.STATUS.CANCEL,
 				QUEUE_CANCEL_TIME: now,
 				QUEUE_CANCEL_REASON: '超过7天未认领，任务已自动取消',
@@ -473,7 +511,11 @@ class QueueService extends BaseService {
 		}, '_id', { QUEUE_EDIT_TIME: 'asc' }, 200);
 
 		for (let item of expiredBooked) {
-			await QueueModel.edit(item._id, {
+			// 条件更新：并发签到（BOOKED→WAITING）时签到方优先，消除互覆盖
+			await QueueModel.edit({
+				_id: item._id,
+				QUEUE_STATUS: QueueModel.STATUS.BOOKED
+			}, {
 				QUEUE_STATUS: QueueModel.STATUS.CANCEL,
 				QUEUE_CANCEL_TIME: now,
 				QUEUE_CANCEL_REASON: '超过一天未签到，预约已自动取消',
@@ -547,7 +589,11 @@ class QueueService extends BaseService {
 			}
 		}
 
-		await QueueModel.edit(item._id, editData);
+		let updated = await QueueModel.edit({
+			_id: item._id,
+			QUEUE_STATUS: item.QUEUE_STATUS
+		}, editData);
+		if (!updated) this.AppError('该记录状态已变化，请刷新后重试');
 
 		return await this.detail(id);
 	}
@@ -562,12 +608,16 @@ class QueueService extends BaseService {
 		reason = (reason || '').trim();
 		if (!reason) this.AppError('请输入取消原因');
 
-		await QueueModel.edit(item._id, {
+		let updated = await QueueModel.edit({
+			_id: item._id,
+			QUEUE_STATUS: item.QUEUE_STATUS
+		}, {
 			QUEUE_STATUS: QueueModel.STATUS.CANCEL,
 			QUEUE_CANCEL_TIME: timeUtil.time(),
 			QUEUE_CANCEL_REASON: reason,
 			QUEUE_CANCEL_OPERATOR: operator
 		});
+		if (!updated) this.AppError('该记录状态已变化，请刷新后重试');
 
 		// 已开始执行的记录不再向司机推送取消通知（文案不适用）
 		if (item.QUEUE_STATUS <= QueueModel.STATUS.CALLED) {
@@ -602,10 +652,11 @@ class QueueService extends BaseService {
 
 	async _makeQueueNo(now) {
 		let day = timeUtil.timestamp2Time(now, 'Y-M-D');
-		let cnt = await QueueModel.count({
-			QUEUE_CHECKIN_TIME: ['>=', timeUtil.time2Timestamp(day + ' 00:00:00')]
+		return await this.nextDayNo('QUEUE_NO', now, async () => {
+			return await QueueModel.count({
+				QUEUE_CHECKIN_TIME: ['>=', timeUtil.time2Timestamp(day + ' 00:00:00')]
+			});
 		});
-		return String(cnt + 1).padStart(3, '0');
 	}
 
 	/** 校验预估费用条目并转为标准结构（金额为 0 或留空的项不计入） */
