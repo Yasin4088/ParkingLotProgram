@@ -5,6 +5,7 @@
 const BaseService = require('./base_service.js');
 const UserModel = require('../model/user_model.js');
 const QueueModel = require('../model/queue_model.js');
+const QueueService = require('./queue_service.js');
 const bcrypt = require('bcryptjs');
 const timeUtil = require('../../framework/utils/time_util.js');
 
@@ -71,6 +72,9 @@ class ForkliftService extends BaseService {
 
 	/** 获取叉车司机任务（抢单池 + 我的任务） */
 	async getMyTask(userId) {
+		// 自动叫号兜底：叉车工作台轮询时顺带执行一次（管理员看板未打开时也能自动叫号）
+		await new QueueService().autoCallCheck();
+
 		let pool = await QueueModel.getAll({
 			QUEUE_STATUS: QueueModel.STATUS.CALLED,
 			QUEUE_FORKLIFT_ID: ''
@@ -108,9 +112,11 @@ class ForkliftService extends BaseService {
 		if (!updated) this.AppError('手慢了，任务已被其他叉车司机抢走');
 
 		// 尝试流转到执行中
-		const QueueService = require('./queue_service.js');
 		let queueService = new QueueService();
-		return await queueService._tryExecuting(queueId);
+		let ret = await queueService._tryExecuting(queueId);
+		// 抢单后抢单池释放，立即尝试自动叫下一位
+		await queueService.autoCallCheck();
+		return ret;
 	}
 
 	/** 叉车司机完成作业（仅上传单据照片） */

@@ -39,6 +39,19 @@ class AdminStorageController extends BaseAdminController {
 		return await service.call(input.id);
 	}
 
+	/** 存取柜自动叫号开关（自动/人工叫号切换） */
+	async setAutoCall() {
+		await this.isAdmin();
+
+		let rules = {
+			value: 'must|int|name=开关状态',
+		};
+		let input = this.validateData(rules);
+
+		let service = new AdminStorageService();
+		return await service.setAutoCall(input.value);
+	}
+
 	/** 收回叫号 */
 	async recall() {
 		await this.isAdmin();

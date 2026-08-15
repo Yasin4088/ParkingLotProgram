@@ -50,6 +50,19 @@ class AdminQueueController extends BaseAdminController {
 		return await this.callSelected();
 	}
 
+	/** 装卸货自动叫号开关（自动/人工叫号切换） */
+	async setAutoCall() {
+		await this.isAdmin();
+
+		let rules = {
+			value: 'must|int|name=开关状态',
+		};
+		let input = this.validateData(rules);
+
+		let service = new QueueService();
+		return await service.setAutoCall(input.value);
+	}
+
 	/** 管理员收回叫号 */
 	async recallCall() {
 		await this.isAdmin();

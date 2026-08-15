@@ -27,6 +27,9 @@ SetupModel.DB_STRUCTURE = {
 	SETUP_SERVICE_PIC: 'array|false|default=[]|comment=客服图片cloudId',
 	SETUP_OFFICE_PIC: 'array|false|default=[]|comment=官微图片cloudId',
 
+	SETUP_QUEUE_AUTO_CALL: 'int|false|default=0|comment=装卸货自动叫号开关',
+	SETUP_STORAGE_AUTO_CALL: 'int|false|default=0|comment=存取柜自动叫号开关',
+
 	SETUP_ADDRESS: 'string|false|comment=地址',
 	SETUP_PHONE: 'string|false|comment=电话', 
 

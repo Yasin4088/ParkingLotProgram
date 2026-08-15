@@ -172,6 +172,9 @@ class QueueService extends BaseService {
 		});
 		if (!updated) this.AppError('预约状态已变化，请刷新后重试');
 
+		// 签到进队后立即尝试自动叫号（开关开启时；myCurrent 随后读取为最新状态）
+		await this.autoCallCheck();
+
 		return await this.myCurrent(userId);
 	}
 
@@ -205,6 +208,45 @@ class QueueService extends BaseService {
 		if (!updated) this.AppError('仅可叫号排队中的车辆');
 
 		return await this.detail(queueId);
+	}
+
+	/** 自动叫号：开关开启且无未接单的叫号时，自动叫排队最早的一辆（最多保持 1 单待接单，接单后自动叫下一位） */
+	async autoCallCheck() {
+		try {
+			if (!(await this.getAutoCallFlag('SETUP_QUEUE_AUTO_CALL'))) return;
+
+			let calledCnt = await QueueModel.count({
+				QUEUE_STATUS: QueueModel.STATUS.CALLED,
+				QUEUE_FORKLIFT_ID: ''
+			});
+			if (calledCnt > 0) return;
+
+			let waiting = await QueueModel.getAll({
+				QUEUE_STATUS: QueueModel.STATUS.WAITING
+			}, '_id', { QUEUE_CHECKIN_TIME: 'asc' }, 1);
+			if (!waiting.length) return;
+
+			// 条件更新：并发/多触发点同时执行时仅一方成功
+			await QueueModel.edit({
+				_id: waiting[0]._id,
+				QUEUE_STATUS: QueueModel.STATUS.WAITING
+			}, {
+				QUEUE_STATUS: QueueModel.STATUS.CALLED,
+				QUEUE_CALL_TIME: timeUtil.time(),
+				QUEUE_DRIVER_CONFIRMED: 0,
+			});
+		} catch (e) {
+			// 自动叫号为后台增强，失败不影响主流程（签到/抢单/看板刷新）
+			console.error('自动叫号执行失败', e);
+		}
+	}
+
+	/** 自动叫号开关（管理员看板切换；开启时立即尝试叫一次） */
+	async setAutoCall(value) {
+		let flag = Number(value) === 1 ? 1 : 0;
+		await this.setAutoCallFlag('SETUP_QUEUE_AUTO_CALL', flag);
+		if (flag) await this.autoCallCheck();
+		return { autoCall: flag };
 	}
 
 	/** 管理员收回叫号（叉车未接单时回退排队） */
@@ -298,7 +340,10 @@ class QueueService extends BaseService {
 		});
 		if (!updated) this.AppError('该任务已被叉车司机抢单');
 
-		return await this._tryExecuting(queueId);
+		let ret = await this._tryExecuting(queueId);
+		// 派单后抢单池释放，立即尝试自动叫下一位
+		await this.autoCallCheck();
+		return ret;
 	}
 
 	/** 管理员整体保存现场费用（执行中/待结算/待支付，支付前均可修改） */
@@ -422,6 +467,8 @@ class QueueService extends BaseService {
 	/** 管理员列表（单一堆场，无需按停车场筛选） */
 	async list() {
 		await this.cancelExpired();
+		// 自动叫号兜底：看板 10s 轮询时顺带执行一次
+		await this.autoCallCheck();
 
 		let where = {
 			QUEUE_STATUS: ['in', BOARD_STATUS]
@@ -435,6 +482,7 @@ class QueueService extends BaseService {
 
 		return {
 			lots: [DEFAULT_LOT],
+			autoCall: await this.getAutoCallFlag('SETUP_QUEUE_AUTO_CALL'),
 			list: list.map(item => this._formatQueueItem(item))
 		};
 	}

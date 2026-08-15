@@ -4,6 +4,15 @@
 		<view class="top-btn" bindtap="bindOpenCreateTap">＋ 新建任务</view>
 	</view>
 
+	<!-- 自动叫号开关 -->
+	<view class="auto-call-bar">
+		<view class="auto-call-info">
+			<view class="auto-call-title">自动叫号</view>
+			<view class="auto-call-desc">开启后排队车辆自动按序叫号，叉车接单后自动叫下一辆</view>
+		</view>
+		<switch checked="{{autoCall}}" disabled="{{autoCallLoading}}" bindchange="bindAutoCallChange" color="#f07818" />
+	</view>
+
 	<!-- 状态统计 + 筛选 -->
 	<view class="chip-bar">
 		<view class="chip {{filterStatus === '' ? 'active' : ''}}" data-key="" bindtap="bindFilterTap">全部 {{total}}</view>

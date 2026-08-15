@@ -87,6 +87,19 @@ class BaseService {
 		return String(val).padStart(3, '0');
 	}
 
+	/** 读自动叫号开关（ax_setup 单文档配置；字段不存在/文档缺失视为关闭） */
+	async getAutoCallFlag(field) {
+		let setup = await SetupModel.getOne({}, field);
+		return setup ? Number(setup[field]) === 1 : false;
+	}
+
+	/** 写自动叫号开关 */
+	async setAutoCallFlag(field, value) {
+		let setup = await SetupModel.getOne({}, 'SETUP_ID');
+		if (!setup) this.AppError('系统设置未初始化');
+		await SetupModel.edit(setup._id, { [field]: Number(value) === 1 ? 1 : 0 });
+	}
+
 
 	async initSetup() {
 		// 集合兜底：热实例内首次调用补齐配置中缺失的集合。

@@ -13,6 +13,10 @@ class AdminStorageService extends BaseAdminService {
 
 	/** 看板列表（未取柜/未取消的记录） */
 	async list() {
+		let service = new StorageService();
+		// 自动叫号兜底：看板 10s 轮询时顺带执行一次
+		await service.autoCallCheck();
+
 		let list = await StorageModel.getAll({
 			STORAGE_STATUS: ['in', StorageModel.BOARD_STATUS]
 		}, '*', {
@@ -21,8 +25,8 @@ class AdminStorageService extends BaseAdminService {
 			STORAGE_ADD_TIME: 'asc'
 		}, 200);
 
-		let service = new StorageService();
 		return {
+			autoCall: await this.getAutoCallFlag('SETUP_STORAGE_AUTO_CALL'),
 			list: list.map(item => service._formatStorageItem(item))
 		};
 	}
@@ -60,6 +64,15 @@ class AdminStorageService extends BaseAdminService {
 		if (!updated) this.AppError('该记录状态已变化，请刷新后重试');
 
 		return await this.detail(id);
+	}
+
+	/** 自动叫号开关（管理员看板切换；开启时立即尝试叫一次） */
+	async setAutoCall(value) {
+		let flag = Number(value) === 1 ? 1 : 0;
+		let service = new StorageService();
+		await service.setAutoCallFlag('SETUP_STORAGE_AUTO_CALL', flag);
+		if (flag) await service.autoCallCheck();
+		return { autoCall: flag };
 	}
 
 	/** 管理员收回叫号（吊柜未接单时回退待叫号） */
@@ -122,6 +135,9 @@ class AdminStorageService extends BaseAdminService {
 		});
 		if (!updated) this.AppError('该记录已被吊柜司机接单或状态已变化，请刷新');
 
+		// 派单后抢单池释放，立即尝试自动叫下一位
+		await new StorageService().autoCallCheck();
+
 		return await this.detail(id);
 	}
 
@@ -150,6 +166,9 @@ class AdminStorageService extends BaseAdminService {
 			STORAGE_QUEUE_TIME: now,
 		});
 		if (!updated) this.AppError('该记录状态已变化（可能已在线支付入队），请刷新后重试');
+
+		// 确认收款进队后立即尝试自动叫号（开关开启时；detail 在叫号后读取为最新状态）
+		await new StorageService().autoCallCheck();
 
 		return await this.detail(id);
 	}

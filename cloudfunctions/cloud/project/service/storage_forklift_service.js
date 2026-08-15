@@ -12,6 +12,10 @@ class StorageForkliftService extends BaseService {
 
 	/** 获取吊柜司机任务（抢单池 + 我的任务） */
 	async getMyTask(userId) {
+		let service = new StorageService();
+		// 自动叫号兜底：吊柜工作台轮询时顺带执行一次（管理员看板未打开时也能自动叫号）
+		await service.autoCallCheck();
+
 		let pool = await StorageModel.getAll({
 			STORAGE_STATUS: ['in', [StorageModel.STATUS.STORE_CALLED, StorageModel.STATUS.FETCH_CALLED]],
 			STORAGE_FORKLIFT_ID: ''
@@ -22,7 +26,6 @@ class StorageForkliftService extends BaseService {
 			STORAGE_STATUS: ['in', [StorageModel.STATUS.STORE_CALLED, StorageModel.STATUS.STORE_EXECUTING, StorageModel.STATUS.FETCH_CALLED, StorageModel.STATUS.FETCH_EXECUTING]]
 		}, '*', { STORAGE_CALL_TIME: 'asc' }, 50);
 
-		let service = new StorageService();
 		return {
 			pool: (pool || []).map(item => service._formatStorageItem(item)),
 			my: (mine || []).map(item => service._formatStorageItem(item))
@@ -61,6 +64,8 @@ class StorageForkliftService extends BaseService {
 		if (!updated) this.AppError('手慢了，任务已被其他吊柜司机抢走');
 
 		let service = new StorageService();
+		// 抢单后抢单池释放，立即尝试自动叫下一位
+		await service.autoCallCheck();
 		return await service.detail(queueId);
 	}
 

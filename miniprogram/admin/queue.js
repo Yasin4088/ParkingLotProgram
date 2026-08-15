@@ -60,6 +60,10 @@ Page({
 		loading: false,
 		submitting: false,
 
+		// 自动叫号开关
+		autoCall: false,
+		autoCallLoading: false,
+
 		// 详情弹窗
 		showDetail: false,
 		editMode: false,
@@ -178,6 +182,7 @@ Page({
 				list,
 				stats,
 				total: list.length,
+				autoCall: !!data.autoCall,
 				displayList: this._filterList(list, this.data.filterStatus),
 			});
 		} catch (e) {
@@ -368,6 +373,28 @@ Page({
 			console.log(err);
 		} finally {
 			this.setData({ createLoading: false });
+		}
+	},
+
+	// ========== 自动叫号开关 ==========
+
+	/** 自动叫号开关切换：开启后系统自动按序叫号，关闭恢复人工叫号 */
+	bindAutoCallChange: async function (e) {
+		if (this.data.autoCallLoading) return;
+		let value = e.detail.value ? 1 : 0;
+		this.setData({ autoCallLoading: true, autoCall: !!value });
+		try {
+			let res = await cloudHelper.callCloudSumbit('admin/queue_auto_call', { value }, { title: '', hint: false });
+			let data = res && res.data ? res.data : res;
+			this.setData({ autoCall: !!data.autoCall });
+			wx.showToast({ title: value ? '已开启自动叫号' : '已关闭自动叫号', icon: 'none' });
+			if (value) this.loadList();
+		} catch (err) {
+			this.setData({ autoCall: !value });
+			wx.showToast({ title: '设置失败，请重试', icon: 'none' });
+			console.log(err);
+		} finally {
+			this.setData({ autoCallLoading: false });
 		}
 	},
 

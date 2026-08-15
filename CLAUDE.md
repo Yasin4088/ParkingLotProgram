@@ -19,8 +19,8 @@
 
 ```
 miniprogram/          # 前端
-  admin/queue.*       # 管理员叫号看板（状态筛选、10s自动刷新、叫号/派单/费用/结算）
-  admin/storage.*     # 管理员存取柜看板（独立排队/叫号/派单/确认收款/柜型管理）
+  admin/queue.*       # 管理员叫号看板（状态筛选、10s自动刷新、自动/人工叫号开关、叫号/派单/费用/结算）
+  admin/storage.*     # 管理员存取柜看板（独立排队、自动/人工叫号开关、叫号/派单/确认收款/柜型管理）
   pages/admin/        # 后台（首页实时统计、司机/叉车/用户管理、历史月报导出、存取柜历史）
   pages/forklift/     # 叉车司机任务页（抢单/倒计时/单据照片完成）
   pages/storage_forklift/ # 吊柜工作台（存取柜执行：存柜/取柜、单据照片完成）
@@ -54,6 +54,7 @@ cloudfunctions/payNotify/ # 微信支付回调云函数（HTTP触发+定时查�
 - 2026-08-14 新增四项（已开发未部署验证）：司机业务选择页（driver/biz_select，仅装卸货/存柜/取柜三模块+进行中角标，司机端导航回接）；存柜柜门照上传修复（根因=内容安全检测服务未开通，上传统一显式跳过 isCheck 且失败返回空不误传本地路径）；登录页文案「叉车/吊柜司机」；叉车/吊柜身份拆分（USER_ROLE 新增 crane，登录按角色直达工作台、前端互斥重定向、后端 checkWorkRole 鉴权、存取柜看板派单/列表只含吊柜账号）；修复 initSetup 集合兜底（原逻辑超级管理员初始化后不再建新集合导致存取柜接口报错，现部署后首个请求自动补齐缺失集合）
 - 2026-08-14 六项 UX（前端已生效，后端 myCurrent 需部署）：① biz_select 加退出登录；② 管理员预填单弹窗可滑动（call-panel max-height+overflow）；③ 存柜登记成功后跳转我的存柜（含取消分支）；④ 查看我的存柜入口只在存柜 tab 展示；⑤ 存柜页内嵌「我的存柜」区（存柜码+状态，myCurrent 存柜人记录改为覆盖 0-7 看板全阶段、取柜单按 _id 去重，取出后才消失）；⑥ 管理员装卸货/存取柜/后台三页底部并排三键切换（redirectTo）
 - 2026-08-14 安全加固三轮（已提交未部署，commit 2f8186f/8c84f60/2597445+解绑按钮）：**司机端接口身份改为服务端 OPENID**（弃用前端 token 身份，getDriverId 按 USER_MINI_OPENID 查证）；**叉车/吊柜账号首登绑定本机微信 OPENID**（USER_WX_OPENID，先登先绑、换设备由管理员编辑页「清除微信绑定」解绑，checkWorkRole 校验绑定）；叉车/吊柜登录失败锁定（5 次/15 分钟）；myCurrent/取柜登记响应脱敏（不再下发用户 _id/OPENID/三证照/支付订单号）；clear_cache 补鉴权；user_list 去敏感字段；setupAdmin 事务防双超管；**发号改事务计数器 ax_counter**（_id=CNT_{PID}_{prefix}_{day}，种子=当日已有记录数，QUEUE_NO/STORAGE_NO 防并发撞号，payNotify 内有同算法副本需同步维护）；装卸/存取柜状态流转全部条件编辑（失败报「状态已变化，请刷新」）；pay() 下单竞态修复；payNotify markPaid 事务幂等（发号+入队原子）；存柜支付前端 res.data 层级修复（在线支付/成功弹窗原为静默失效）；initSetup 热缓存；我的存柜 N+1 改内存计算
+- 2026-08-15 自动叫号（已开发未部署，与安全加固同批部署 cloud 即生效）：装卸货、存取柜**各一个独立开关**（存 ax_setup 的 SETUP_QUEUE_AUTO_CALL/SETUP_STORAGE_AUTO_CALL，管理员看板顶部 switch 切换，admin/queue_auto_call + admin/storage_auto_call 路由）；策略=无未接单的叫号时自动叫排队最早的一单（最多 1 单待接单，叉车/吊柜接单后自动叫下一位，存取柜存柜/取柜按排队时间全局取最早）；触发点=签到/存柜登记/支付入队/收款确认/抢单/派单即时触发 + 管理员看板 10s 轮询 + 叉车/吊柜工作台轮询兜底（看板未打开也能自动叫号）；自动叫号失败仅 console.error 不影响主流程；条件编辑防并发重复叫号；注意：自动模式下管理员「收回叫号」会被 10s 兜底自动重新叫号，需暂停时切回人工模式
 - 部署注意（本轮安全加固上线）：① 重新部署 cloud 与 payNotify **同一窗口**（发号算法副本需一致）；② 存量叉车/吊柜司机需**重新登录一次**（登录即绑定本机微信，旧缓存 token 会因未绑定被拒）；③ 控制台清单：cloud 云函数超时 3s→**10s**；建索引 ax_queue(QUEUE_STATUS/QUEUE_USER_ID/QUEUE_CHECKIN_TIME)、ax_storage(STORAGE_STATUS/STORAGE_USER_ID/STORAGE_FETCH_USER_ID/STORAGE_QUEUE_TIME/STORAGE_CODE/STORAGE_CABINET_NO/STORAGE_PAY_OUT_TRADE_NO/STORAGE_FORKLIFT_ID)、ax_user(USER_MINI_OPENID/USER_ROLE/USER_NAME)、ax_admin(ADMIN_TOKEN/ADMIN_NAME)；④ 全部集合权限确认「仅云函数可读写」；⑤ 重新部署触发建 ax_storage/ax_storage_cabinet/ax_counter 集合 + 身份拆分生效 → 管理员把吊柜司机账号逐个改为吊柜身份 → 按计划验证存取柜全流程（存柜→叫号→吊柜→取柜缴费确认→叫号→取柜）+ 身份互斥（云开发控制台测试面板验证两工作台 API 互调被拒、司机 B token=他人 _id 被拒）+ 月报核对
 - 下一步：① 商户号通过后按「上线前清单」微信支付启用检查项配置 → 0.01 元真机验证支付回调幂等；② 可选后续：装卸服务费微信支付收款（记账单可复用 PAY_MODE/PAY_STATUS 字段）、交易账单下载 API 对账（官方 4012791866）
 - 已接受风险（用户决策，勿加校验）：取柜链路 6 位存柜码即凭证（fetch_calc/fetch_register 无需登录/限频）；取柜人身份仍按客户端 token 写入（设计取舍）

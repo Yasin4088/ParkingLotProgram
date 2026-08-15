@@ -80,6 +80,12 @@ class StorageService extends BaseService {
 			STORAGE_PAY_OUT_TRADE_NO: '',
 		});
 
+		// 自动叫号：开关开启时登记完成即可能被叫号，被叫中则刷新状态再返回
+		let autoCalledId = await this.autoCallCheck();
+		if (autoCalledId === ret._id) {
+			ret = await StorageModel.getOne({ _id: ret._id });
+		}
+
 		return this._formatStorageItem(ret);
 	}
 
@@ -271,7 +277,59 @@ class StorageService extends BaseService {
 			if (fresh && fresh.STORAGE_STATUS === StorageModel.STATUS.FETCH_WAITING) return true;
 			this.AppError('该记录状态已变更，请刷新查看');
 		}
+		// 支付入队后立即尝试自动叫号（开关开启时）
+		await this.autoCallCheck();
 		return true;
+	}
+
+	/** 自动叫号：开关开启且无未接单的叫号时，自动叫排队最早的一条（存柜/取柜同一队列，最多保持 1 单待接单）
+	 *  返回被叫记录的 _id（未叫号返回 null），供调用方决定是否需要刷新状态 */
+	async autoCallCheck() {
+		try {
+			if (!(await this.getAutoCallFlag('SETUP_STORAGE_AUTO_CALL'))) return null;
+
+			let calledCnt = await StorageModel.count({
+				STORAGE_STATUS: ['in', [StorageModel.STATUS.STORE_CALLED, StorageModel.STATUS.FETCH_CALLED]],
+				STORAGE_FORKLIFT_ID: ''
+			});
+			if (calledCnt > 0) return null;
+
+			// 存柜待叫号与取柜待叫号按排队时间取全局最早的一条
+			let storeWait = await StorageModel.getAll({
+				STORAGE_STATUS: StorageModel.STATUS.STORE_WAITING
+			}, 'STORAGE_STATUS,STORAGE_QUEUE_TIME', { STORAGE_QUEUE_TIME: 'asc' }, 1);
+			let fetchWait = await StorageModel.getAll({
+				STORAGE_STATUS: StorageModel.STATUS.FETCH_WAITING
+			}, 'STORAGE_STATUS,STORAGE_QUEUE_TIME', { STORAGE_QUEUE_TIME: 'asc' }, 1);
+
+			let storeTop = (storeWait || [])[0];
+			let fetchTop = (fetchWait || [])[0];
+			let target = null;
+			if (storeTop && fetchTop) {
+				target = storeTop.STORAGE_QUEUE_TIME <= fetchTop.STORAGE_QUEUE_TIME ? storeTop : fetchTop;
+			} else {
+				target = storeTop || fetchTop;
+			}
+			if (!target) return null;
+
+			let newStatus = target.STORAGE_STATUS === StorageModel.STATUS.STORE_WAITING
+				? StorageModel.STATUS.STORE_CALLED
+				: StorageModel.STATUS.FETCH_CALLED;
+
+			// 条件更新：并发/多触发点同时执行时仅一方成功
+			let updated = await StorageModel.edit({
+				_id: target._id,
+				STORAGE_STATUS: target.STORAGE_STATUS
+			}, {
+				STORAGE_STATUS: newStatus,
+				STORAGE_CALL_TIME: timeUtil.time(),
+			});
+			return updated ? target._id : null;
+		} catch (e) {
+			// 自动叫号为后台增强，失败不影响主流程（登记/支付/看板刷新）
+			console.error('自动叫号执行失败', e);
+			return null;
+		}
 	}
 
 	/** 司机我的存柜（存柜单 + 取柜单；存柜人记录保留到取出为止） */
