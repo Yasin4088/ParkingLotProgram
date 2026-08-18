@@ -167,5 +167,5 @@
 
 /* 客户登录按钮（月付/月结） */
 .customer-btn {
-    background: linear-gradient(135deg, #0E9F6E 0%, #34C38F 100%) !important;
+    background: linear-gradient(135deg, #3B82E6 0%, #5A9CF0 100%) !important;
 }

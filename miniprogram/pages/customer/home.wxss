@@ -6,7 +6,7 @@
 }
 
 .header {
-	background: linear-gradient(135deg, #0E9F6E 0%, #34C38F 100%);
+	background: linear-gradient(135deg, #3B82E6 0%, #5A9CF0 100%);
 	border-radius: 24rpx;
 	color: #fff;
 	padding: 36rpx 34rpx;
@@ -76,7 +76,7 @@
 	width: 100%;
 	height: 88rpx;
 	line-height: 88rpx;
-	background: linear-gradient(135deg, #0E9F6E 0%, #34C38F 100%);
+	background: linear-gradient(135deg, #3B82E6 0%, #5A9CF0 100%);
 	color: #fff;
 	font-size: 32rpx;
 	font-weight: 600;
@@ -144,8 +144,8 @@
 }
 
 .plate-status.on {
-	background: #e6f7f0;
-	color: #0E9F6E;
+	background: #e3f2fd;
+	color: #1565C0;
 }
 
 .plate-status.using {

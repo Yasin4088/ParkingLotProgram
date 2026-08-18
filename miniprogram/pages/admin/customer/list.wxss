@@ -29,8 +29,8 @@
 	font-size: 22rpx;
 	padding: 4rpx 16rpx;
 	border-radius: 20rpx;
-	background: #e6f7f0;
-	color: #0E9F6E;
+	background: #e3f2fd;
+	color: #1565C0;
 }
 
 .d-status {

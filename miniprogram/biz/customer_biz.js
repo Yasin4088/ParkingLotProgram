@@ -7,7 +7,7 @@ const constants = require('./constants.js');
 
 function isCustomer(that) {
 	wx.setNavigationBarColor({
-		backgroundColor: '#0E9F6E',
+		backgroundColor: '#3B82E6',
 		frontColor: '#ffffff',
 	});
 	let customer = cacheHelper.get(constants.CACHE_CUSTOMER);
