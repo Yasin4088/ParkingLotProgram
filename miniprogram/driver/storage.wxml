@@ -54,20 +54,6 @@
 		<view class="tips">登记后自动记录时间并生成存柜码，等待管理员叫号后吊柜司机开始存柜</view>
 
 		<button class="primary-btn" loading="{{submitting}}" bindtap="bindStoreSubmit">登记存柜</button>
-
-		<!-- 我的存柜（取出前一直可见，防止忘记存柜码） -->
-		<view class="my-storage">
-			<view class="my-storage-title">我的存柜</view>
-			<view wx:if="{{!myList.length}}" class="my-storage-empty">暂无进行中的存柜</view>
-			<view wx:for="{{myList}}" wx:key="_id" class="my-storage-item" bindtap="bindMyTap">
-				<view class="my-storage-head">
-					<text class="my-storage-code">存柜码 {{item.STORAGE_CODE}}</text>
-					<text class="my-storage-status">{{item.statusDesc}}</text>
-				</view>
-				<view class="my-storage-meta">{{item.typeName}} · {{item.STORAGE_CABINET_NAME}} · 柜号 {{item.STORAGE_CABINET_NO}}</view>
-				<view class="my-storage-meta" wx:if="{{item.ahead > 0}}">前面还有 {{item.ahead}} 人排队</view>
-			</view>
-		</view>
 	</view>
 
 	<!-- 取柜登记 -->
@@ -115,23 +101,29 @@
 			</block>
 		</view>
 
-		<!-- 支付（暂未开放，占位按键；不计费/月付单不展示） -->
-		<button wx:if="{{calc && !calc.noCharge && !calc.monthly}}" class="primary-btn" bindtap="bindPayTap">支付 ¥{{calc.feeTotalText}}</button>
+		<!-- 在线支付走「提交取柜登记」自动拉起；本页不放独立支付按钮（登记前无支付记录） -->
 
-		<view wx:if="{{calc && !calc.noCharge && !calc.monthly}}" class="form-item">
-			<view class="label">支付方式</view>
-			<picker range="{{payModes}}" range-key="label" value="{{payModeIndex}}" bindchange="bindPayModeChange">
-				<view class="picker">{{payModes[payModeIndex].label}}</view>
-			</picker>
-		</view>
+		<view wx:if="{{calc && !calc.noCharge && !calc.monthly}}" class="tips">{{wxpayEnable ? '提交后自动拉起微信支付，支付完成自动进入取柜排队' : '提交后请到现场缴费，管理员确认收款后进入排队'}}</view>
 
-		<view wx:if="{{calc && !calc.noCharge && !calc.monthly}}" class="tips">{{wxpayEnable ? '在线支付完成后自动进入取柜排队' : '提交后请到现场缴费，管理员确认收款后进入排队'}}</view>
-
-		<button wx:if="{{calc}}" class="primary-btn" loading="{{submitting}}" bindtap="bindFetchSubmit">{{calc.noCharge ? '提交取柜登记（不计费）' : (calc.monthly ? '提交取柜登记（免付）' : '提交取柜登记')}}</button>
+		<button wx:if="{{calc}}" class="primary-btn" loading="{{submitting}}" bindtap="bindFetchSubmit">{{calc.noCharge ? '提交取柜登记（不计费）' : (calc.monthly ? '提交取柜登记（免付）' : '支付费用')}}</button>
 	</view>
 
-	<!-- 入口只在存柜页展示（取柜页入口已移除） -->
-	<view class="footer-actions" wx:if="{{tab === 'store'}}">
-		<view bindtap="bindMyTap">查看我的存柜</view>
+	<!-- 我的存柜/取柜（两个 tab 都展示；取柜 tab 只展示取柜阶段记录，点记录进「我的存取柜」页支付/看状态） -->
+	<view class="my-storage">
+		<view class="my-storage-title">{{tab === 'store' ? '我的存柜' : '我的取柜'}}</view>
+		<view wx:if="{{!myList.length}}" class="my-storage-empty">暂无进行中的{{tab === 'store' ? '存柜' : '取柜'}}</view>
+		<view wx:for="{{myList}}" wx:key="_id" wx:if="{{tab === 'store' || item.STORAGE_STATUS >= 4}}" class="my-storage-item" bindtap="bindMyTap">
+			<view class="my-storage-head">
+				<text class="my-storage-code">存柜码 {{item.STORAGE_CODE}}</text>
+				<text class="my-storage-status">{{item.statusDesc}}</text>
+			</view>
+			<view class="my-storage-meta">{{item.typeName}} · {{item.STORAGE_CABINET_NAME}} · 柜号 {{item.STORAGE_CABINET_NO}}</view>
+			<view class="my-storage-meta" wx:if="{{item.ahead > 0}}">前面还有 {{item.ahead}} 人排队</view>
+		</view>
+	</view>
+
+	<!-- 我的记录入口（两个 tab 都展示） -->
+	<view class="footer-actions">
+		<view bindtap="bindMyTap">{{tab === 'store' ? '查看我的存柜' : '查看我的取柜'}}</view>
 	</view>
 </view>

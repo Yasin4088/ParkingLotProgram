@@ -63,6 +63,7 @@ class WxPayLib {
 				headers: {
 					'Accept': 'application/json',
 					'Content-Type': 'application/json',
+					'User-Agent': 'parking-lot/1.0',
 					'Authorization': WxPayLib._buildAuthorization(method, url, bodyStr),
 				}
 			}, res => {

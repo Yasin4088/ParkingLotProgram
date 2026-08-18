@@ -16,6 +16,27 @@ class StorageForkliftService extends BaseService {
 		// 自动叫号兜底：吊柜工作台轮询时顺带执行一次（管理员看板未打开时也能自动叫号）
 		await service.autoCallCheck();
 
+		// 状态自愈：已分配给我的任务若异常停在「已叫号」(1/6)——正常派单/抢单应直接进入「执行中」，
+		// 按设计推进为执行中(2/7)，保证只有抢单/派单后的任务才可提交完成（兼容历史异常数据）
+		let stuck = await StorageModel.getAll({
+			STORAGE_FORKLIFT_ID: userId,
+			STORAGE_STATUS: ['in', [StorageModel.STATUS.STORE_CALLED, StorageModel.STATUS.FETCH_CALLED]]
+		}, '_id,STORAGE_STATUS', {}, 20);
+		for (let s of (stuck || [])) {
+			let newStatus = s.STORAGE_STATUS === StorageModel.STATUS.STORE_CALLED
+				? StorageModel.STATUS.STORE_EXECUTING
+				: StorageModel.STATUS.FETCH_EXECUTING;
+			try {
+				await StorageModel.edit({
+					_id: s._id,
+					STORAGE_STATUS: s.STORAGE_STATUS,
+					STORAGE_FORKLIFT_ID: userId
+				}, { STORAGE_STATUS: newStatus });
+			} catch (e) {
+				console.error('任务状态自愈失败', s._id, e);
+			}
+		}
+
 		let pool = await StorageModel.getAll({
 			STORAGE_STATUS: ['in', [StorageModel.STATUS.STORE_CALLED, StorageModel.STATUS.FETCH_CALLED]],
 			STORAGE_FORKLIFT_ID: ''
@@ -69,7 +90,7 @@ class StorageForkliftService extends BaseService {
 		return await service.detail(queueId);
 	}
 
-	/** 吊柜司机完成作业（必传执行照片；存柜 2→3 记计费起点，取柜 7→8） */
+	/** 吊柜司机完成作业（必传执行照片；存柜 2→3 记计费起点，取柜 7→8，仅执行中可完成） */
 	async completeTask(userId, queueId, execProof) {
 		execProof = (execProof || '').trim();
 		if (!execProof) this.AppError('请先上传执行照片');

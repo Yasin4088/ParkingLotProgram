@@ -3,12 +3,12 @@
 		<view class="custom-nav-back" style="top: {{statusBar}}px; height: {{navBarHeight}}px;" bindtap="bindBackTap">
 			<view class="custom-nav-back-icon"></view>
 		</view>
-		<view class="custom-nav-title" style="height: {{navBarHeight}}px; line-height: {{navBarHeight}}px;">我的存柜</view>
+		<view class="custom-nav-title" style="height: {{navBarHeight}}px; line-height: {{navBarHeight}}px;">我的存取柜</view>
 	</view>
 
 	<view class="header">
-		<view class="title">我的存柜</view>
-		<view class="desc">存柜码请妥善保存，取柜时凭码登记并按天缴费</view>
+		<view class="title">我的存取柜</view>
+		<view class="desc">存柜码请妥善保存；存柜登记与取柜缴费、排队进度都在这里查看</view>
 	</view>
 
 	<view wx:for="{{list}}" wx:key="_id" class="card">

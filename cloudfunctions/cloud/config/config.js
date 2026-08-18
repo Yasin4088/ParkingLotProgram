@@ -37,12 +37,14 @@ module.exports = {
 	ADMIN_LOGIN_EXPIRE: 86400, //管理员token过期时间 (秒)
 
 	// #### 微信支付（存取柜取柜交款）
-	WXPAY_ENABLE: false, //是否开通在线支付；商户号未就绪时保持 false，司机走现场支付+管理员确认收款
-	WXPAY_MCH_ID: '', //商户号
-	WXPAY_APP_ID: '', //小程序appid
-	WXPAY_SERIAL_NO: '', //商户API证书序列号
-	WXPAY_NOTIFY_URL: '', //支付回调完整URL（payNotify 云函数 HTTP 触发地址，例：https://<环境ID>.service.tcloudbase.com/payNotify）
+	WXPAY_ENABLE: true, //是否开通在线支付；已配置商户参数+payNotify 回调，0.01 元真机验证通过后保持 true
+	WXPAY_MCH_ID: '1749428583', //商户号
+	WXPAY_APP_ID: 'wx6425c8398684c540', //小程序appid
+	WXPAY_SERIAL_NO: '1CA0BE41724660E2F56C2D60A7D131273A401F3C', //商户API证书序列号
+	WXPAY_NOTIFY_URL: 'https://cloud1-d8gyu2ikvf4aa3997-1467220965.ap-shanghai.app.tcloudbase.com/payNotify', //支付回调完整URL（payNotify HTTP 网关路由，已自测连通）
 	// 敏感密钥不入代码，配置到云函数环境变量：
 	//   cloud 函数：WXPAY_MCH_PRIVATE_KEY（商户API证书私钥 PEM 文本，换行可用 \n 转义）
-	//   payNotify 函数：WXPAY_API_V3_KEY（APIv3密钥32字节）、WXPAY_MCH_ID、WXPAY_APP_ID；平台证书放 payNotify/certs/wechatpay_<序列号>.pem（已 gitignore）
+	//   payNotify 函数：WXPAY_API_V3_KEY（APIv3密钥32字节）、WXPAY_MCH_ID、WXPAY_APP_ID；
+	//   回调验签密钥放 payNotify/certs/（已 gitignore）：平台证书 wechatpay_<序列号>.pem，
+	//   或新商户的微信支付公钥 wechatpay_<PUB_KEY_ID_数字串>.pem（本商户无平台证书，用公钥）
 }

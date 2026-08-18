@@ -20,8 +20,6 @@ Page({
 		fetchCode: '',
 		calc: null,
 		calcLoading: false,
-		payModes: [{ label: '现场支付', value: 0 }],
-		payModeIndex: 0,
 		submitting: false,
 		wxpayEnable: false,
 		myList: [],
@@ -78,11 +76,8 @@ Page({
 				name: c.name,
 				text: c.name + '（¥' + c.priceDailyText + '/天）',
 			}));
-			let payModes = [{ label: '现场支付', value: 0 }];
-			if (res.wxpayEnable) payModes.push({ label: '在线支付（微信）', value: 1 });
 			this.setData({
 				cabinets,
-				payModes,
 				wxpayEnable: !!res.wxpayEnable,
 				cabinetIndex: cabinets.length ? 0 : -1,
 			});
@@ -174,10 +169,6 @@ Page({
 		this.setData({ fetchCode: e.detail.value.trim() });
 	},
 
-	bindPayModeChange: function (e) {
-		this.setData({ payModeIndex: Number(e.detail.value) });
-	},
-
 	bindChooseDoorProof: function () {
 		wx.chooseMedia({
 			count: 1,
@@ -249,11 +240,6 @@ Page({
 		}
 	},
 
-	/** 取柜费用支付（暂未开放，占位按键） */
-	bindPayTap: function () {
-		wx.showToast({ title: '支付功能暂未开放', icon: 'none' });
-	},
-
 	/** 取柜费用预览（按天计费，不足1天按1天；附月付车牌识别提示，不占用月付池） */
 	bindFetchCalc: async function () {
 		if (this.data.calcLoading) return;
@@ -291,7 +277,7 @@ Page({
 		if (!this.data.calc) return wx.showToast({ title: '请先查询费用', icon: 'none' });
 		if (!/^1\d{10}$/.test(this.data.phone)) return wx.showToast({ title: '请输入正确手机号', icon: 'none' });
 
-		let payMode = this.data.payModes[this.data.payModeIndex].value;
+		let payMode = this.data.wxpayEnable ? 1 : 0; // 在线支付已开通，取柜缴费默认走在线支付（未开通时回退现场支付+管理员确认收款）
 		let fetchPlate = (this.data.fetchPlate || '').trim().toUpperCase();
 
 		this.setData({ submitting: true });

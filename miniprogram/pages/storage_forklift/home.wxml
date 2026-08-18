@@ -41,7 +41,7 @@
 			</view>
 		</view>
 
-		<!-- 执行中 → 执行照片上传 + 完成 -->
+		<!-- 执行中（已抢单/已派单，状态 2/7）→ 执行照片上传 + 完成 -->
 		<block wx:if="{{myTask.STORAGE_STATUS === 2 || myTask.STORAGE_STATUS === 7}}">
 			<view class="finish-proof">
 				<view class="finish-title">{{myTask.STORAGE_STATUS === 2 ? '存柜完成照片（必传）' : '取柜完成照片（必传）'}}</view>

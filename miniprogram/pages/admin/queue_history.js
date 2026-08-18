@@ -4,6 +4,8 @@ const fileHelper = require('../../helper/file_helper.js');
 
 Page({
 	data: {
+		tabs: [{ label: '装卸货', value: 0 }, { label: '存取柜', value: 1 }],
+		tab: 0,
 		months: [],
 		monthIndex: 0,
 		yearMonth: '',
@@ -54,11 +56,26 @@ Page({
 		return months;
 	},
 
+	/** Tab 切换：0=装卸货历史, 1=存取柜历史（挚力取柜记录） */
+	bindTabChange: function (e) {
+		let tab = Number(e.currentTarget.dataset.tab);
+		if (tab === this.data.tab) return;
+		this.setData({
+			tab,
+			list: [],
+			total: 0,
+			showDetail: false,
+			selectedItem: null,
+		});
+		this.loadList();
+	},
+
 	loadList: async function () {
 		if (!this.data.yearMonth) return;
 		this.setData({ loading: true });
 		try {
-			let data = await cloudHelper.callCloudData('admin/queue_history_list', {
+			let route = this.data.tab === 1 ? 'admin/storage_history_list' : 'admin/queue_history_list';
+			let data = await cloudHelper.callCloudData(route, {
 				yearMonth: this.data.yearMonth,
 			}, { title: '加载中' });
 			this.setData({
@@ -88,18 +105,19 @@ Page({
 
 		this.setData({ exporting: true });
 		try {
-			await cloudHelper.callCloudSumbit('admin/report_month', {
+			let isStorage = this.data.tab === 1;
+			await cloudHelper.callCloudSumbit(isStorage ? 'admin/report_storage_month' : 'admin/report_month', {
 				yearMonth: this.data.yearMonth,
 			}, { title: '生成报表中' });
 
-			let urlData = await cloudHelper.callCloudData('admin/report_url', {
+			let urlData = await cloudHelper.callCloudData(isStorage ? 'admin/report_storage_url' : 'admin/report_url', {
 				yearMonth: this.data.yearMonth,
 			}, { title: '' });
 			if (!urlData || !urlData.url) {
 				wx.showToast({ title: '报表生成失败，请重试', icon: 'none' });
 				return;
 			}
-			fileHelper.openDoc('装卸月报', urlData.url, '.xlsx');
+			fileHelper.openDoc(isStorage ? '存取柜月报' : '装卸月报', urlData.url, '.xlsx');
 		} catch (e) {
 			console.log(e);
 		} finally {
@@ -142,7 +160,8 @@ Page({
 			success: async res => {
 				if (!res.confirm) return;
 				try {
-					await cloudHelper.callCloudSumbit('admin/queue_history_clear', { id }, { title: '清理中' });
+					let route = this.data.tab === 1 ? 'admin/storage_history_clear' : 'admin/queue_history_clear';
+					await cloudHelper.callCloudSumbit(route, { id }, { title: '清理中' });
 					wx.showToast({ title: '已清理', icon: 'success' });
 					this.bindCloseDetailTap();
 					this.loadList();
@@ -158,11 +177,12 @@ Page({
 
 		wx.showModal({
 			title: '清空历史记录',
-			content: '将清理全部已完成/已取消历史记录，此操作不可恢复，确认继续？',
+			content: '将清理该类别全部历史记录，此操作不可恢复，确认继续？',
 			success: async res => {
 				if (!res.confirm) return;
 				try {
-					await cloudHelper.callCloudSumbit('admin/queue_history_clear_all', {}, { title: '清理中' });
+					let route = this.data.tab === 1 ? 'admin/storage_history_clear_all' : 'admin/queue_history_clear_all';
+					await cloudHelper.callCloudSumbit(route, {}, { title: '清理中' });
 					wx.showToast({ title: '已清空', icon: 'success' });
 					this.bindCloseDetailTap();
 					this.loadList();

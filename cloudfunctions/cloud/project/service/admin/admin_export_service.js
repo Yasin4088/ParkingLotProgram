@@ -164,14 +164,13 @@ class AdminExportService extends BaseAdminService {
 
 		let header = [
 			'状态', '排队号', '存柜码', '车牌号', '柜型', '柜号',
-			'存柜登记时间', '存柜完成时间', '取柜登记时间', '计费天数',
+			'存柜完成时间', '取柜登记时间', '计费天数',
 			'单价(元/天)', '费用(元)', '支付状态', '月结客户', '吊柜司机', '取柜登记手机号'
 		];
 
 		let rows = [header];
 		let feeTotal = 0;
 		let paidTotal = 0;
-		let confirmedTotal = 0;
 		let monthlyTotal = 0;
 
 		for (let item of list) {
@@ -182,7 +181,6 @@ class AdminExportService extends BaseAdminService {
 				item.STORAGE_PLATE || '',
 				item.STORAGE_CABINET_NAME || '',
 				item.STORAGE_CABINET_NO || '',
-				item.STORAGE_ADD_TIME ? timeUtil.timestamp2Time(item.STORAGE_ADD_TIME) : '',
 				item.STORAGE_FINISH_TIME ? timeUtil.timestamp2Time(item.STORAGE_FINISH_TIME) : '',
 				item.STORAGE_FETCH_TIME ? timeUtil.timestamp2Time(item.STORAGE_FETCH_TIME) : '',
 				item.STORAGE_DAYS || 0,
@@ -195,14 +193,12 @@ class AdminExportService extends BaseAdminService {
 			]);
 			feeTotal += Number(item.feeTotal) || 0;
 			if (Number(item.STORAGE_PAY_STATUS) === 1) paidTotal += Number(item.feeTotal) || 0;
-			if (Number(item.STORAGE_PAY_STATUS) === 3) confirmedTotal += Number(item.feeTotal) || 0;
 			if (Number(item.STORAGE_MONTHLY) === 1) monthlyTotal += Number(item.feeTotal) || 0;
 		}
 
 		let empty = ['', '', '', '', '', '', '', '', '', '', '', '', ''];
 		rows.push(empty.concat(['', '合计费用(元)', (feeTotal / 100).toFixed(2), '']).concat(['']));
 		rows.push(empty.concat(['', '已支付(元)', (paidTotal / 100).toFixed(2), '']).concat(['']));
-		rows.push(empty.concat(['', '已确认收款(元)', (confirmedTotal / 100).toFixed(2), '']).concat(['']));
 		rows.push(empty.concat(['', '月结(元)', (monthlyTotal / 100).toFixed(2), '']).concat(['']));
 
 		let dataService = new DataService();

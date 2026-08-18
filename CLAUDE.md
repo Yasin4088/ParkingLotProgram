@@ -46,7 +46,7 @@ cloudfunctions/payNotify/ # 微信支付回调云函数（HTTP触发+定时查�
 ## 上线前清单（用户准备发布时，AI 必须主动逐项提醒）
 
 - **用户隐私保护指引**（GPS 签到依赖）：小程序后台 mp.weixin.qq.com → 设置 → 服务内容声明 → 用户隐私保护指引，声明「位置信息」及用途；未配置时真机上 wx.getLocation 会报隐私协议错误（开发者工具模拟器不受影响）
-- **微信支付启用检查**（商户号通过、WXPAY_ENABLE=true 时）：① 商户平台绑定小程序 appid、开通 JSAPI 支付；② 环境变量：cloud 函数 WXPAY_MCH_PRIVATE_KEY；payNotify 函数 WXPAY_API_V3_KEY/WXPAY_MCH_ID/WXPAY_APP_ID/WXPAY_MCH_PRIVATE_KEY/WXPAY_SERIAL_NO；③ payNotify 部署后控制台开启 HTTP 触发（云接入），config.WXPAY_NOTIFY_URL 填该地址，并添加每5分钟定时触发器（查单兜底）；④ 回调验签密钥放 payNotify/certs/（*.pem 已 gitignore）：老商户平台证书 wechatpay_<序列号>.pem，新商户（/v3/certificates 报「无平台证书」）用微信支付公钥 wechatpay_<PUB_KEY_ID_数字串>.pem（商户平台-账户中心-API安全 申请下载，本商户 2026-08 即公钥模式）；⑤ 0.01 元真机验证：支付→回调入队→重复通知幂等→取消支付→定时查单兜底
+- **微信支付启用检查**（商户号通过、WXPAY_ENABLE=true 时）：① 商户平台绑定小程序 appid、开通 JSAPI 支付；② 环境变量：cloud 函数 WXPAY_MCH_PRIVATE_KEY；payNotify 函数 WXPAY_API_V3_KEY/WXPAY_MCH_ID/WXPAY_APP_ID/WXPAY_MCH_PRIVATE_KEY/WXPAY_SERIAL_NO；③ 定时触发器已内置 payNotify/config.json（每5分钟查单兜底，随部署自动创建）；HTTP 触发在云开发控制台「云接入/HTTP网关」给 payNotify 配访问路径（不是函数详情里的触发配置 tab，微信云开发没有该 tab），config.WXPAY_NOTIFY_URL 填得到的 URL；④ 回调验签密钥放 payNotify/certs/（*.pem 已 gitignore）：老商户平台证书 wechatpay_<序列号>.pem，新商户（/v3/certificates 报「无平台证书」）用微信支付公钥 wechatpay_<PUB_KEY_ID_数字串>.pem（商户平台-账户中心-API安全 申请下载，本商户 2026-08 即公钥模式）；⑤ 0.01 元真机验证：支付→回调入队→重复通知幂等→取消支付→定时查单兜底
 
 ## 当前状态与下一步
 

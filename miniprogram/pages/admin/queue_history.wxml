@@ -2,12 +2,17 @@
 	<view class="header">
 		<view>
 			<view class="title">历史记录</view>
-			<view class="desc">查看已完成/已取消装卸记录，按月导出经营报表</view>
+			<view class="desc">查看装卸货/存取柜历史记录（存取柜含挚力取柜记录），按月导出经营报表</view>
 		</view>
 		<view class="header-actions">
 			<view class="action-btn" bindtap="bindRefreshTap">刷新</view>
 			<view class="action-btn danger" bindtap="bindClearAllTap">清空</view>
 		</view>
+	</view>
+
+	<!-- Tab 切换：装卸货 / 存取柜 -->
+	<view class="tab-bar">
+		<view wx:for="{{tabs}}" wx:key="value" class="tab-item {{tab === item.value ? 'active' : ''}}" data-tab="{{item.value}}" bindtap="bindTabChange">{{item.label}}</view>
 	</view>
 
 	<!-- 月份选择 + 导出 -->
@@ -20,7 +25,8 @@
 
 	<view class="summary">共 {{total}} 条历史记录</view>
 
-	<view wx:if="{{list.length}}">
+	<!-- 装卸货历史 -->
+	<view wx:if="{{tab === 0 && list.length}}">
 		<view wx:for="{{list}}" wx:key="_id" data-id="{{item._id}}" bindtap="bindItemTap" class="history-card {{item.QUEUE_STATUS === 9 ? 'done' : 'cancel'}}">
 			<view class="top">
 				<view class="plate">{{item.QUEUE_PLATE || '--'}}</view>
@@ -42,9 +48,32 @@
 		</view>
 	</view>
 
-	<view wx:else class="empty">{{loading ? '加载中...' : '该月暂无历史记录'}}</view>
+	<!-- 存取柜历史（挚力取柜记录） -->
+	<view wx:if="{{tab === 1 && list.length}}">
+		<view wx:for="{{list}}" wx:key="_id" data-id="{{item._id}}" bindtap="bindItemTap" class="history-card {{item.STORAGE_STATUS === 8 ? 'done' : 'cancel'}}">
+			<view class="top">
+				<view class="plate">{{item.STORAGE_PLATE || '--'}}</view>
+				<view class="status {{item.STORAGE_STATUS === 8 ? 'done' : 'cancel'}}">{{item.statusDesc}}</view>
+			</view>
+			<view class="meta">{{item.typeName}} · {{item.STORAGE_CABINET_NAME}} {{item.STORAGE_CABINET_NO}} · 码{{item.STORAGE_CODE}}</view>
+			<view wx:if="{{item.forkliftName}}" class="meta">吊柜：{{item.forkliftName}}</view>
+			<view wx:if="{{item.fetchDoneTimeText}}" class="meta">取柜完成：{{item.fetchDoneTimeText}}</view>
+			<view wx:if="{{item.cancelTimeText}}" class="meta">取消：{{item.cancelTimeText}}</view>
+			<view wx:if="{{item.STORAGE_STATUS === 8}}" class="meta">费用：¥{{item.feeTotalText}}（{{item.STORAGE_DAYS}}天 · {{item.payStatusDesc}}）</view>
+			<view wx:if="{{item.STORAGE_EXEC_PROOF || item.STORAGE_FETCH_PROOF}}" class="proof-tag">已上传执行凭证</view>
+			<view wx:elif="{{item.STORAGE_CABINET_DOOR_PROOF}}" class="proof-tag light">有柜门照片</view>
 
-	<view wx:if="{{showDetail}}" class="detail-mask" bindtap="bindCloseDetailTap">
+			<view class="card-actions">
+				<view class="link-btn">查看详情</view>
+				<view class="clear-btn" data-id="{{item._id}}" catchtap="bindClearTap">清理</view>
+			</view>
+		</view>
+	</view>
+
+	<view wx:if="{{!list.length}}" class="empty">{{loading ? '加载中...' : '该月暂无历史记录'}}</view>
+
+	<!-- 装卸货详情 -->
+	<view wx:if="{{showDetail && tab === 0}}" class="detail-mask" bindtap="bindCloseDetailTap">
 		<view class="detail-panel" catchtap="bindNoop">
 			<view class="detail-head">
 				<view>
@@ -138,6 +167,95 @@
 					</view>
 				</view>
 				<view wx:else class="fee-empty">暂无费用</view>
+				<view class="fee-total">合计：¥{{selectedItem.feeTotalText}}（{{selectedItem.payStatusDesc}}）</view>
+			</view>
+
+			<view class="detail-actions">
+				<view class="detail-btn danger" data-id="{{selectedItem._id}}" bindtap="bindClearTap">清理此记录</view>
+			</view>
+		</view>
+	</view>
+
+	<!-- 存取柜详情 -->
+	<view wx:if="{{showDetail && tab === 1}}" class="detail-mask" bindtap="bindCloseDetailTap">
+		<view class="detail-panel" catchtap="bindNoop">
+			<view class="detail-head">
+				<view>
+					<view class="detail-title">记录详情</view>
+					<view class="detail-sub">{{selectedItem.STORAGE_NO || '--'}} · {{selectedItem.statusDesc}}</view>
+				</view>
+				<view class="detail-close" bindtap="bindCloseDetailTap">关闭</view>
+			</view>
+
+			<view class="detail-grid">
+				<view class="detail-row">
+					<view class="detail-label">车牌号</view>
+					<view class="detail-value">{{selectedItem.STORAGE_PLATE || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">存柜码</view>
+					<view class="detail-value">{{selectedItem.STORAGE_CODE || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">业务</view>
+					<view class="detail-value">{{selectedItem.typeName}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">柜型 / 柜号</view>
+					<view class="detail-value">{{selectedItem.STORAGE_CABINET_NAME || '--'}} · {{selectedItem.STORAGE_CABINET_NO || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">吊柜司机</view>
+					<view class="detail-value">{{selectedItem.forkliftName || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">存柜登记</view>
+					<view class="detail-value">{{selectedItem.addTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">存柜完成</view>
+					<view class="detail-value">{{selectedItem.finishTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">取柜登记</view>
+					<view class="detail-value">{{selectedItem.fetchTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">取柜完成</view>
+					<view class="detail-value">{{selectedItem.fetchDoneTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">取消时间</view>
+					<view class="detail-value">{{selectedItem.cancelTimeText || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">取消原因</view>
+					<view class="detail-value">{{selectedItem.STORAGE_CANCEL_REASON || '--'}}</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">柜门照片</view>
+					<view wx:if="{{selectedItem.STORAGE_CABINET_DOOR_PROOF}}" class="detail-link" data-url="{{selectedItem.STORAGE_CABINET_DOOR_PROOF}}" bindtap="bindPreviewTap">点击查看</view>
+					<view wx:else class="detail-value">--</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">存柜完成照</view>
+					<view wx:if="{{selectedItem.STORAGE_EXEC_PROOF}}" class="detail-link" data-url="{{selectedItem.STORAGE_EXEC_PROOF}}" bindtap="bindPreviewTap">点击查看</view>
+					<view wx:else class="detail-value">--</view>
+				</view>
+				<view class="detail-row">
+					<view class="detail-label">取柜完成照</view>
+					<view wx:if="{{selectedItem.STORAGE_FETCH_PROOF}}" class="detail-link" data-url="{{selectedItem.STORAGE_FETCH_PROOF}}" bindtap="bindPreviewTap">点击查看</view>
+					<view wx:else class="detail-value">--</view>
+				</view>
+			</view>
+
+			<!-- 取柜费用 -->
+			<view wx:if="{{selectedItem.STORAGE_STATUS === 8}}" class="fee-box">
+				<view class="fee-box-title">取柜费用</view>
+				<view class="fee-line">
+					<view class="fee-line-name">{{selectedItem.STORAGE_DAYS}} 天 × ¥{{selectedItem.priceDailyText}}/天</view>
+					<view class="fee-line-amount">¥{{selectedItem.feeTotalText}}</view>
+				</view>
 				<view class="fee-total">合计：¥{{selectedItem.feeTotalText}}（{{selectedItem.payStatusDesc}}）</view>
 			</view>
 

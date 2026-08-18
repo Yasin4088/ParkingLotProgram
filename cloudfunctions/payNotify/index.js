@@ -7,11 +7,18 @@
  *   → 条件更新 {_id, STATUS:4, OUT_TRADE_NO} → STATUS:5 + 已支付 + 生成排队号（幂等）
  * 应答：验签/业务成功 → HTTP 200 无应答报文；失败 → 5XX + {code:'FAIL'}（微信将按 15s/15s/... 频次重试）
  * 定时兜底（官方建议：商户系统不能仅依赖回调，需结合查单 4012791861 第2.3节）：
- *   云开发控制台给本函数添加定时触发器（建议每5分钟），扫描待缴费在线单做商户订单号查单，
- *   已支付则走与回调相同的落库逻辑，避免回调丢失导致司机付款后不入队。
- * 部署：上传后控制台开启 HTTP 触发（云接入）；环境变量 WXPAY_API_V3_KEY / WXPAY_MCH_ID / WXPAY_APP_ID /
+ *   定时触发器已内置本目录 config.json（type: timer，每5分钟执行一次，随上传部署自动创建），
+ *   扫描待缴费在线单做商户订单号查单，已支付则走与回调相同的落库逻辑，
+ *   避免回调丢失导致司机付款后不入队（本函数被定时触发时 event.Type === 'Timer'）。
+ * 部署：环境变量 WXPAY_API_V3_KEY / WXPAY_MCH_ID / WXPAY_APP_ID /
  *   WXPAY_MCH_PRIVATE_KEY（定时查单签名用）/ WXPAY_SERIAL_NO；
- *   平台证书下载后放 certs/wechatpay_<序列号>.pem（可放多张，按 Wechatpay-Serial 选择）
+ *   HTTP 触发：云开发控制台「云接入 / HTTP网关」给本函数配置访问路径（如 /payNotify），
+ *   得到的 URL（形如 https://<环境ID>.service.tcloudbase.com/payNotify）填到 cloud 函数 config.js 的
+ *   WXPAY_NOTIFY_URL；
+ *   回调验签密钥（二选一，按 Wechatpay-Serial 头选择文件）：
+ *     平台证书：certs/wechatpay_<证书序列号>.pem（老商户，官方下载接口 /v3/certificates）
+ *     微信支付公钥：certs/wechatpay_<PUB_KEY_ID_数字串>.pem（新商户无平台证书，
+ *       序列号固定 PUB_KEY_ID_ 前缀格式，商户平台-账户中心-API安全 申请下载，一次申请永久有效）
  * 说明：Node.js 非微信支付官方示例语言（官方仅 curl/Java/Go），本文件参考官方 Java SDK 逻辑翻译生成，非官方维护。
  */
 
@@ -63,7 +70,7 @@ function getHeader(headers, name) {
 	return '';
 }
 
-/** 读取本地平台证书：certs/wechatpay_<序列号>.pem → {序列号: PEM} */
+/** 读取本地验签密钥（平台证书或微信支付公钥）：certs/wechatpay_<序列号|PUB_KEY_ID>.pem → {序列号: PEM} */
 function loadCerts() {
 	let map = {};
 	try {
@@ -136,6 +143,7 @@ function queryOrder(outTradeNo) {
 			timeout: 10000,
 			headers: {
 				'Accept': 'application/json',
+				'User-Agent': 'parking-lot/1.0',
 				'Authorization': authorization,
 			}
 		}, res => {

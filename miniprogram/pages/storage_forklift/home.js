@@ -29,6 +29,18 @@ Page({
 		this.setData({ isLoad: true });
 		await this._loadTask(true);
 		this._loaded = true;
+		// 10s 自动刷新（与管理员看板一致）：任务池/我的任务保持最新，避免对已被接走的单误抢
+		this._timer = setInterval(() => {
+			if (this.data.uploading) return; // 上传照片期间跳过，避免与选图/上传冲突
+			this._loadTask(true);
+		}, 10000);
+	},
+
+	onUnload: function () {
+		if (this._timer) {
+			clearInterval(this._timer);
+			this._timer = null;
+		}
 	},
 
 	onShow: function () {
@@ -97,6 +109,7 @@ Page({
 					that._loadTask();
 				} catch (err) {
 					console.log(err);
+					wx.showToast({ title: (err && err.msg) || '抢单失败，请重试', icon: 'none' });
 					that._loadTask(); // 可能已被其他吊柜司机抢走，刷新任务池
 				} finally {
 					that.setData({ grabbingId: '' });
@@ -165,6 +178,7 @@ Page({
 					that._loadTask();
 				} catch (e) {
 					console.log(e);
+					wx.showToast({ title: (e && e.msg) || '提交失败，请重试', icon: 'none' });
 				} finally {
 					that.setData({ loading: false });
 				}
