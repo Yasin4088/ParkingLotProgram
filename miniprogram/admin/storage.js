@@ -1,6 +1,7 @@
 const cloudHelper = require('../helper/cloud_helper.js');
 const cacheHelper = require('../helper/cache_helper.js');
 const constants = require('../biz/constants.js');
+const AdminBiz = require('../biz/admin_biz.js');
 
 // 状态 → 卡片/徽标配色（复用装卸看板配色）
 const STATUS_CLASS = {
@@ -47,6 +48,7 @@ Page({
 		filterStatus: '',
 		loading: false,
 		submitting: false,
+		isSuper: false, // 是否超级管理员（其他管理员仅可见/操作其他公司单，无柜型/历史/自动叫号/收款权限）
 
 		// 自动叫号开关
 		autoCall: false,
@@ -90,6 +92,7 @@ Page({
 
 	onLoad: function () {
 		this._checkLogin();
+		this.setData({ isSuper: AdminBiz.isSuperAdmin() });
 		this.loadList();
 	},
 

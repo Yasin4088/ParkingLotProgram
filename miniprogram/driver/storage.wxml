@@ -36,6 +36,14 @@
 		</view>
 
 		<view class="form-item">
+			<view class="label">所属公司</view>
+			<picker range="{{companyItems}}" range-key="label" value="{{storeCompanyIndex}}" bindchange="bindStoreCompanyChange">
+				<view class="picker">{{companyItems[storeCompanyIndex].label}}</view>
+			</picker>
+		</view>
+		<view class="tips">选「其他」的存柜单不计费不付款（取柜时直接排队），且不留历史记录；如需月付识别请选「挚力」</view>
+
+		<view class="form-item">
 			<view class="label">柜门照片（必传）</view>
 			<view class="upload" bindtap="bindChooseDoorProof">
 				<image wx:if="{{doorProofLocal}}" src="{{doorProofLocal}}" mode="aspectFill"></image>
@@ -74,6 +82,11 @@
 			<input value="{{phone}}" placeholder="用于现场联系" type="number" maxlength="11" bindinput="bindPhoneInput" />
 		</view>
 
+		<view class="form-item">
+			<view class="label">取柜车牌</view>
+			<input value="{{fetchPlate}}" placeholder="月付司机填写，自动识别免现场缴费" maxlength="20" bindinput="bindFetchPlateInput" />
+		</view>
+
 		<button class="ghost-btn" loading="{{calcLoading}}" bindtap="bindFetchCalc">查询费用</button>
 
 		<view wx:if="{{calc}}" class="calc-box">
@@ -89,26 +102,32 @@
 				<text>存柜时间</text>
 				<text>{{calc.finishTimeText}}</text>
 			</view>
-			<view class="calc-row">
-				<text>计费</text>
-				<text>{{calc.days}} 天 × ¥{{calc.priceDailyText}}/天（不足1天按1天）</text>
-			</view>
-			<view class="calc-total">合计：¥{{calc.feeTotalText}}</view>
+			<block wx:if="{{calc.noCharge}}">
+				<view class="calc-total">其他公司单，不计费</view>
+			</block>
+			<block wx:else>
+				<view class="calc-row">
+					<text>计费</text>
+					<text>{{calc.days}} 天 × ¥{{calc.priceDailyText}}/天（不足1天按1天）</text>
+				</view>
+				<view class="calc-total">合计：¥{{calc.feeTotalText}}</view>
+				<view wx:if="{{calc.monthly}}" class="calc-monthly">已识别到月付车牌，本单免现场缴费（费用记公司月结）</view>
+			</block>
 		</view>
 
-		<!-- 支付（暂未开放，占位按键） -->
-		<button wx:if="{{calc}}" class="primary-btn" bindtap="bindPayTap">支付 ¥{{calc.feeTotalText}}</button>
+		<!-- 支付（暂未开放，占位按键；不计费/月付单不展示） -->
+		<button wx:if="{{calc && !calc.noCharge && !calc.monthly}}" class="primary-btn" bindtap="bindPayTap">支付 ¥{{calc.feeTotalText}}</button>
 
-		<view wx:if="{{calc}}" class="form-item">
+		<view wx:if="{{calc && !calc.noCharge && !calc.monthly}}" class="form-item">
 			<view class="label">支付方式</view>
 			<picker range="{{payModes}}" range-key="label" value="{{payModeIndex}}" bindchange="bindPayModeChange">
 				<view class="picker">{{payModes[payModeIndex].label}}</view>
 			</picker>
 		</view>
 
-		<view wx:if="{{calc}}" class="tips">{{wxpayEnable ? '在线支付完成后自动进入取柜排队' : '提交后请到现场缴费，管理员确认收款后进入排队'}}</view>
+		<view wx:if="{{calc && !calc.noCharge && !calc.monthly}}" class="tips">{{wxpayEnable ? '在线支付完成后自动进入取柜排队' : '提交后请到现场缴费，管理员确认收款后进入排队'}}</view>
 
-		<button wx:if="{{calc}}" class="primary-btn" loading="{{submitting}}" bindtap="bindFetchSubmit">提交取柜登记</button>
+		<button wx:if="{{calc}}" class="primary-btn" loading="{{submitting}}" bindtap="bindFetchSubmit">{{calc.noCharge ? '提交取柜登记（不计费）' : (calc.monthly ? '提交取柜登记（免付）' : '提交取柜登记')}}</button>
 	</view>
 
 	<!-- 入口只在存柜页展示（取柜页入口已移除） -->

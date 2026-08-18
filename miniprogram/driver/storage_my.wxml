@@ -46,24 +46,35 @@
 		<!-- 取柜单费用 -->
 		<view wx:if="{{item.STORAGE_STATUS >= 4}}" class="fee-box">
 			<view class="fee-box-title">取柜费用</view>
-			<view class="fee-line">
-				<view class="fee-line-name">{{item.STORAGE_DAYS}} 天 × ¥{{item.priceDailyText}}/天</view>
-				<view class="fee-line-amount">¥{{item.feeTotalText}}</view>
-			</view>
-			<view class="fee-line">
-				<view class="fee-line-name">支付状态</view>
-				<view class="fee-line-amount">{{item.payStatusDesc}}</view>
-			</view>
-			<view class="fee-total">合计：¥{{item.feeTotalText}}</view>
+			<block wx:if="{{item.noCharge}}">
+				<view class="fee-line">
+					<view class="fee-line-name">其他公司单</view>
+					<view class="fee-line-amount">不计费</view>
+				</view>
+				<view class="fee-total">无需付款</view>
+			</block>
+			<block wx:else>
+				<view class="fee-line">
+					<view class="fee-line-name">{{item.STORAGE_DAYS}} 天 × ¥{{item.priceDailyText}}/天</view>
+					<view class="fee-line-amount">¥{{item.feeTotalText}}</view>
+				</view>
+				<view class="fee-line">
+					<view class="fee-line-name">支付状态</view>
+					<view class="fee-line-amount">{{item.payStatusDesc}}</view>
+				</view>
+				<view class="fee-total">合计：¥{{item.feeTotalText}}</view>
+			</block>
 		</view>
 
 		<!-- 状态提示 -->
 		<view wx:if="{{item.STORAGE_STATUS === 0}}" class="tips">已登记，等待管理员叫号后吊柜司机开始存柜。</view>
 		<view wx:elif="{{item.STORAGE_STATUS === 1}}" class="tips">已叫号，等待吊柜司机接单。</view>
 		<view wx:elif="{{item.STORAGE_STATUS === 2}}" class="tips">吊柜司机正在存柜作业，请留意现场安排。</view>
-		<view wx:elif="{{item.STORAGE_STATUS === 3}}" class="tips">已存柜，取柜请凭存柜码登记并按天缴费。</view>
+		<view wx:elif="{{item.STORAGE_STATUS === 3}}" class="tips">已存柜，取柜请凭存柜码登记{{item.noCharge ? '（其他公司单不计费）' : '并按天缴费'}}。</view>
 		<view wx:elif="{{item.STORAGE_STATUS === 4 && item.payMode === 1}}" class="tips">费用已锁定，请完成支付后进入取柜排队。</view>
 		<view wx:elif="{{item.STORAGE_STATUS === 4}}" class="tips">费用已锁定，请到现场缴费，管理员确认收款后进入排队。</view>
+		<view wx:elif="{{item.STORAGE_STATUS === 5 && item.noCharge}}" class="tips">其他公司单，不计费，已进入取柜排队。</view>
+		<view wx:elif="{{item.STORAGE_STATUS === 5 && item.STORAGE_MONTHLY === 1}}" class="tips">月付单已进入取柜排队，无需现场缴费（费用记公司月结）。</view>
 		<view wx:elif="{{item.STORAGE_STATUS === 5}}" class="tips">已缴费，等待管理员叫号。</view>
 		<view wx:elif="{{item.STORAGE_STATUS === 6}}" class="tips">已叫号，等待吊柜司机接单。</view>
 		<view wx:elif="{{item.STORAGE_STATUS === 7}}" class="tips">吊柜司机正在取柜作业，请留意现场安排。</view>

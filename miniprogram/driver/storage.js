@@ -7,12 +7,16 @@ Page({
 	data: {
 		tab: 'store', // store=存柜, fetch=取柜
 		plate: '',
+		fetchPlate: '',
 		phone: '',
 		cabinets: [],
 		cabinetIndex: -1,
 		cabinetNo: '',
 		doorProof: '',
 		doorProofLocal: '',
+		storeCompany: 0, // 存柜登记所属公司 0=挚力(计费),1=其他(不计费)
+		storeCompanyIndex: 0,
+		companyItems: [{ label: '挚力', value: 0 }, { label: '其他', value: 1 }],
 		fetchCode: '',
 		calc: null,
 		calcLoading: false,
@@ -98,7 +102,7 @@ Page({
 		}
 	},
 
-	/** 预填注册时登记的车牌与手机号（可修改） */
+	/** 预填注册时登记的车牌与手机号（可修改）；取柜车牌独立预填 */
 	_prefill: async function () {
 		try {
 			let driverInfo = await cloudHelper.callCloudData('driver/getInfo', {}, { title: '', hint: false });
@@ -106,6 +110,9 @@ Page({
 			let data = {};
 			if (!this.data.plate && driverInfo.USER_LICENSE_PLATE) {
 				data.plate = driverInfo.USER_LICENSE_PLATE.toUpperCase();
+			}
+			if (!this.data.fetchPlate && driverInfo.USER_LICENSE_PLATE) {
+				data.fetchPlate = driverInfo.USER_LICENSE_PLATE.toUpperCase();
 			}
 			if (!this.data.phone && driverInfo.USER_MOBILE) {
 				data.phone = driverInfo.USER_MOBILE;
@@ -138,12 +145,25 @@ Page({
 		this.setData({ plate: e.detail.value.toUpperCase() });
 	},
 
+	bindFetchPlateInput: function (e) {
+		this.setData({ fetchPlate: e.detail.value.toUpperCase() });
+	},
+
 	bindPhoneInput: function (e) {
 		this.setData({ phone: e.detail.value });
 	},
 
 	bindCabinetChange: function (e) {
 		this.setData({ cabinetIndex: Number(e.detail.value) });
+	},
+
+	bindStoreCompanyChange: function (e) {
+		let index = Number(e.detail.value);
+		let item = this.data.companyItems[index];
+		this.setData({
+			storeCompanyIndex: index,
+			storeCompany: item ? item.value : 0,
+		});
 	},
 
 	bindCabinetNoInput: function (e) {
@@ -202,11 +222,13 @@ Page({
 				cabinetId: this.data.cabinets[this.data.cabinetIndex].id,
 				cabinetNo: this.data.cabinetNo.trim(),
 				doorProof: this.data.doorProof,
+				company: this.data.storeCompany,
 			}, { title: '提交中' });
 
+			let companyDesc = this.data.storeCompany === 1 ? '（其他公司，不计费）' : '';
 			wx.showModal({
 				title: '存柜登记成功',
-				content: '存柜码：' + res.data.STORAGE_CODE + '\n排队号：' + res.data.STORAGE_NO + '\n\n请保存存柜码，取柜时凭码登记缴费',
+				content: '存柜码：' + res.data.STORAGE_CODE + '\n排队号：' + res.data.STORAGE_NO + companyDesc + '\n\n请保存存柜码，取柜时凭码登记',
 				confirmText: '复制存柜码',
 				success: r => {
 					if (r.confirm) {
@@ -232,7 +254,7 @@ Page({
 		wx.showToast({ title: '支付功能暂未开放', icon: 'none' });
 	},
 
-	/** 取柜费用预览（按天计费，不足1天按1天） */
+	/** 取柜费用预览（按天计费，不足1天按1天；附月付车牌识别提示，不占用月付池） */
 	bindFetchCalc: async function () {
 		if (this.data.calcLoading) return;
 
@@ -243,7 +265,10 @@ Page({
 		this.setData({ calcLoading: true });
 		try {
 			// 用 callCloud 直取错误信息（callCloudData 会吞掉失败原因，导致点查询无任何反应）
-			let res = await cloudHelper.callCloud('storage/fetch_calc', { code }, { title: '', hint: false });
+			let res = await cloudHelper.callCloud('storage/fetch_calc', {
+				code,
+				plate: (this.data.fetchPlate || '').trim().toUpperCase(),
+			}, { title: '', hint: false });
 			this.setData({ calc: res.data });
 			// 费用区展开后自动滚到底部，避免结果被屏幕下端遮挡
 			setTimeout(() => {
@@ -257,7 +282,7 @@ Page({
 		}
 	},
 
-	/** 取柜登记：锁定费用进入待缴费，缴费后才可被叫号 */
+	/** 取柜登记：月付车牌自动识别免现场缴费直接入队；否则锁定费用待缴费 */
 	bindFetchSubmit: async function () {
 		if (this.data.submitting) return;
 
@@ -267,6 +292,7 @@ Page({
 		if (!/^1\d{10}$/.test(this.data.phone)) return wx.showToast({ title: '请输入正确手机号', icon: 'none' });
 
 		let payMode = this.data.payModes[this.data.payModeIndex].value;
+		let fetchPlate = (this.data.fetchPlate || '').trim().toUpperCase();
 
 		this.setData({ submitting: true });
 		try {
@@ -274,11 +300,37 @@ Page({
 				code,
 				phone: this.data.phone,
 				payMode,
+				plate: fetchPlate,
 			}, { title: '提交中' });
 
-			if (this.data.wxpayEnable && payMode === 1) {
+			let data = res.data || {};
+			if (data.noCharge) {
+				// 其他公司单：不计费不付款，直接进入取柜排队
+				wx.showModal({
+					title: '登记成功',
+					content: '该存柜属于其他公司，不计费，已直接进入取柜排队。',
+					showCancel: false,
+					success: () => {
+						setTimeout(() => {
+							wx.redirectTo({ url: '/driver/storage_my' });
+						}, 800);
+					}
+				});
+			} else if (data.monthly) {
+				// 月付：免现场缴费，直接进入取柜排队（费用记公司月结）
+				wx.showModal({
+					title: '月付免现场缴费',
+					content: '识别到月付车牌 ' + (data.fetchPlate || '') + '，本单费用记公司月结，已直接进入取柜排队。',
+					showCancel: false,
+					success: () => {
+						setTimeout(() => {
+							wx.redirectTo({ url: '/driver/storage_my' });
+						}, 800);
+					}
+				});
+			} else if (this.data.wxpayEnable && payMode === 1) {
 				// 在线支付：下单 → 拉起微信支付 → 支付回调推进排队
-				await this._doPay(res.data._id);
+				await this._doPay(data._id);
 			} else {
 				wx.showToast({ title: '登记成功，请现场缴费', icon: 'none' });
 				setTimeout(() => {

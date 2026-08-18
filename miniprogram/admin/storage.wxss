@@ -153,6 +153,31 @@
 	border-radius: 999rpx;
 }
 
+.mplate-tag {
+	display: inline-block;
+	margin-left: 12rpx;
+	padding: 4rpx 14rpx;
+	border-radius: 999rpx;
+	background: #e6f7f0;
+	color: #0E9F6E;
+	font-size: 22rpx;
+}
+
+.company-tag {
+	display: inline-block;
+	margin-left: 10rpx;
+	padding: 4rpx 14rpx;
+	border-radius: 999rpx;
+	background: #e6f7f0;
+	color: #0E9F6E;
+	font-size: 22rpx;
+}
+
+.company-tag.other {
+	background: #fff1e6;
+	color: #e67e22;
+}
+
 .status.st-pending {
 	color: #627d98;
 	background: #f0f4f8;

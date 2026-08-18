@@ -21,6 +21,9 @@
 		"pages/admin/index/home/admin_home",
 		"pages/admin/mgr/admin/list",
 		"pages/admin/mgr/admin/edit",
+		"pages/admin/customer/list",
+		"pages/admin/customer/edit",
+		"pages/customer/home",
 		"projects/A00/search/search"
 	],
 	"window": {

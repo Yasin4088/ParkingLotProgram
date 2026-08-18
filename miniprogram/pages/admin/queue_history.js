@@ -17,6 +17,12 @@ Page({
 
 	onLoad: function () {
 		if (!AdminBiz.isAdmin(this)) return;
+		// 历史/月报仅超级管理员可查看
+		if (!AdminBiz.isSuperAdmin()) {
+			wx.showToast({ title: '仅超级管理员可查看历史', icon: 'none' });
+			setTimeout(() => wx.navigateBack(), 1200);
+			return;
+		}
 		wx.setNavigationBarColor({
 			backgroundColor: '#3B82E6',
 			frontColor: '#ffffff',
@@ -31,6 +37,7 @@ Page({
 	},
 
 	onShow: function () {
+		if (!AdminBiz.isSuperAdmin()) return;
 		if (AdminBiz.getAdminToken()) this.loadList();
 	},
 

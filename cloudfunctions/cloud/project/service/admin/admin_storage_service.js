@@ -11,15 +11,18 @@ const timeUtil = require('../../../framework/utils/time_util.js');
 
 class AdminStorageService extends BaseAdminService {
 
-	/** 看板列表（未取柜/未取消的记录） */
-	async list() {
+	/** 看板列表（未取柜/未取消的记录；其他管理员仅可见其他公司单） */
+	async list(isSuper = true) {
 		let service = new StorageService();
 		// 自动叫号兜底：看板 10s 轮询时顺带执行一次
 		await service.autoCallCheck();
 
-		let list = await StorageModel.getAll({
+		let where = {
 			STORAGE_STATUS: ['in', StorageModel.BOARD_STATUS]
-		}, '*', {
+		};
+		if (!isSuper) where.STORAGE_COMPANY = 1; // 其他管理员仅对接其他公司单
+
+		let list = await StorageModel.getAll(where, '*', {
 			STORAGE_STATUS: 'asc',
 			STORAGE_QUEUE_TIME: 'asc',
 			STORAGE_ADD_TIME: 'asc'
@@ -31,18 +34,27 @@ class AdminStorageService extends BaseAdminService {
 		};
 	}
 
-	async detail(id) {
+	/** 详情（其他管理员仅可查看其他公司单） */
+	async detail(id, isSuper = true) {
 		let service = new StorageService();
+		if (!isSuper) {
+			let item = await StorageModel.getOne({
+				_id: id,
+				STORAGE_COMPANY: 1
+			}, 'STORAGE_ID');
+			if (!item) this.AppError('仅可查看其他公司的存取柜记录');
+		}
 		return await service.detail(id);
 	}
 
-	/** 管理员叫号（待叫号 → 已叫号，进入吊柜抢单池） */
-	async call(id) {
+	/** 管理员叫号（待叫号 → 已叫号，进入吊柜抢单池；其他管理员仅可叫号其他公司单） */
+	async call(id, isSuper = true) {
 		let item = await StorageModel.getOne({
 			_id: id,
 			STORAGE_STATUS: ['in', [StorageModel.STATUS.STORE_WAITING, StorageModel.STATUS.FETCH_WAITING]]
 		});
 		if (!item) this.AppError('仅可叫号待叫号的记录');
+		if (!isSuper && Number(item.STORAGE_COMPANY) !== 1) this.AppError('仅可叫号其他公司的存取柜记录');
 
 		// 取柜叫号防御校验：必须先缴费/确认收款
 		if (item.STORAGE_STATUS === StorageModel.STATUS.FETCH_WAITING && Number(item.STORAGE_PAY_STATUS) === StorageModel.PAY_STATUS.UNPAID) {
@@ -101,8 +113,8 @@ class AdminStorageService extends BaseAdminService {
 		return await this.detail(id);
 	}
 
-	/** 管理员手动派单（抢单兜底，派单即进入执行中，仅限吊柜身份账号） */
-	async assign(id, forkliftId) {
+	/** 管理员手动派单（抢单兜底，派单即进入执行中，仅限吊柜身份账号；其他管理员仅可派其他公司单） */
+	async assign(id, forkliftId, isSuper = true) {
 		let forklift = await UserModel.getOne({
 			_id: forkliftId,
 			USER_ROLE: 'crane',
@@ -116,6 +128,7 @@ class AdminStorageService extends BaseAdminService {
 			STORAGE_FORKLIFT_ID: ''
 		});
 		if (!item) this.AppError('该记录已被吊柜司机接单');
+		if (!isSuper && Number(item.STORAGE_COMPANY) !== 1) this.AppError('仅可派其他公司的存取柜记录');
 
 		let newStatus = item.STORAGE_STATUS === StorageModel.STATUS.STORE_CALLED
 			? StorageModel.STATUS.STORE_EXECUTING
@@ -173,13 +186,14 @@ class AdminStorageService extends BaseAdminService {
 		return await this.detail(id);
 	}
 
-	/** 管理员取消（看板任意状态均可删除，留历史） */
-	async cancel(id, reason, operator = '管理员') {
+	/** 管理员取消（看板任意状态均可删除，留历史；其他管理员仅可取消其他公司单） */
+	async cancel(id, reason, operator = '管理员', isSuper = true) {
 		let item = await StorageModel.getOne({
 			_id: id,
 			STORAGE_STATUS: ['in', StorageModel.BOARD_STATUS]
 		});
 		if (!item) this.AppError('仅可删除看板上的记录');
+		if (!isSuper && Number(item.STORAGE_COMPANY) !== 1) this.AppError('仅可取消其他公司的存取柜记录');
 
 		reason = (reason || '').trim();
 		if (!reason) this.AppError('请输入取消原因');
@@ -194,12 +208,23 @@ class AdminStorageService extends BaseAdminService {
 			STORAGE_CANCEL_OPERATOR: operator
 		});
 		if (!updated) this.AppError('该记录状态已变化，请刷新后重试');
+
+		// 月付单取消后归还车牌占用，避免客户额度被浪费（已消去的车牌不受影响）
+		if (Number(item.STORAGE_MONTHLY) === 1 && item.STORAGE_MONTHLY_PLATE_ID) {
+			try {
+				await new StorageService().releaseMplate(item.STORAGE_MONTHLY_PLATE_ID);
+			} catch (e) {
+				// 释放失败不影响取消主流程，仅记录
+				console.error('月付车牌释放失败', item.STORAGE_MONTHLY_PLATE_ID, e);
+			}
+		}
 	}
 
-	/** 历史记录（已取柜/已取消，可按月筛选） */
+	/** 历史记录（已取柜/已取消，可按月筛选；其他公司单不留历史） */
 	async historyList(yearMonth) {
 		let list = await StorageModel.getAll({
-			STORAGE_STATUS: ['in', [StorageModel.STATUS.FETCHED, StorageModel.STATUS.CANCEL]]
+			STORAGE_STATUS: ['in', [StorageModel.STATUS.FETCHED, StorageModel.STATUS.CANCEL]],
+			STORAGE_COMPANY: ['<>', 1] // 排除其他公司单（含无字段的历史数据，视为挚力单）
 		}, '*', { STORAGE_ADD_TIME: 'desc' }, 500);
 
 		let service = new StorageService();
@@ -221,21 +246,23 @@ class AdminStorageService extends BaseAdminService {
 		};
 	}
 
-	/** 清理单条历史记录 */
+	/** 清理单条历史记录（仅挚力单） */
 	async clearHistory(id) {
 		let item = await StorageModel.getOne({
 			_id: id,
-			STORAGE_STATUS: ['in', [StorageModel.STATUS.FETCHED, StorageModel.STATUS.CANCEL]]
+			STORAGE_STATUS: ['in', [StorageModel.STATUS.FETCHED, StorageModel.STATUS.CANCEL]],
+			STORAGE_COMPANY: ['<>', 1]
 		}, '_id');
 		if (!item) this.AppError('未找到可清理的历史记录');
 
 		await StorageModel.del(item._id);
 	}
 
-	/** 清空全部历史记录 */
+	/** 清空全部历史记录（仅挚力单） */
 	async clearAllHistory() {
 		await StorageModel.del({
-			STORAGE_STATUS: ['in', [StorageModel.STATUS.FETCHED, StorageModel.STATUS.CANCEL]]
+			STORAGE_STATUS: ['in', [StorageModel.STATUS.FETCHED, StorageModel.STATUS.CANCEL]],
+			STORAGE_COMPANY: ['<>', 1]
 		});
 	}
 

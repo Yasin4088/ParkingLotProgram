@@ -39,6 +39,11 @@ class AdminController extends BaseController {
 		this._adminId = admin.ADMIN_ID;
 	}
 
+	/** 是否超级管理员（isAdmin/isSuperAdmin 后可用，不重新查库） */
+	_isSuper() {
+		return this._admin && Number(this._admin.ADMIN_TYPE) === 1;
+	}
+
 	/** 记录日志 */
 	async log(content, type) {
 		let service = new BaseAdminService();

@@ -148,6 +148,16 @@ input {
 	color: #e53e3e;
 }
 
+.calc-monthly {
+	margin-top: 14rpx;
+	padding: 16rpx 20rpx;
+	border-radius: 12rpx;
+	background: #e6f7f0;
+	color: #0E9F6E;
+	font-size: 26rpx;
+	line-height: 1.5;
+}
+
 .primary-btn,
 .ghost-btn {
 	height: 88rpx;

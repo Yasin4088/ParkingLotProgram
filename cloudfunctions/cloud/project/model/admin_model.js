@@ -23,7 +23,7 @@ AdminModel.DB_STRUCTURE = {
 
 	ADMIN_LOGIN_CNT: 'int|true|default=0|comment=登录次数',
 	ADMIN_LOGIN_TIME: 'int|true|default=0|comment=最后登录时间',
-	ADMIN_TYPE: 'int|true|default=0|comment=类型 0=普通管理员 1=超级管理员',
+	ADMIN_TYPE: 'int|true|default=0|comment=类型 0=其他管理员 1=超级管理员',
 
 	ADMIN_LOGIN_FAIL_CNT: 'int|true|default=0|comment=连续登录失败次数',
 	ADMIN_LOGIN_FAIL_TIME: 'int|true|default=0|comment=最后登录失败时间',
@@ -46,7 +46,7 @@ AdminModel.TYPE = {
 	SUPER: 1
 };
 AdminModel.TYPE_DESC = {
-	NORMAL: '普通管理员',
+	NORMAL: '其他管理员',
 	SUPER: '超级管理员'
 };
 

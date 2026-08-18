@@ -14,7 +14,7 @@ Page({
         type: 0,
         status: 1,
         typeItems: [
-            { label: '普通管理员', val: 0 },
+            { label: '其他管理员', val: 0 },
             { label: '超级管理员', val: 1 },
         ],
         statusItems: [

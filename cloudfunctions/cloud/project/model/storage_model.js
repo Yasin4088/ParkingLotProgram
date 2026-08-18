@@ -14,6 +14,7 @@ StorageModel.DB_STRUCTURE = {
 
 	STORAGE_CODE: 'string|true|comment=存柜码(6位数字,取柜凭证)',
 	STORAGE_NO: 'string|false|comment=排队号(存柜登记时/取柜缴费确认时生成)',
+	STORAGE_COMPANY: 'int|true|default=0|comment=所属公司 0=挚力(计费),1=其他(不计费不留历史)',
 	STORAGE_STATUS: 'int|true|default=0|comment=状态 0=待叫号(存柜),1=已叫号(存柜),2=存柜执行中,3=已存柜,4=取柜待缴费,5=取柜待叫号,6=已叫号(取柜),7=取柜执行中,8=已取柜,9=已取消',
 
 	// 存柜登记
@@ -41,15 +42,23 @@ StorageModel.DB_STRUCTURE = {
 	STORAGE_FETCH_USER_ID: 'string|false|comment=取柜登记司机用户ID(可与存柜人不同)',
 	STORAGE_FETCH_OPENID: 'string|false|comment=取柜登记司机openid',
 	STORAGE_FETCH_PHONE: 'string|false|comment=取柜登记手机号',
+	STORAGE_FETCH_PLATE: 'string|false|comment=取柜登记车牌(月付识别用，可与存柜车牌不同)',
 	STORAGE_FETCH_TIME: 'int|true|default=0|comment=取柜登记时间',
 	STORAGE_DAYS: 'int|true|default=0|comment=计费天数(不足1天按1天)',
 	STORAGE_FEE_TOTAL: 'int|true|default=0|comment=取柜费用(分)，服务端重算',
 	STORAGE_FETCH_DONE_TIME: 'int|true|default=0|comment=取柜完成时间',
 	STORAGE_FETCH_PROOF: 'string|false|comment=取柜完成照片fileID',
 
+	// 月付(月结)识别：取柜登记时按取柜车牌命中月付池则本单免现场缴费，费用记公司月结
+	STORAGE_MONTHLY: 'int|true|default=0|comment=是否月付单 0=否,1=是',
+	STORAGE_MONTHLY_PLATE_ID: 'string|false|comment=占用的月付车牌池记录ID(ax_storage_mplate)',
+	STORAGE_MONTHLY_CUSTOMER_ID: 'string|false|comment=月付客户账号ID快照',
+	STORAGE_MONTHLY_CUSTOMER_NAME: 'string|false|comment=月付客户名快照',
+	STORAGE_MONTHLY_MATCH_TIME: 'int|true|default=0|comment=月付识别时间',
+
 	// 支付
 	STORAGE_PAY_MODE: 'int|true|default=0|comment=支付方式 0=现场支付,1=小程序在线支付',
-	STORAGE_PAY_STATUS: 'int|true|default=0|comment=支付状态 0=未支付,1=已支付(在线),2=免支付(存柜),3=已确认收款(现场)',
+	STORAGE_PAY_STATUS: 'int|true|default=0|comment=支付状态 0=未支付,1=已支付(在线),2=免支付(存柜),3=已确认收款(现场),4=月付(月结,免现场缴费),5=不计费(其他公司)',
 	STORAGE_PAY_OUT_TRADE_NO: 'string|false|comment=商户订单号',
 	STORAGE_PAY_TRANSACTION_ID: 'string|false|comment=微信支付单号',
 	STORAGE_PAY_TIME: 'int|true|default=0|comment=在线支付成功时间',
@@ -100,14 +109,18 @@ StorageModel.PAY_STATUS = {
 	UNPAID: 0,
 	PAID: 1,
 	FREE: 2,
-	CONFIRMED: 3
+	CONFIRMED: 3,
+	MONTHLY: 4,
+	NO_CHARGE: 5
 };
 
 StorageModel.PAY_STATUS_DESC = {
 	UNPAID: '未支付',
 	PAID: '已支付',
 	FREE: '免支付',
-	CONFIRMED: '已确认收款'
+	CONFIRMED: '已确认收款',
+	MONTHLY: '月付(月结)',
+	NO_CHARGE: '不计费(其他公司)'
 };
 
 /** 支付方式 */
@@ -130,6 +143,17 @@ StorageModel.GRAB_TYPE = {
 StorageModel.GRAB_TYPE_DESC = {
 	GRAB: '抢单',
 	ASSIGN: '派单'
+};
+
+/** 所属公司 */
+StorageModel.COMPANY = {
+	ZHI_LI: 0,
+	OTHER: 1
+};
+
+StorageModel.COMPANY_DESC = {
+	ZHI_LI: '挚力',
+	OTHER: '其他'
 };
 
 /** 看板展示状态(不含已取柜/已取消) */

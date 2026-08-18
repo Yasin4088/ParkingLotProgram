@@ -78,7 +78,7 @@ class StorageForkliftService extends BaseService {
 			_id: queueId,
 			STORAGE_STATUS: ['in', [StorageModel.STATUS.STORE_EXECUTING, StorageModel.STATUS.FETCH_EXECUTING]],
 			STORAGE_FORKLIFT_ID: userId
-		}, 'STORAGE_STATUS');
+		}, 'STORAGE_STATUS,STORAGE_MONTHLY,STORAGE_MONTHLY_PLATE_ID');
 		if (!item) this.AppError('任务状态已变更，无法完成');
 
 		let now = timeUtil.time();
@@ -105,6 +105,16 @@ class StorageForkliftService extends BaseService {
 		if (!updated) this.AppError('任务状态已变更，无法完成');
 
 		let service = new StorageService();
+		// 月付柜被司机提走（取柜完成）后，对应的月付车牌从月付池中消去
+		if (item.STORAGE_STATUS === StorageModel.STATUS.FETCH_EXECUTING
+			&& Number(item.STORAGE_MONTHLY) === 1 && item.STORAGE_MONTHLY_PLATE_ID) {
+			try {
+				await service.consumeMplate(item.STORAGE_MONTHLY_PLATE_ID);
+			} catch (e) {
+				// 消去失败不影响取柜完成主流程，仅记录（客户侧该车牌仍显示占用，可联系管理员处理）
+				console.error('月付车牌消去失败', item.STORAGE_MONTHLY_PLATE_ID, e);
+			}
+		}
 		return await service.detail(queueId);
 	}
 }

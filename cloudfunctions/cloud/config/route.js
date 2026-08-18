@@ -25,6 +25,11 @@ module.exports = {
 	'storage/my_current': 'storage_controller@myCurrent',
 	'storage/pay': 'storage_controller@pay',
 
+	'customer/login': 'customer_controller@login',
+	'customer/home': 'customer_controller@home',
+	'customer/plate_add': 'customer_controller@plateAdd',
+	'customer/plate_del': 'customer_controller@plateDel',
+
 	'forklift/login': 'forklift_controller@login',
 	'forklift/my_task': 'forklift_controller@myTask',
 	'forklift/complete': 'forklift_controller@complete',
@@ -92,4 +97,8 @@ module.exports = {
 	'admin/admin_del': 'admin/admin_mgr_controller@delAdmin',
 	'admin/admin_change_pwd': 'admin/admin_mgr_controller@changePwd',
 	'admin/admin_reset_pwd': 'admin/admin_mgr_controller@resetPwd',
+
+	'admin/customer_insert': 'admin/admin_customer_controller@insert',
+	'admin/customer_edit': 'admin/admin_customer_controller@edit',
+	'admin/customer_del': 'admin/admin_customer_controller@del',
 };

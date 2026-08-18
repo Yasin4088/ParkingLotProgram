@@ -3,6 +3,7 @@ const cacheHelper = require('../../helper/cache_helper.js');
 const constants = require('../../biz/constants.js');
 const AdminBiz = require('../../biz/admin_biz.js');
 const ForkliftBiz = require('../../biz/forklift_biz.js');
+const CustomerBiz = require('../../biz/customer_biz.js');
 const setting = require('../../setting/setting.js');
 
 Page({
@@ -19,6 +20,7 @@ Page({
 		cacheHelper.remove(constants.CACHE_TOKEN);
 		cacheHelper.remove(constants.CACHE_ADMIN);
 		cacheHelper.remove(constants.CACHE_FORKLIFT);
+		cacheHelper.remove(constants.CACHE_CUSTOMER);
 	},
 
 	onShow: function () {
@@ -165,6 +167,34 @@ Page({
 			} else {
 				wx.redirectTo({ url: '/pages/driver/register/register' });
 			}
+		} catch (e) {
+			console.log(e);
+		} finally {
+			this.setData({ loading: false });
+		}
+	},
+
+	// 客户登录（月付/月结车牌录入）
+	bindCustomerLoginTap: async function () {
+		if (this.data.loading) return;
+
+		let name = this.data.name.trim();
+		let pwd = this.data.pwd.trim();
+
+		if (!name) return wx.showToast({ title: '请输入用户名', icon: 'none' });
+		if (pwd.length < 4) return wx.showToast({ title: '密码至少4位', icon: 'none' });
+
+		this.setData({ loading: true });
+
+		try {
+			let res = await cloudHelper.callCloudSumbit('customer/login', {
+				username: name,
+				password: pwd,
+			}, { title: '登录中' });
+
+			CustomerBiz.customerLogin(res.data);
+			wx.redirectTo({ url: '/pages/customer/home' });
+
 		} catch (e) {
 			console.log(e);
 		} finally {

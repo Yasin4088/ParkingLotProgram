@@ -46,8 +46,8 @@ class QueueService extends BaseService {
 		};
 	}
 
-	/** 管理员创建任务（待认领） */
-	async createTask(plate, action, cargoName, phone, fees, remark, payMode) {
+	/** 管理员创建任务（待认领）；company 0=挚力(全流程),1=其他(叫号后直接完成不留历史) */
+	async createTask(plate, action, cargoName, phone, fees, remark, payMode, company) {
 		if (!ACTIONS[action]) this.AppError('请选择装货或卸货');
 
 		plate = (plate || '').trim().toUpperCase();
@@ -55,7 +55,10 @@ class QueueService extends BaseService {
 		phone = (phone || '').trim();
 		if (!phone) this.AppError('请输入司机手机号');
 
-		fees = this._checkEstimateFees(fees);
+		let comp = Number(company) === 1 ? 1 : 0;
+		// 其他公司单无计费环节，费用/支付方式不落库
+		let storeFees = comp === 1 ? [] : this._checkEstimateFees(fees);
+		let storePayMode = comp === 1 ? 0 : (Number(payMode) === 1 ? 1 : 0);
 
 		return await QueueModel.insert({
 			QUEUE_USER_ID: '',
@@ -64,14 +67,15 @@ class QueueService extends BaseService {
 			QUEUE_PLATE: plate,
 			QUEUE_LOT_ID: DEFAULT_LOT.id,
 			QUEUE_LOT_NAME: DEFAULT_LOT.name,
+			QUEUE_COMPANY: comp,
 			QUEUE_ACTION: action,
 			QUEUE_ACTION_NAME: ACTIONS[action],
 			QUEUE_CARGO_NAME: cargoName || '',
 			QUEUE_REMARK: (remark || '').trim(),
 			QUEUE_CREATE_TYPE: 0,
-			QUEUE_FEES: fees,
-			QUEUE_FEE_TOTAL: this._sumFees(fees),
-			QUEUE_PAY_MODE: Number(payMode) === 1 ? 1 : 0,
+			QUEUE_FEES: storeFees,
+			QUEUE_FEE_TOTAL: this._sumFees(storeFees),
+			QUEUE_PAY_MODE: storePayMode,
 			QUEUE_FORKLIFT_ID: '',
 			QUEUE_FORKLIFT_NAME: '',
 			QUEUE_STATUS: QueueModel.STATUS.CLAIM_PENDING,
@@ -194,9 +198,33 @@ class QueueService extends BaseService {
 		}, { QUEUE_SUBSCRIBE: 1 });
 	}
 
-	/** 管理员叫号（任务进入叉车抢单池） */
-	async callDriver(queueId) {
+	/** 管理员叫号（挚力单进入叉车抢单池；其他公司单叫号后直接完成，无后续流程）
+	 *  isSuper=false（其他管理员）时仅可叫号其他公司单 */
+	async callDriver(queueId, isSuper = true) {
 		let now = timeUtil.time();
+		let item = await QueueModel.getOne({
+			_id: queueId,
+			QUEUE_STATUS: QueueModel.STATUS.WAITING
+		}, 'QUEUE_COMPANY');
+		if (!item) this.AppError('仅可叫号排队中的车辆');
+		if (!isSuper && Number(item.QUEUE_COMPANY) !== 1) this.AppError('仅可叫号其他公司的排队记录');
+
+		if (Number(item.QUEUE_COMPANY) === 1) {
+			// 其他公司单：叫号广播照常，但直接置为已完成（不进叉车池、无费用/结算/支付）
+			let updated = await QueueModel.edit({
+				_id: queueId,
+				QUEUE_STATUS: QueueModel.STATUS.WAITING
+			}, {
+				QUEUE_STATUS: QueueModel.STATUS.DONE,
+				QUEUE_CALL_TIME: now,
+				QUEUE_FINISH_TIME: now,
+				QUEUE_DONE_TIME: now,
+				QUEUE_PAY_STATUS: QueueModel.PAY_STATUS.FREE,
+			});
+			if (!updated) this.AppError('仅可叫号排队中的车辆');
+			return await this.detail(queueId);
+		}
+
 		let updated = await QueueModel.edit({
 			_id: queueId,
 			QUEUE_STATUS: QueueModel.STATUS.WAITING
@@ -210,7 +238,8 @@ class QueueService extends BaseService {
 		return await this.detail(queueId);
 	}
 
-	/** 自动叫号：开关开启且无未接单的叫号时，自动叫排队最早的一辆（最多保持 1 单待接单，接单后自动叫下一位） */
+	/** 自动叫号：开关开启且无未接单的叫号时，自动叫排队最早的一辆（最多保持 1 单待接单，接单后自动叫下一位）
+	 *  其他公司单被叫后直接完成，不占用叉车抢单池 */
 	async autoCallCheck() {
 		try {
 			if (!(await this.getAutoCallFlag('SETUP_QUEUE_AUTO_CALL'))) return;
@@ -223,18 +252,30 @@ class QueueService extends BaseService {
 
 			let waiting = await QueueModel.getAll({
 				QUEUE_STATUS: QueueModel.STATUS.WAITING
-			}, '_id', { QUEUE_CHECKIN_TIME: 'asc' }, 1);
+			}, '_id,QUEUE_COMPANY', { QUEUE_CHECKIN_TIME: 'asc' }, 1);
 			if (!waiting.length) return;
+
+			let now = timeUtil.time();
+			let target = waiting[0];
+			let editData = {
+				QUEUE_CALL_TIME: now,
+			};
+			if (Number(target.QUEUE_COMPANY) === 1) {
+				// 其他公司单：叫号后直接完成
+				editData.QUEUE_STATUS = QueueModel.STATUS.DONE;
+				editData.QUEUE_FINISH_TIME = now;
+				editData.QUEUE_DONE_TIME = now;
+				editData.QUEUE_PAY_STATUS = QueueModel.PAY_STATUS.FREE;
+			} else {
+				editData.QUEUE_STATUS = QueueModel.STATUS.CALLED;
+				editData.QUEUE_DRIVER_CONFIRMED = 0;
+			}
 
 			// 条件更新：并发/多触发点同时执行时仅一方成功
 			await QueueModel.edit({
-				_id: waiting[0]._id,
+				_id: target._id,
 				QUEUE_STATUS: QueueModel.STATUS.WAITING
-			}, {
-				QUEUE_STATUS: QueueModel.STATUS.CALLED,
-				QUEUE_CALL_TIME: timeUtil.time(),
-				QUEUE_DRIVER_CONFIRMED: 0,
-			});
+			}, editData);
 		} catch (e) {
 			// 自动叫号为后台增强，失败不影响主流程（签到/抢单/看板刷新）
 			console.error('自动叫号执行失败', e);
@@ -265,14 +306,23 @@ class QueueService extends BaseService {
 		return await this.detail(queueId);
 	}
 
-	/** 司机确认收到叫号（与叉车抢单并行，仅设标记位） */
+	/** 司机确认收到叫号（与叉车抢单并行，仅设标记位；其他公司单叫号即完成，重复确认静默成功） */
 	async driverConfirm(userId, queueId) {
 		let item = await QueueModel.getOne({
 			_id: queueId,
 			QUEUE_USER_ID: userId,
 			QUEUE_STATUS: QueueModel.STATUS.CALLED
 		});
-		if (!item) this.AppError('未找到待确认的叫号记录');
+		if (!item) {
+			// 其他公司单叫号后直接完成，司机此时确认视为已处理（不报错）
+			let done = await QueueModel.getOne({
+				_id: queueId,
+				QUEUE_USER_ID: userId,
+				QUEUE_STATUS: QueueModel.STATUS.DONE
+			});
+			if (done) return this._formatQueueItem(done);
+			this.AppError('未找到待确认的叫号记录');
+		}
 
 		let updated = await QueueModel.edit({
 			_id: item._id,
@@ -487,10 +537,11 @@ class QueueService extends BaseService {
 		};
 	}
 
-	/** 管理员历史记录（已完成/已取消，可按月筛选） */
+	/** 管理员历史记录（已完成/已取消，可按月筛选；其他公司单不留历史） */
 	async historyList(yearMonth) {
 		let list = await QueueModel.getAll({
-			QUEUE_STATUS: ['in', [QueueModel.STATUS.DONE, QueueModel.STATUS.CANCEL]]
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.DONE, QueueModel.STATUS.CANCEL]],
+			QUEUE_COMPANY: ['<>', 1] // 排除其他公司单（含无字段的历史数据，视为挚力单）
 		}, '*', { QUEUE_ADD_TIME: 'desc' }, 500);
 
 		list = (list || []).map(item => this._formatQueueItem(item));
@@ -511,21 +562,23 @@ class QueueService extends BaseService {
 		};
 	}
 
-	/** 管理员清理单条历史记录 */
+	/** 管理员清理单条历史记录（仅挚力单） */
 	async clearHistory(id) {
 		let item = await QueueModel.getOne({
 			_id: id,
-			QUEUE_STATUS: ['in', [QueueModel.STATUS.DONE, QueueModel.STATUS.CANCEL]]
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.DONE, QueueModel.STATUS.CANCEL]],
+			QUEUE_COMPANY: ['<>', 1]
 		}, '_id');
 		if (!item) this.AppError('未找到可清理的历史记录');
 
 		await QueueModel.del(item._id);
 	}
 
-	/** 管理员清空全部历史记录 */
+	/** 管理员清空全部历史记录（仅挚力单） */
 	async clearAllHistory() {
 		await QueueModel.del({
-			QUEUE_STATUS: ['in', [QueueModel.STATUS.DONE, QueueModel.STATUS.CANCEL]]
+			QUEUE_STATUS: ['in', [QueueModel.STATUS.DONE, QueueModel.STATUS.CANCEL]],
+			QUEUE_COMPANY: ['<>', 1]
 		});
 	}
 
@@ -646,12 +699,13 @@ class QueueService extends BaseService {
 		return await this.detail(id);
 	}
 
-	async cancel(id, reason, operator = '管理员') {
+	async cancel(id, reason, operator = '管理员', isSuper = true) {
 		let item = await QueueModel.getOne({
 			_id: id,
 			QUEUE_STATUS: ['in', BOARD_STATUS]
 		});
 		if (!item) this.AppError('仅可删除看板上的记录');
+		if (!isSuper && Number(item.QUEUE_COMPANY) !== 1) this.AppError('仅可取消其他公司的排队记录');
 
 		reason = (reason || '').trim();
 		if (!reason) this.AppError('请输入取消原因');
@@ -740,6 +794,8 @@ class QueueService extends BaseService {
 
 		item.statusDesc = QueueModel.getDesc('STATUS', item.QUEUE_STATUS);
 		item.ahead = ahead;
+		item.company = Number(item.QUEUE_COMPANY) === 1 ? 1 : 0;
+		item.companyDesc = QueueModel.getDesc('COMPANY', item.company);
 		item.checkinTimeText = item.QUEUE_CHECKIN_TIME ? timeUtil.timestamp2Time(item.QUEUE_CHECKIN_TIME) : '';
 		item.callTimeText = item.QUEUE_CALL_TIME ? timeUtil.timestamp2Time(item.QUEUE_CALL_TIME) : '';
 		item.confirmTimeText = item.QUEUE_CONFIRM_TIME ? timeUtil.timestamp2Time(item.QUEUE_CONFIRM_TIME) : '';

@@ -1,0 +1,63 @@
+<view class="page">
+	<!-- 顶部信息 -->
+	<view class="header">
+		<view class="title">月付车牌管理</view>
+		<view class="desc">录入月付司机的车牌后，司机取柜登记时填写该车牌即可自动识别，本单免现场缴费（费用记公司月结）；每个车牌使用一次后自动消去，需重新录入。</view>
+		<view class="stats">
+			<view class="stat">
+				<view class="stat-num">{{stats.active}}</view>
+				<view class="stat-label">有效车牌</view>
+			</view>
+			<view class="stat">
+				<view class="stat-num">{{stats.claimed}}</view>
+				<view class="stat-label">使用中</view>
+			</view>
+			<view class="stat">
+				<view class="stat-num">{{stats.consumed}}</view>
+				<view class="stat-label">已使用</view>
+			</view>
+		</view>
+	</view>
+
+	<!-- 录入车牌 -->
+	<view class="card">
+		<view class="card-title">录入月付车牌</view>
+		<textarea class="plates-input" value="{{platesText}}" bindinput="bindPlatesInput" maxlength="1000" auto-height
+			placeholder="每行一个车牌，如：&#10;粤B12345&#10;粤BD67890" />
+		<button class="primary-btn" loading="{{submitting}}" bindtap="bindAddTap">录入车牌</button>
+		<view class="tips">车牌录入后进入月付池，取柜司机填写该车牌即免现场缴费；可用逗号/分号/换行批量录入</view>
+	</view>
+
+	<!-- 月付车牌池 -->
+	<view class="card">
+		<view class="card-title">月付车牌池（{{stats.active + stats.claimed}}）</view>
+		<view wx:if="{{!active.length}}" class="empty">暂无车牌，请先录入</view>
+		<view wx:for="{{active}}" wx:key="_id" class="plate-item">
+			<view class="plate-left">
+				<view class="plate-no">{{item.plate}}</view>
+				<view class="plate-meta">录入：{{item.addTimeText}}</view>
+			</view>
+			<view class="plate-right">
+				<view class="plate-status {{item.status === 0 ? 'on' : 'using'}}">{{item.statusDesc}}</view>
+				<view wx:if="{{item.status === 0}}" class="plate-del" data-id="{{item._id}}" data-plate="{{item.plate}}" bindtap="bindDelTap">删除</view>
+			</view>
+		</view>
+	</view>
+
+	<!-- 已使用记录 -->
+	<view class="card">
+		<view class="card-title">已使用记录（{{stats.consumed}}）</view>
+		<view wx:if="{{!consumed.length}}" class="empty">暂无已使用记录</view>
+		<view wx:for="{{consumed}}" wx:key="_id" class="plate-item">
+			<view class="plate-left">
+				<view class="plate-no dim">{{item.plate}}</view>
+				<view class="plate-meta">使用时间：{{item.consumeTimeText}}</view>
+			</view>
+			<view class="plate-right">
+				<view class="plate-status off">{{item.statusDesc}}</view>
+			</view>
+		</view>
+	</view>
+
+	<button class="exit-btn" bindtap="bindExitTap">退出登录</button>
+</view>

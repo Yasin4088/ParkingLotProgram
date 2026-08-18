@@ -103,6 +103,10 @@
 		// 叉车司机
 		let forklift = cacheHelper.get(constants.CACHE_FORKLIFT);
 		if (forklift && forklift.id) token = forklift.id;
+	} else if (route.indexOf('customer/') > -1) {
+		// 客户账号（月付车牌）
+		let customer = cacheHelper.get(constants.CACHE_CUSTOMER);
+		if (customer && customer.id) token = customer.id;
 	} else {
 		//正常用户
 		let user = cacheHelper.get(constants.CACHE_TOKEN);

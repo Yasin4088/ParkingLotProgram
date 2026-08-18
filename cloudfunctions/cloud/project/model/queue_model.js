@@ -19,6 +19,7 @@ QueueModel.DB_STRUCTURE = {
 
 	QUEUE_LOT_ID: 'string|true|comment=停车场ID',
 	QUEUE_LOT_NAME: 'string|true|comment=停车场名称',
+	QUEUE_COMPANY: 'int|true|default=0|comment=所属公司 0=挚力,1=其他(普通管理员预填,叫号后直接完成不留历史)',
 	QUEUE_ACTION: 'string|true|comment=业务类型 load=装货,unload=卸货',
 	QUEUE_ACTION_NAME: 'string|true|comment=业务类型名称',
 	QUEUE_PROOF: 'string|false|comment=预约单证图片fileID',
@@ -140,6 +141,17 @@ QueueModel.GRAB_TYPE = {
 QueueModel.GRAB_TYPE_DESC = {
 	GRAB: '抢单',
 	ASSIGN: '派单'
+};
+
+/** 所属公司 */
+QueueModel.COMPANY = {
+	ZHI_LI: 0,
+	OTHER: 1
+};
+
+QueueModel.COMPANY_DESC = {
+	ZHI_LI: '挚力',
+	OTHER: '其他'
 };
 
 module.exports = QueueModel;

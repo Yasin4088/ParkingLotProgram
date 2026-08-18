@@ -1,10 +1,17 @@
 const cloudHelper = require('../helper/cloud_helper.js');
 const cacheHelper = require('../helper/cache_helper.js');
 const constants = require('../biz/constants.js');
+const AdminBiz = require('../biz/admin_biz.js');
 
 const ACTIONS = [
 	{ id: 'load', name: '装货' },
 	{ id: 'unload', name: '卸货' },
+];
+
+// 公司选项（与后端 QUEUE_COMPANY 一致：0=挚力,1=其他）
+const COMPANY_ITEMS = [
+	{ id: 0, name: '挚力' },
+	{ id: 1, name: '其他' },
 ];
 
 // 固定费用项（可另加自定义费用）
@@ -92,8 +99,12 @@ Page({
 		createActionIndex: 0,
 		createPayModeIndex: 0,
 		payModes: PAY_MODES,
+		companyItems: COMPANY_ITEMS,
+		createCompany: 0,
+		createCompanyIndex: 0,
 		createFees: [],
 		createLoading: false,
+		isSuper: false, // 是否超级管理员（其他管理员仅可预填其他公司单并叫号）
 
 		// 叫号确认弹窗
 		showCallModal: false,
@@ -116,6 +127,7 @@ Page({
 
 	onLoad: function () {
 		this._checkLogin();
+		this.setData({ isSuper: AdminBiz.isSuperAdmin() });
 		this.loadList();
 	},
 
@@ -276,11 +288,15 @@ Page({
 	// ========== 新建任务 ==========
 
 	bindOpenCreateTap: function () {
+		// 其他管理员：公司锁定为「其他」，无费用/支付方式
+		let isSuper = this.data.isSuper;
 		this.setData({
 			showCreate: true,
 			createForm: { plate: '', phone: '', action: 'load', cargoName: '', remark: '' },
 			createActionIndex: 0,
 			createPayModeIndex: 0,
+			createCompany: isSuper ? 0 : 1,
+			createCompanyIndex: isSuper ? 0 : 1,
 			createFees: this._emptyFeeRows(),
 		});
 	},
@@ -316,6 +332,15 @@ Page({
 
 	bindCreatePayModeChange: function (e) {
 		this.setData({ createPayModeIndex: Number(e.detail.value) });
+	},
+
+	bindCreateCompanyChange: function (e) {
+		let index = Number(e.detail.value);
+		let item = this.data.companyItems[index];
+		this.setData({
+			createCompanyIndex: index,
+			createCompany: item ? item.id : 0,
+		});
 	},
 
 	bindCreateFeeNameInput: function (e) {
@@ -354,6 +379,7 @@ Page({
 
 		let payModeItem = PAY_MODES[this.data.createPayModeIndex];
 		let payMode = payModeItem ? payModeItem.id : 0;
+		let company = this.data.createCompany;
 
 		this.setData({ createLoading: true });
 		try {
@@ -365,8 +391,9 @@ Page({
 				remark: (form.remark || '').trim(),
 				fees,
 				payMode,
+				company,
 			}, { title: '创建中' });
-			wx.showToast({ title: '任务已创建，等待司机认领', icon: 'none' });
+			wx.showToast({ title: company === 1 ? '任务已创建（其他公司），等待司机认领' : '任务已创建，等待司机认领', icon: 'none' });
 			this.setData({ showCreate: false });
 			this.loadList();
 		} catch (err) {
@@ -423,9 +450,10 @@ Page({
 			}, { title: '叫号中' });
 
 			let data = res && res.data ? res.data : res;
+			let isOther = Number(data.company) === 1;
 			wx.showModal({
 				title: '叫号成功',
-				content: '请 ' + (data.QUEUE_NO || '') + ' 号，车牌 ' + data.QUEUE_PLATE + ' 前往装卸区\n叉车司机将自行抢单',
+				content: '请 ' + (data.QUEUE_NO || '') + ' 号，车牌 ' + data.QUEUE_PLATE + ' 前往装卸区' + (isOther ? '\n（其他公司单，叫号后本单完成，无需叉车/费用环节）' : '\n叉车司机将自行抢单'),
 				showCancel: false,
 			});
 

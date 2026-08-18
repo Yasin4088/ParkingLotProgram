@@ -9,7 +9,7 @@
 				<text class="text-xl">{{admin.name}}</text>
 
 				<text wx:if="{{admin.type==1}}" class="tag small bg-orange light radius margin-left-s">超级管理员</text>
-				<text wx:if="{{admin.type==0}}" class="tag small bg-green radius margin-left-s">一般管理员</text>
+				<text wx:if="{{admin.type==0}}" class="tag small bg-green radius margin-left-s">其他管理员</text>
 
 			</view>
 		</view>
@@ -44,8 +44,9 @@
 	<view class="comm-list grid col-4">
 		<view class="item" bindtap="url" data-url="../../driver/list"> <text class="icon-peoplefill text-orange"></text> <text class="text-black">司机管理</text></view>
 		<view class="item" bindtap="url" data-url="../../forklift/list"> <text class="icon-peoplefill text-orange"></text> <text class="text-black">叉车/吊柜司机管理</text></view>
-		<view class="item" bindtap="url" data-url="../../queue_history"> <text class="icon-footprint text-blue"></text> <text class="text-black">历史记录</text></view>
+		<view wx:if="{{admin.type==1}}" class="item" bindtap="url" data-url="../../queue_history"> <text class="icon-footprint text-blue"></text> <text class="text-black">历史记录</text></view>
 		<view wx:if="{{admin.type==1}}" class="item" bindtap="url" data-url="../../mgr/admin/list"> <text class="icon-peoplefill text-blue"></text> <text class="text-black">管理员管理</text></view>
+		<view wx:if="{{admin.type==1}}" class="item" bindtap="url" data-url="../../customer/list"> <text class="icon-peoplefill text-green"></text> <text class="text-black">客户管理（月付）</text></view>
 	</view>
 
 	<!-- BOTTOM begin -->

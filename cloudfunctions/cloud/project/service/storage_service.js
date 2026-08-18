@@ -6,6 +6,7 @@ const BaseService = require('./base_service.js');
 const StorageModel = require('../model/storage_model.js');
 const CabinetModel = require('../model/cabinet_model.js');
 const UserModel = require('../model/user_model.js');
+const StorageMplateModel = require('../model/storage_mplate_model.js');
 const WxPayLib = require('../lib/wxpay_lib.js');
 const config = require('../../config/config.js');
 const timeUtil = require('../../framework/utils/time_util.js');
@@ -31,8 +32,8 @@ class StorageService extends BaseService {
 		};
 	}
 
-	/** 司机登记存柜（免费，自动记录时间，生成存柜码与排队号） */
-	async registerStore(userId, openId, phone, plate, cabinetId, cabinetNo, doorProof) {
+	/** 司机登记存柜（免费，自动记录时间，生成存柜码与排队号）；company 0=挚力(计费),1=其他(不计费不留历史) */
+	async registerStore(userId, openId, phone, plate, cabinetId, cabinetNo, doorProof, company) {
 		plate = (plate || '').trim().toUpperCase();
 		if (plate.length < 3) this.AppError('请输入车牌号');
 		phone = (phone || '').trim();
@@ -62,6 +63,7 @@ class StorageService extends BaseService {
 		let ret = await StorageModel.insert({
 			STORAGE_CODE: code,
 			STORAGE_NO: queueNo,
+			STORAGE_COMPANY: Number(company) === 1 ? 1 : 0,
 			STORAGE_STATUS: StorageModel.STATUS.STORE_WAITING,
 			STORAGE_USER_ID: userId,
 			STORAGE_OPENID: openId,
@@ -89,10 +91,29 @@ class StorageService extends BaseService {
 		return this._formatStorageItem(ret);
 	}
 
-	/** 取柜费用预览（按存柜码查询，不落库） */
-	async fetchCalc(code) {
+	/** 取柜费用预览（按存柜码查询，不落库；其他公司单不计费；附月付车牌提示，不锁定池内车牌） */
+	async fetchCalc(code, plate) {
 		let item = await this._getByCode(code);
+		let noCharge = Number(item.STORAGE_COMPANY) === 1;
+		if (noCharge) {
+			return {
+				_id: item._id,
+				code: item.STORAGE_CODE,
+				cabinetName: item.STORAGE_CABINET_NAME,
+				cabinetNo: item.STORAGE_CABINET_NO,
+				plate: item.STORAGE_PLATE,
+				finishTimeText: item.STORAGE_FINISH_TIME ? timeUtil.timestamp2Time(item.STORAGE_FINISH_TIME) : '',
+				priceDailyText: '0.00',
+				days: 0,
+				feeTotal: 0,
+				feeTotalText: '0.00',
+				noCharge: true,
+				monthly: false,
+			};
+		}
+
 		let fee = await this._calcFee(item);
+		let monthly = await this.checkMonthlyPlate(plate);
 		return {
 			_id: item._id,
 			code: item.STORAGE_CODE,
@@ -104,36 +125,114 @@ class StorageService extends BaseService {
 			days: fee.days,
 			feeTotal: fee.feeTotal,
 			feeTotalText: this._fmtMoney(fee.feeTotal),
+			noCharge: false,
+			monthly: monthly,
 		};
 	}
 
-	/** 司机登记取柜（服务端重算费用并锁定，进入待缴费） */
-	async registerFetch(userId, openId, phone, code, payMode) {
+	/** 司机登记取柜（挚力单：服务端重算费用并锁定，月付/到付照常；其他公司单：不计费不付款直接入队） */
+	async registerFetch(userId, openId, phone, code, payMode, fetchPlate) {
 		phone = (phone || '').trim();
 		if (!phone) this.AppError('请输入手机号');
+		fetchPlate = (fetchPlate || '').trim().toUpperCase();
 
 		let item = await this._getByCode(code);
+		let now = timeUtil.time();
+		let isOther = Number(item.STORAGE_COMPANY) === 1;
+
+		// 其他公司单：不计费不付款，直接进入取柜排队（跳过费用计算/月付识别/在线现场支付）
+		if (isOther) {
+			let queueNo = await StorageService.makeStorageNo(now);
+			let updated = await StorageModel.edit({
+				_id: item._id,
+				STORAGE_STATUS: StorageModel.STATUS.STORED
+			}, {
+				STORAGE_STATUS: StorageModel.STATUS.FETCH_WAITING,
+				STORAGE_FETCH_USER_ID: userId,
+				STORAGE_FETCH_OPENID: openId,
+				STORAGE_FETCH_PHONE: phone,
+				STORAGE_FETCH_PLATE: fetchPlate,
+				STORAGE_FETCH_TIME: now,
+				STORAGE_DAYS: 0,
+				STORAGE_FEE_TOTAL: 0,
+				STORAGE_PAY_MODE: StorageModel.PAY_MODE.ONSITE,
+				STORAGE_PAY_STATUS: StorageModel.PAY_STATUS.NO_CHARGE,
+				STORAGE_NO: queueNo,
+				STORAGE_QUEUE_TIME: now,
+			});
+			if (!updated) this.AppError('该柜已被取走或状态已变更');
+
+			await this.autoCallCheck();
+
+			return {
+				_id: item._id,
+				code: item.STORAGE_CODE,
+				cabinetName: item.STORAGE_CABINET_NAME,
+				cabinetNo: item.STORAGE_CABINET_NO,
+				plate: item.STORAGE_PLATE,
+				fetchPlate: fetchPlate,
+				days: 0,
+				feeTotal: 0,
+				feeTotalText: '0.00',
+				payMode: 0,
+				monthly: false,
+				noCharge: true,
+				customerName: '',
+			};
+		}
+
 		let fee = await this._calcFee(item);
 		let mode = Number(payMode) === 1 ? 1 : 0;
 
-		let now = timeUtil.time();
-		let updated = await StorageModel.edit({
-			_id: item._id,
-			STORAGE_STATUS: StorageModel.STATUS.STORED
-		}, {
-			STORAGE_STATUS: StorageModel.STATUS.FETCH_TO_PAY,
+		// 月付识别：取柜车牌命中月付池则锁定该车牌条目（池内每条单次有效；并发重复登记仅一方成功）
+		let mplate = null;
+		if (fetchPlate) mplate = await this._claimMonthlyPlate(fetchPlate, item._id);
+
+		let baseData = {
 			STORAGE_FETCH_USER_ID: userId,
 			STORAGE_FETCH_OPENID: openId,
 			STORAGE_FETCH_PHONE: phone,
+			STORAGE_FETCH_PLATE: fetchPlate,
 			STORAGE_FETCH_TIME: now,
 			STORAGE_DAYS: fee.days,
 			STORAGE_FEE_TOTAL: fee.feeTotal,
 			STORAGE_PRICE_DAILY: fee.priceDaily,
-			STORAGE_PAY_MODE: mode,
-			STORAGE_PAY_STATUS: StorageModel.PAY_STATUS.UNPAID,
-			STORAGE_PAY_OUT_TRADE_NO: '',
-		});
-		if (!updated) this.AppError('该柜已被取走或状态已变更');
+		};
+
+		if (mplate) {
+			// 月付单：免现场缴费，直接进入取柜排队（缴费确认/在线支付环节整体跳过）
+			let queueNo = await StorageService.makeStorageNo(now);
+			baseData.STORAGE_STATUS = StorageModel.STATUS.FETCH_WAITING;
+			baseData.STORAGE_PAY_MODE = StorageModel.PAY_MODE.ONSITE;
+			baseData.STORAGE_PAY_STATUS = StorageModel.PAY_STATUS.MONTHLY;
+			baseData.STORAGE_NO = queueNo;
+			baseData.STORAGE_QUEUE_TIME = now;
+			baseData.STORAGE_MONTHLY = 1;
+			baseData.STORAGE_MONTHLY_PLATE_ID = mplate._id;
+			baseData.STORAGE_MONTHLY_CUSTOMER_ID = mplate.MPLATE_CUSTOMER_ID;
+			baseData.STORAGE_MONTHLY_CUSTOMER_NAME = mplate.MPLATE_CUSTOMER_NAME || '';
+			baseData.STORAGE_MONTHLY_MATCH_TIME = now;
+		} else {
+			// 到付：锁定费用进入待缴费（现场/在线支付，原逻辑不变）
+			baseData.STORAGE_STATUS = StorageModel.STATUS.FETCH_TO_PAY;
+			baseData.STORAGE_PAY_MODE = mode;
+			baseData.STORAGE_PAY_STATUS = StorageModel.PAY_STATUS.UNPAID;
+			baseData.STORAGE_PAY_OUT_TRADE_NO = '';
+			baseData.STORAGE_MONTHLY = 0;
+		}
+
+		let updated = await StorageModel.edit({
+			_id: item._id,
+			STORAGE_STATUS: StorageModel.STATUS.STORED
+		}, baseData);
+		if (!updated) {
+			// 条件更新失败（并发/已被取走）：若已锁定月付车牌则释放回池，避免浪费客户额度
+			if (mplate) await this.releaseMplate(mplate._id);
+			this.AppError('该柜已被取走或状态已变更');
+		}
+
+		// 月付单入队后立即尝试自动叫号（开关开启时）
+		await this.autoCallCheck();
 
 		// 仅返回取柜单据最小信息，不附带存柜人注册信息（身份证/三证照等 PII 不下发）
 		return {
@@ -142,10 +241,14 @@ class StorageService extends BaseService {
 			cabinetName: item.STORAGE_CABINET_NAME,
 			cabinetNo: item.STORAGE_CABINET_NO,
 			plate: item.STORAGE_PLATE,
+			fetchPlate: fetchPlate,
 			days: fee.days,
 			feeTotal: fee.feeTotal,
 			feeTotalText: this._fmtMoney(fee.feeTotal),
-			payMode: mode,
+			payMode: mplate ? 0 : mode,
+			monthly: !!mplate,
+			noCharge: false,
+			customerName: mplate ? (mplate.MPLATE_CUSTOMER_NAME || '') : '',
 		};
 	}
 
@@ -403,6 +506,8 @@ class StorageService extends BaseService {
 			delete obj.STORAGE_PAY_OUT_TRADE_NO;
 			delete obj.STORAGE_PAY_TRANSACTION_ID;
 			delete obj.STORAGE_PAY_AMOUNT;
+			delete obj.STORAGE_MONTHLY_PLATE_ID;
+			delete obj.STORAGE_MONTHLY_CUSTOMER_ID;
 		}
 
 		return ret;
@@ -450,6 +555,70 @@ class StorageService extends BaseService {
 		});
 		if (!item) this.AppError('存柜码不存在或该柜已取出');
 		return item;
+	}
+
+	// ========== 月付车牌池 ==========
+
+	/** 校验车牌是否命中月付池有效条目（仅查询不锁定，供费用预览提示） */
+	async checkMonthlyPlate(plate) {
+		plate = (plate || '').trim().toUpperCase();
+		if (!plate || plate.length < 3) return false;
+		let entry = await StorageMplateModel.getOne({
+			MPLATE_PLATE: plate,
+			MPLATE_STATUS: StorageMplateModel.STATUS.ACTIVE
+		}, 'MPLATE_ID');
+		return !!entry;
+	}
+
+	/** 锁定一枚有效月付车牌（条件更新防并发双占；同车牌多条时逐条尝试，全部占用返回 null） */
+	async _claimMonthlyPlate(plate, storageId) {
+		plate = (plate || '').trim().toUpperCase();
+		if (!plate || plate.length < 3) return null;
+
+		let now = timeUtil.time();
+		for (let i = 0; i < 5; i++) {
+			let entry = await StorageMplateModel.getOne({
+				MPLATE_PLATE: plate,
+				MPLATE_STATUS: StorageMplateModel.STATUS.ACTIVE
+			}, 'MPLATE_ID,MPLATE_CUSTOMER_ID,MPLATE_CUSTOMER_NAME', { MPLATE_ADD_TIME: 'asc' });
+			if (!entry) return null;
+
+			let updated = await StorageMplateModel.edit({
+				_id: entry._id,
+				MPLATE_STATUS: StorageMplateModel.STATUS.ACTIVE
+			}, {
+				MPLATE_STATUS: StorageMplateModel.STATUS.CLAIMED,
+				MPLATE_STORAGE_ID: storageId,
+				MPLATE_CLAIM_TIME: now,
+			});
+			if (updated) return entry;
+		}
+		return null;
+	}
+
+	/** 月付柜被提走（取柜完成）后消去车牌：占用 → 已使用，从月付池消失 */
+	async consumeMplate(plateId) {
+		if (!plateId) return;
+		await StorageMplateModel.edit({
+			_id: plateId,
+			MPLATE_STATUS: StorageMplateModel.STATUS.CLAIMED
+		}, {
+			MPLATE_STATUS: StorageMplateModel.STATUS.CONSUMED,
+			MPLATE_CONSUME_TIME: timeUtil.time(),
+		});
+	}
+
+	/** 月付单中途取消时释放车牌占用：占用 → 有效，归还月付池 */
+	async releaseMplate(plateId) {
+		if (!plateId) return;
+		await StorageMplateModel.edit({
+			_id: plateId,
+			MPLATE_STATUS: StorageMplateModel.STATUS.CLAIMED
+		}, {
+			MPLATE_STATUS: StorageMplateModel.STATUS.ACTIVE,
+			MPLATE_STORAGE_ID: '',
+			MPLATE_CLAIM_TIME: 0,
+		});
 	}
 
 	/** 服务端计算取柜费用：天数×每日单价（单价取柜型现行价） */
@@ -506,6 +675,9 @@ class StorageService extends BaseService {
 		item.statusDesc = StorageModel.getDesc('STATUS', item.STORAGE_STATUS);
 		item.ahead = ahead;
 		item.typeName = item.STORAGE_STATUS <= StorageModel.STATUS.STORED ? '存柜' : '取柜';
+		item.company = Number(item.STORAGE_COMPANY) === 1 ? 1 : 0;
+		item.companyDesc = StorageModel.getDesc('COMPANY', item.company);
+		item.noCharge = item.company === 1;
 		item.addTimeText = item.STORAGE_ADD_TIME ? timeUtil.timestamp2Time(item.STORAGE_ADD_TIME) : '';
 		item.queueTimeText = item.STORAGE_QUEUE_TIME ? timeUtil.timestamp2Time(item.STORAGE_QUEUE_TIME) : '';
 		item.callTimeText = item.STORAGE_CALL_TIME ? timeUtil.timestamp2Time(item.STORAGE_CALL_TIME) : '';

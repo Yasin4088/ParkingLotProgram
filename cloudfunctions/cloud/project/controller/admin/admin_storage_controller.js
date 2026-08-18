@@ -11,7 +11,7 @@ class AdminStorageController extends BaseAdminController {
 		await this.isAdmin();
 
 		let service = new AdminStorageService();
-		return await service.list();
+		return await service.list(this._isSuper());
 	}
 
 	async detail() {
@@ -23,7 +23,7 @@ class AdminStorageController extends BaseAdminController {
 		let input = this.validateData(rules);
 
 		let service = new AdminStorageService();
-		return await service.detail(input.id);
+		return await service.detail(input.id, this._isSuper());
 	}
 
 	/** 叫号 */
@@ -36,12 +36,12 @@ class AdminStorageController extends BaseAdminController {
 		let input = this.validateData(rules);
 
 		let service = new AdminStorageService();
-		return await service.call(input.id);
+		return await service.call(input.id, this._isSuper());
 	}
 
-	/** 存取柜自动叫号开关（自动/人工叫号切换） */
+	/** 存取柜自动叫号开关（自动/人工叫号切换；仅超级管理员） */
 	async setAutoCall() {
-		await this.isAdmin();
+		await this.isSuperAdmin();
 
 		let rules = {
 			value: 'must|int|name=开关状态',
@@ -76,12 +76,12 @@ class AdminStorageController extends BaseAdminController {
 		let input = this.validateData(rules);
 
 		let service = new AdminStorageService();
-		return await service.assign(input.id, input.forkliftId);
+		return await service.assign(input.id, input.forkliftId, this._isSuper());
 	}
 
-	/** 现场收款确认 */
+	/** 现场收款确认（仅超级管理员） */
 	async confirmPay() {
-		await this.isAdmin();
+		await this.isSuperAdmin();
 
 		let rules = {
 			id: 'must|string|name=存取柜记录',
@@ -102,11 +102,11 @@ class AdminStorageController extends BaseAdminController {
 		let input = this.validateData(rules);
 
 		let service = new AdminStorageService();
-		await service.cancel(input.id, input.reason);
+		await service.cancel(input.id, input.reason, '管理员', this._isSuper());
 	}
 
 	async historyList() {
-		await this.isAdmin();
+		await this.isSuperAdmin();
 
 		let rules = {
 			yearMonth: 'string|name=月份',
@@ -118,7 +118,7 @@ class AdminStorageController extends BaseAdminController {
 	}
 
 	async historyClear() {
-		await this.isAdmin();
+		await this.isSuperAdmin();
 
 		let rules = {
 			id: 'must|string|name=历史记录',
@@ -130,21 +130,21 @@ class AdminStorageController extends BaseAdminController {
 	}
 
 	async historyClearAll() {
-		await this.isAdmin();
+		await this.isSuperAdmin();
 
 		let service = new AdminStorageService();
 		await service.clearAllHistory();
 	}
 
 	async cabinetList() {
-		await this.isAdmin();
+		await this.isSuperAdmin();
 
 		let service = new AdminStorageService();
 		return await service.cabinetList();
 	}
 
 	async cabinetSave() {
-		await this.isAdmin();
+		await this.isSuperAdmin();
 
 		let rules = {
 			id: 'string|name=柜型记录',
@@ -166,7 +166,7 @@ class AdminStorageController extends BaseAdminController {
 	}
 
 	async cabinetDel() {
-		await this.isAdmin();
+		await this.isSuperAdmin();
 
 		let rules = {
 			id: 'must|string|name=柜型记录',

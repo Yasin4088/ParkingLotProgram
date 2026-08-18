@@ -79,7 +79,7 @@ class AdminUserController extends BaseAdminController {
 		return result;
 	}
 
-	/** 删除用户 */
+	/** 删除用户（客户账号仅超级管理员可删除） */
 	async delUser() {
 		await this.isAdmin();
 
@@ -89,6 +89,11 @@ class AdminUserController extends BaseAdminController {
 
 		let input = this.validateData(rules);
 
+		let cur = await new AdminUserService().getUserDetailById(input.id);
+		if (cur && cur.USER_ROLE === 'customer') {
+			await this.isSuperAdmin();
+		}
+
 		let name = await this.getNameBeforeLog('user', input.id);
 
 		let service = new AdminUserService();
@@ -97,7 +102,7 @@ class AdminUserController extends BaseAdminController {
 		this.log('删除了用户「' + name + '」', LogModel.TYPE.USER);
 	}
 
-	/** 新增用户（司机或叉车司机） */
+	/** 新增用户（司机或叉车司机；客户账号仅超级管理员可创建） */
 	async insertUser() {
 		await this.isAdmin();
 
@@ -110,15 +115,21 @@ class AdminUserController extends BaseAdminController {
 
 		let input = this.validateData(rules);
 
+		let role = input.role || 'driver';
+		if (role === 'customer') {
+			// 客户账号（月付车牌）仅超级管理员可创建
+			await this.isSuperAdmin();
+		}
+
 		let service = new AdminUserService();
 		let id = await service.insertUser({
 			username: input.username,
 			password: input.password,
 			phone: input.phone || '',
-			role: input.role || 'driver',
+			role: role,
 		});
 
-		let roleLabel = input.role === 'crane' ? '吊柜司机' : (input.role === 'forklift' ? '叉车司机' : '司机');
+		let roleLabel = role === 'crane' ? '吊柜司机' : (role === 'forklift' ? '叉车司机' : (role === 'customer' ? '客户' : '司机'));
 		this.log('新增了' + roleLabel + '「' + input.username + '」', LogModel.TYPE.USER);
 
 		return { id };
@@ -163,6 +174,12 @@ class AdminUserController extends BaseAdminController {
 
 		let input = this.validateData(rules);
 
+		// 客户账号（月付车牌）仅超级管理员可编辑（含改客户账号状态/身份）
+		let cur = await new AdminUserService().getUserDetailById(input.id);
+		if ((cur && cur.USER_ROLE === 'customer') || input.role === 'customer') {
+			await this.isSuperAdmin();
+		}
+
 		let service = new AdminUserService();
 		await service.editUser(input.id, {
 			username: input.username,
@@ -178,7 +195,7 @@ class AdminUserController extends BaseAdminController {
 		return {};
 	}
 
-	/** 设置用户状态（启用/禁用） */
+	/** 设置用户状态（启用/禁用；客户账号仅超级管理员可操作） */
 	async userStatus() {
 		await this.isAdmin();
 
@@ -188,6 +205,11 @@ class AdminUserController extends BaseAdminController {
 		};
 
 		let input = this.validateData(rules);
+
+		let cur = await new AdminUserService().getUserDetailById(input.id);
+		if (cur && cur.USER_ROLE === 'customer') {
+			await this.isSuperAdmin();
+		}
 
 		let name = await this.getNameBeforeLog('user', input.id);
 

@@ -1,0 +1,6 @@
+{
+	"navigationBarTitleText": "客户账号",
+	"usingComponents": {
+		"cmpt-comm-list": "/cmpts/public/list/comm_list_cmpt"
+	}
+}

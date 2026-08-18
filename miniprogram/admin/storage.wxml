@@ -1,11 +1,11 @@
 <view class="page">
-	<!-- 顶部操作：柜型管理 -->
-	<view class="top-bar">
+	<!-- 顶部操作：柜型管理（仅超级管理员） -->
+	<view wx:if="{{isSuper}}" class="top-bar">
 		<view class="top-btn" bindtap="bindOpenCabinetTap">柜型管理</view>
 	</view>
 
-	<!-- 自动叫号开关 -->
-	<view class="auto-call-bar">
+	<!-- 自动叫号开关（仅超级管理员） -->
+	<view wx:if="{{isSuper}}" class="auto-call-bar">
 		<view class="auto-call-info">
 			<view class="auto-call-title">自动叫号</view>
 			<view class="auto-call-desc">开启后待叫号记录自动按序叫号，吊柜接单后自动叫下一单</view>
@@ -25,7 +25,7 @@
 		<view wx:for="{{displayList}}" wx:key="_id" data-id="{{item._id}}" bindtap="bindItemTap" class="queue-card {{item.statusClass}}">
 			<view class="top">
 				<view class="no">{{item.STORAGE_NO || item.typeName}}</view>
-				<view class="status {{item.statusClass}}">{{item.statusDesc}}</view>
+				<view class="status {{item.statusClass}}">{{item.statusDesc}}<text wx:if="{{item.company === 1}}" class="company-tag other">其他</text><text wx:else class="company-tag">挚力</text><text wx:if="{{item.STORAGE_MONTHLY === 1}}" class="mplate-tag">月付</text></view>
 			</view>
 			<view class="plate">{{item.STORAGE_PLATE}}</view>
 			<view class="meta">{{item.typeName}} · {{item.STORAGE_CABINET_NAME}} {{item.STORAGE_CABINET_NO}} · 码{{item.STORAGE_CODE}}</view>
@@ -38,9 +38,10 @@
 				吊柜：{{item.forkliftName}}<text wx:if="{{item.grabTypeDesc}}">（{{item.grabTypeDesc}}）</text>
 			</view>
 
-			<!-- 取柜费用 -->
+			<!-- 取柜费用（不计费单/月付单/已收款单展示状态） -->
 			<view wx:if="{{item.STORAGE_STATUS >= 4}}" class="meta">
-				费用：¥{{item.feeTotalText}}（{{item.STORAGE_DAYS}}天） · {{item.payStatusDesc}}
+				<block wx:if="{{item.noCharge}}">费用：不计费（其他公司单）</block>
+				<block wx:else>费用：¥{{item.feeTotalText}}<block wx:if="{{item.STORAGE_DAYS}}">（{{item.STORAGE_DAYS}}天）</block> · {{item.payStatusDesc}}</block>
 			</view>
 
 			<!-- 待叫号 → 叫号 -->
@@ -52,15 +53,15 @@
 				<view class="card-btn ghost" data-id="{{item._id}}" catchtap="bindRecallTap">收回叫号</view>
 			</view>
 
-			<!-- 取柜待缴费 → 确认收款 -->
-			<button wx:if="{{item.STORAGE_STATUS === 4}}" class="finish-btn" data-id="{{item._id}}" catchtap="bindConfirmPayTap">确认收款</button>
+			<!-- 取柜待缴费 → 确认收款（仅超级管理员；其他公司单不计费无此环节） -->
+			<button wx:if="{{item.STORAGE_STATUS === 4 && isSuper}}" class="finish-btn" data-id="{{item._id}}" catchtap="bindConfirmPayTap">确认收款</button>
 		</view>
 	</view>
 
 	<view wx:else class="empty">{{filterStatus === '' ? '暂无存取柜记录' : '该状态下暂无记录'}}</view>
 
 	<view class="bottom-links">
-		<view bindtap="bindHistoryTap">历史记录</view>
+		<view wx:if="{{isSuper}}" bindtap="bindHistoryTap">历史记录</view>
 		<view bindtap="bindRefreshTap">刷新列表</view>
 	</view>
 
@@ -185,6 +186,10 @@
 
 			<view class="detail-grid">
 				<view class="detail-row">
+					<view class="detail-label">所属公司</view>
+					<view class="detail-value">{{selectedItem.companyDesc || '挚力'}}</view>
+				</view>
+				<view class="detail-row">
 					<view class="detail-label">车牌号</view>
 					<view class="detail-value">{{selectedItem.STORAGE_PLATE || '--'}}</view>
 				</view>
@@ -231,6 +236,14 @@
 				<view wx:if="{{selectedItem.STORAGE_FETCH_PHONE}}" class="detail-row">
 					<view class="detail-label">取柜手机号</view>
 					<view class="detail-value">{{selectedItem.STORAGE_FETCH_PHONE}}</view>
+				</view>
+				<view wx:if="{{selectedItem.STORAGE_FETCH_PLATE}}" class="detail-row">
+					<view class="detail-label">取柜车牌</view>
+					<view class="detail-value">{{selectedItem.STORAGE_FETCH_PLATE}}</view>
+				</view>
+				<view wx:if="{{selectedItem.STORAGE_MONTHLY === 1}}" class="detail-row">
+					<view class="detail-label">月结客户</view>
+					<view class="detail-value">{{selectedItem.STORAGE_MONTHLY_CUSTOMER_NAME || '--'}}</view>
 				</view>
 				<view wx:if="{{selectedItem.STORAGE_CABINET_DOOR_PROOF}}" class="detail-row">
 					<view class="detail-label">柜门照片</view>
@@ -305,11 +318,18 @@
 			<!-- 取柜费用 -->
 			<view wx:if="{{selectedItem.STORAGE_STATUS >= 4}}" class="fee-box">
 				<view class="fee-box-title">取柜费用</view>
-				<view class="fee-line">
-					<view class="fee-line-name">{{selectedItem.STORAGE_DAYS}} 天 × ¥{{selectedItem.priceDailyText}}/天</view>
-					<view class="fee-line-amount">¥{{selectedItem.feeTotalText}}</view>
+				<view wx:if="{{selectedItem.noCharge}}" class="fee-line">
+					<view class="fee-line-name">其他公司单</view>
+					<view class="fee-line-amount">不计费</view>
 				</view>
-				<view class="fee-total">合计：¥{{selectedItem.feeTotalText}}</view>
+				<block wx:else>
+					<view class="fee-line">
+						<view class="fee-line-name">{{selectedItem.STORAGE_DAYS}} 天 × ¥{{selectedItem.priceDailyText}}/天</view>
+						<view class="fee-line-amount">¥{{selectedItem.feeTotalText}}</view>
+					</view>
+					<view wx:if="{{selectedItem.STORAGE_MONTHLY === 1}}" class="fee-total">月付单，费用记公司月结，无需现场收款</view>
+					<view wx:else class="fee-total">合计：¥{{selectedItem.feeTotalText}}</view>
+				</block>
 			</view>
 
 			<!-- 操作区 -->
@@ -320,7 +340,7 @@
 				<view class="detail-btn warn" bindtap="bindDetailAssignTap">派单</view>
 				<view class="detail-btn ghost" bindtap="bindDetailRecallTap">收回叫号</view>
 			</view>
-			<view wx:if="{{selectedItem.STORAGE_STATUS === 4}}" class="detail-actions two">
+			<view wx:if="{{selectedItem.STORAGE_STATUS === 4 && isSuper}}" class="detail-actions two">
 				<view class="detail-btn warn" bindtap="bindDetailConfirmPayTap">确认收款</view>
 			</view>
 

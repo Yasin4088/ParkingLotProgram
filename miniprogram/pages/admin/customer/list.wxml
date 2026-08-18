@@ -1,0 +1,32 @@
+<view wx:if="{{isAdmin}}" class="page">
+	<!-- 客户账号列表（月付/月结） -->
+	<cmpt-comm-list id="customerList" type="admin-customer" _params="{{customerParams}}" route="admin/user_list" search="{{search}}" topBottom="50" placeholder="搜索客户" bind:list="bindCommListCmpt">
+		<view>
+			<view wx:if="{{dataList && dataList.total}}" class="load text-grey">共 {{dataList.total}} 个客户账号</view>
+
+			<view class="driver-item" wx:for="{{dataList.list}}" wx:key="_id">
+				<view class="top-row">
+					<view class="d-name">{{item.USER_NAME}}</view>
+					<view class="d-role">客户</view>
+					<view class="d-status {{item.USER_STATUS === 9 ? 'off' : (item.USER_STATUS === 0 ? 'pending' : 'on')}}">{{item.USER_STATUS_DESC || '正常'}}</view>
+				</view>
+				<view class="mid-row">
+					<text>{{item.USER_MOBILE || '未填手机号'}}</text>
+				</view>
+				<view class="mid-row sub">
+					<text>注册：{{item.USER_ADD_TIME}} · 最近登录：{{item.USER_LOGIN_TIME}}</text>
+				</view>
+				<view class="bottom-row">
+					<view class="edit-btn" bindtap="bindEditTap" data-id="{{item._id}}">编辑</view>
+					<view class="del-btn" bindtap="bindDelTap" data-id="{{item._id}}">删除</view>
+				</view>
+			</view>
+			<view wx:if="{{dataList && dataList.total === 0}}" class="load text-grey">暂无客户账号，请先添加客户</view>
+		</view>
+	</cmpt-comm-list>
+
+	<!-- 底部添加按钮 -->
+	<view class="bottom-btn">
+		<view class="add-driver-btn" bindtap="bindAddTap">添加客户账号</view>
+	</view>
+</view>

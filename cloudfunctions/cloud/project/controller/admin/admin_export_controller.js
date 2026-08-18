@@ -117,9 +117,9 @@ class AdminExportController extends BaseAdminController {
 
 	/************** 装卸月报导出 BEGIN ********************* */
 
-	/** 导出月度经营报表 */
+	/** 导出月度经营报表（仅超级管理员） */
 	async queueMonthExport() {
-		await this.isAdmin();
+		await this.isSuperAdmin();
 
 		// 数据校验
 		let rules = {
@@ -133,9 +133,9 @@ class AdminExportController extends BaseAdminController {
 		return await service.exportQueueMonthExcel(input.yearMonth);
 	}
 
-	/** 获取月报下载地址 */
+	/** 获取月报下载地址（仅超级管理员） */
 	async queueMonthGet() {
-		await this.isAdmin();
+		await this.isSuperAdmin();
 
 		// 数据校验
 		let rules = {
@@ -152,9 +152,9 @@ class AdminExportController extends BaseAdminController {
 
 	/************** 存取柜月报导出 BEGIN ********************* */
 
-	/** 导出存取柜月度经营报表 */
+	/** 导出存取柜月度经营报表（仅超级管理员） */
 	async storageMonthExport() {
-		await this.isAdmin();
+		await this.isSuperAdmin();
 
 		// 数据校验
 		let rules = {
@@ -168,9 +168,9 @@ class AdminExportController extends BaseAdminController {
 		return await service.exportStorageMonthExcel(input.yearMonth);
 	}
 
-	/** 获取存取柜月报下载地址 */
+	/** 获取存取柜月报下载地址（仅超级管理员） */
 	async storageMonthGet() {
-		await this.isAdmin();
+		await this.isSuperAdmin();
 
 		// 数据校验
 		let rules = {
