@@ -49,12 +49,14 @@ QueueModel.DB_STRUCTURE = {
 	QUEUE_FINISH_BILL_PROOF: 'string|false|comment=完成单据照片fileID',
 	QUEUE_FINISH_TIME: 'int|true|default=0|comment=作业完成时间',
 
-	QUEUE_PAY_MODE: 'int|true|default=0|comment=支付方式 0=现场支付,1=客户记账',
-	QUEUE_PAY_STATUS: 'int|true|default=0|comment=支付状态 0=未支付,1=已支付,2=免支付,3=记账',
+	QUEUE_PAY_MODE: 'int|true|default=0|comment=支付方式 0=现场支付,1=客户记账,2=在线支付(司机微信支付)',
+	QUEUE_PAY_STATUS: 'int|true|default=0|comment=支付状态 0=未支付,1=已支付(在线),2=免支付,3=记账,4=已确认收款(现场)',
 	QUEUE_PAY_OUT_TRADE_NO: 'string|false|comment=商户订单号',
 	QUEUE_PAY_TRANSACTION_ID: 'string|false|comment=微信支付单号',
 	QUEUE_PAY_TIME: 'int|true|default=0|comment=支付成功时间',
 	QUEUE_PAY_AMOUNT: 'int|true|default=0|comment=实付金额(分)',
+	QUEUE_PAY_CONFIRM_TIME: 'int|true|default=0|comment=管理员确认收款时间',
+	QUEUE_PAY_CONFIRM_OPERATOR: 'string|false|comment=确认收款操作人',
 	QUEUE_SETTLE_TIME: 'int|true|default=0|comment=结算时间',
 	QUEUE_SETTLE_OPERATOR: 'string|false|comment=结算操作人',
 	QUEUE_DONE_TIME: 'int|true|default=0|comment=完成离场时间',
@@ -111,25 +113,29 @@ QueueModel.PAY_STATUS = {
 	UNPAID: 0,
 	PAID: 1,
 	FREE: 2,
-	ON_ACCOUNT: 3
+	ON_ACCOUNT: 3,
+	CONFIRMED: 4
 };
 
 QueueModel.PAY_STATUS_DESC = {
 	UNPAID: '未支付',
 	PAID: '已支付',
 	FREE: '免支付',
-	ON_ACCOUNT: '记账'
+	ON_ACCOUNT: '记账',
+	CONFIRMED: '已确认收款'
 };
 
 /** 支付方式 */
 QueueModel.PAY_MODE = {
 	ONSITE: 0,
-	ON_ACCOUNT: 1
+	ON_ACCOUNT: 1,
+	ONLINE: 2
 };
 
 QueueModel.PAY_MODE_DESC = {
 	ONSITE: '现场支付',
-	ON_ACCOUNT: '客户记账'
+	ON_ACCOUNT: '客户记账',
+	ONLINE: '在线支付'
 };
 
 /** 叉车接单方式 */

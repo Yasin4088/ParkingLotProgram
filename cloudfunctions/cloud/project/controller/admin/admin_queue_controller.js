@@ -125,6 +125,19 @@ class AdminQueueController extends BaseAdminController {
 		return await service.settle(input.id, '管理员', input.payMode);
 	}
 
+	/** 管理员现场确认收款（待支付 → 已完成；仅超级管理员） */
+	async confirmPay() {
+		await this.isSuperAdmin();
+
+		let rules = {
+			id: 'must|string|name=排队记录',
+		};
+		let input = this.validateData(rules);
+
+		let service = new QueueService();
+		return await service.confirmPay(input.id, '管理员');
+	}
+
 	async detail() {
 		await this.isAdmin();
 

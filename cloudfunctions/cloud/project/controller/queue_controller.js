@@ -67,6 +67,18 @@ class QueueController extends BaseController {
 		let service = new QueueService();
 		return await service.driverConfirm(driver._id, input.id);
 	}
+
+	/** 司机在线支付装卸货费用（待支付 → 已完成） */
+	async pay() {
+		let rules = {
+			id: 'must|string|name=排队记录',
+		};
+		let input = this.validateData(rules);
+
+		let driver = await this.getDriverId();
+		let service = new QueueService();
+		return await service.pay(driver._id, input.id);
+	}
 }
 
 module.exports = QueueController;

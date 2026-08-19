@@ -11,6 +11,7 @@ module.exports = {
 	'queue/checkin': 'queue_controller@checkin',
 	'queue/subscribe': 'queue_controller@subscribe',
 	'queue/confirm': 'queue_controller@confirm',
+	'queue/pay': 'queue_controller@pay',
 
 	'driver/wxlogin': 'driver_controller@wxLogin',
 	'driver/register': 'driver_controller@register',
@@ -52,6 +53,7 @@ module.exports = {
 	'admin/queue_assign': 'admin/admin_queue_controller@manualAssign',
 	'admin/queue_fee_save': 'admin/admin_queue_controller@saveSceneFee',
 	'admin/queue_settle': 'admin/admin_queue_controller@settle',
+	'admin/queue_confirm_pay': 'admin/admin_queue_controller@confirmPay',
 	'admin/queue_detail': 'admin/admin_queue_controller@detail',
 	'admin/queue_history_list': 'admin/admin_queue_controller@historyList',
 	'admin/queue_history_clear': 'admin/admin_queue_controller@historyClear',

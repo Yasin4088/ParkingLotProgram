@@ -39,8 +39,7 @@ Page({
 
 		if (tab === 'admin') {
 			this._checkSetup();
-		}
-	},
+		}	},
 
 	_checkSetup: async function () {
 		try {
@@ -200,6 +199,11 @@ Page({
 		} finally {
 			this.setData({ loading: false });
 		}
+	},
+
+	/** 查看用户协议与隐私政策 */
+	bindPrivacyTap: function () {
+		wx.navigateTo({ url: '/pages/privacy/privacy' });
 	},
 
 });

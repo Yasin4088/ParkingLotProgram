@@ -95,10 +95,11 @@ class WxPayLib {
 		});
 	}
 
-	/** 商户订单号：6-32位，仅数字/字母/_-；'STOR'+记录ID前20位+'_'+6位随机（官方 4012791856 out_trade_no 规则） */
-	static genOutTradeNo(id) {
+	/** 商户订单号：6-32位，仅数字/字母/_-；prefix+记录ID前20位+'_'+6位随机（官方 4012791856 out_trade_no 规则）
+	 *  prefix 区分业务：STOR=存取柜取柜费用, QUE=装卸货费用 */
+	static genOutTradeNo(id, prefix = 'STOR') {
 		let clean = String(id || '').replace(/[^0-9a-zA-Z_-]/g, '').slice(0, 20);
-		return 'STOR' + clean + '_' + crypto.randomBytes(3).toString('hex');
+		return prefix + clean + '_' + crypto.randomBytes(3).toString('hex');
 	}
 
 	/** JSAPI/小程序下单，返回 {prepay_id}（官方 4012791856） */

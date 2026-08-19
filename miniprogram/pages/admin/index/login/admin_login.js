@@ -1,4 +1,4 @@
-const pageHelper = require('../../../../helper/page_helper.js');
+const pageHelper = require('../../../../helper/page_helper.js'); // 保留引用（模板兼容）
 
 Page({
 
@@ -12,8 +12,9 @@ Page({
 	},
 
 	bindBackTap: function (e) {
-		wx.reLaunch({
-			url: pageHelper.fmtURLByPID('/projects/A00/my/index/my_index'),
+		wx.navigateBack({
+			delta: 1,
+			fail: () => wx.reLaunch({ url: '/pages/login/login' })
 		});
 	},
 

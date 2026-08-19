@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>挚力供应链 · 司机使用说明</title>
+<style>
+:root {
+  --primary: #3B82E6;
+  --primary-light: #EBF3FF;
+  --primary-dark: #2563EB;
+  --text: #1a1a1a;
+  --text-secondary: #666;
+  --text-light: #999;
+  --border: #e8e8e8;
+  --bg: #f5f7fa;
+  --card-bg: #ffffff;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --radius: 12px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 15px;
+}
+.container { max-width: 820px; margin: 0 auto; padding: 0 20px 60px; }
+
+/* 封面 */
+.cover {
+  background: linear-gradient(135deg, #3B82E6 0%, #2563EB 100%);
+  color: #fff;
+  padding: 60px 24px 48px;
+  border-radius: 0 0 24px 24px;
+  text-align: center;
+  margin-bottom: 32px;
+}
+.cover h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px; }
+.cover .subtitle { font-size: 16px; opacity: 0.9; margin-bottom: 4px; }
+.cover .version { font-size: 13px; opacity: 0.7; margin-top: 12px; }
+
+/* 目录 */
+.toc {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+.toc h2 { font-size: 18px; margin-bottom: 16px; color: var(--text); }
+.toc ol { list-style: none; counter-reset: toc; }
+.toc ol li {
+  counter-increment: toc;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 15px;
+}
+.toc ol li:last-child { border-bottom: none; }
+.toc ol li::before {
+  content: counter(toc);
+  display: inline-block;
+  width: 24px; height: 24px;
+  line-height: 24px;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  margin-right: 10px;
+  font-weight: 600;
+}
+.toc ol li a { color: var(--text); text-decoration: none; }
+.toc ol li a:hover { color: var(--primary); }
+
+/* 章节 */
+.section {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+.section h2 {
+  font-size: 20px;
+  color: var(--primary-dark);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--primary-light);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section h2 .icon { font-size: 22px; }
+.section h3 {
+  font-size: 17px;
+  color: var(--text);
+  margin: 24px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.section p { margin-bottom: 12px; color: var(--text); }
+.section ul, .section ol { padding-left: 24px; margin-bottom: 12px; }
+.section li { margin-bottom: 6px; }
+
+/* 步骤 */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+  position: relative;
+  padding: 16px 16px 16px 56px;
+  margin-bottom: 12px;
+  background: var(--bg);
+  border-radius: 10px;
+  counter-increment: step;
+}
+.step::before {
+  content: counter(step);
+  position: absolute;
+  left: 16px; top: 16px;
+  width: 28px; height: 28px;
+  line-height: 28px;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+}
+.step .step-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+.step .step-desc { font-size: 14px; color: var(--text-secondary); }
+
+/* 提示框 */
+.tip {
+  background: var(--primary-light);
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+.tip strong { color: var(--primary-dark); }
+.tip-warning {
+  background: #FFF7ED;
+  border-left-color: var(--warning);
+}
+.tip-warning strong { color: #C2410C; }
+.tip-danger {
+  background: #FEF2F2;
+  border-left-color: var(--danger);
+}
+.tip-danger strong { color: #B91C1C; }
+
+/* 状态流程图 */
+.flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 20px 0;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+.flow-node {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.flow-arrow { color: var(--text-light); font-size: 14px; }
+.flow .s-pending { background: #E0E7FF; color: #3730A3; }
+.flow .s-booked { background: #DBEAFE; color: #1E40AF; }
+.flow .s-waiting { background: #FEF3C7; color: #92400E; }
+.flow .s-called { background: #FCE7F3; color: #9D174D; }
+.flow .s-exec { background: #FFEDD5; color: #9A3412; }
+.flow .s-settle { background: #E0F2FE; color: #075985; }
+.flow .s-pay { background: #FEE2E2; color: #991B1B; }
+.flow .s-done { background: #DCFCE7; color: #166534; }
+.flow .s-cancel { background: #F3F4F6; color: #6B7280; }
+
+/* 状态表格 */
+.status-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 14px;
+}
+.status-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+}
+.status-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.status-table tr:nth-child(even) td { background: var(--bg); }
+.status-table .badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* 卡片网格 */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.feature-card {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.feature-card .fc-icon { font-size: 28px; margin-bottom: 8px; }
+.feature-card .fc-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.feature-card .fc-desc { font-size: 13px; color: var(--text-secondary); }
+
+/* FAQ */
+.faq-item {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+.faq-item .faq-q {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: var(--primary-dark);
+}
+.faq-item .faq-q::before { content: "Q: "; color: var(--primary); }
+.faq-item .faq-a { font-size: 14px; color: var(--text-secondary); }
+.faq-item .faq-a::before { content: "A: "; color: var(--success); font-weight: 600; }
+
+/* 页脚 */
+.footer {
+  text-align: center;
+  padding: 32px 0 16px;
+  color: var(--text-light);
+  font-size: 13px;
+}
+.footer hr { border: none; border-top: 1px solid var(--border); margin-bottom: 16px; }
+
+@media (max-width: 600px) {
+  .cover h1 { font-size: 22px; }
+  .section { padding: 20px; }
+  .section h2 { font-size: 17px; }
+  .flow { flex-direction: column; align-items: flex-start; }
+  .flow-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+
+<!-- 封面 -->
+<div class="cover">
+  <h1>挚力供应链</h1>
+  <div class="subtitle">司机端小程序使用说明</div>
+  <div class="subtitle">停车场装卸排队 · 存取柜服务</div>
+  <div class="version">广州挚力供应链有限公司</div>
+</div>
+
+<div class="container">
+
+<!-- 目录 -->
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#sec1">登录与注册</a></li>
+    <li><a href="#sec2">功能总览</a></li>
+    <li><a href="#sec3">装卸货操作流程</a></li>
+    <li><a href="#sec4">存柜操作流程</a></li>
+    <li><a href="#sec5">取柜操作流程</a></li>
+    <li><a href="#sec6">我的存取柜（进度查看与支付）</a></li>
+    <li><a href="#sec7">个人信息管理</a></li>
+    <li><a href="#sec8">常见问题</a></li>
+  </ol>
+</div>
+
+<!-- 1. 登录与注册 -->
+<div class="section" id="sec1">
+  <h2><span class="icon">1</span> 登录与注册</h2>
+
+  <h3>1.1 首次登录</h3>
+  <p>打开小程序后，默认显示「司机」登录页。司机使用<strong>微信一键登录</strong>，无需输入账号密码。</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-title">点击「微信一键登录」</div>
+      <div class="step-desc">系统通过微信授权自动登录，登录后进入注册信息完善页面。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">获取手机号</div>
+      <div class="step-desc">点击「微信授权获取手机号」按钮，一键获取本机微信绑定的手机号。也可以手动输入手机号（仅开发测试用）。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">填写基本信息</div>
+      <div class="step-desc">填写<strong>真实姓名</strong>、<strong>身份证号</strong>（18位）、<strong>车牌号</strong>（如粤B12345）。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">上传证件照片（三证齐全）</div>
+      <div class="step-desc">依次上传<strong>驾驶证照片</strong>、<strong>行驶证照片</strong>、<strong>身份证照片</strong>。可拍照或从相册选择，点击已上传的照片可重新上传。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">提交注册</div>
+      <div class="step-desc">确认信息无误后点击「提交注册」，完成后自动进入业务选择页。</div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <strong>提示：</strong>所有信息仅用于停车场管理，不会外泄。车牌号和手机号会在后续操作中自动预填，可随时修改。
+  </div>
+
+  <h3>1.2 日常登录</h3>
+  <p>注册完成后，每次打开小程序点击「微信一键登录」即可直接进入业务选择页，无需重复填写信息。</p>
+</div>
+
+<!-- 2. 功能总览 -->
+<div class="section" id="sec2">
+  <h2><span class="icon">2</span> 功能总览</h2>
+  <p>登录后进入<strong>业务选择页</strong>，提供三大功能模块：</p>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="fc-icon">🚚</div>
+      <div class="fc-title">装卸货</div>
+      <div class="fc-desc">认领任务 → GPS签到排队 → 叫号 → 叉车装卸 → 结算支付</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">📦</div>
+      <div class="fc-title">存柜</div>
+      <div class="fc-desc">登记存柜 → 生成存柜码 → 叫号 → 吊柜存柜作业</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">🔓</div>
+      <div class="fc-title">取柜</div>
+      <div class="fc-desc">输入存柜码 → 查询费用 → 缴费 → 叫号 → 吊柜取柜作业</div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <strong>进行中提示：</strong>如果有正在进行的装卸货任务，装卸货卡片上会显示「进行中」角标，方便您快速回到排队页面。
+  </div>
+
+  <p>页面底部提供两个入口：<strong>个人信息修改</strong>（查看和修改注册信息）和<strong>退出登录</strong>。</p>
+</div>
+
+<!-- 3. 装卸货操作流程 -->
+<div class="section" id="sec3">
+  <h2><span class="icon">3</span> 装卸货操作流程</h2>
+
+  <h3>3.1 整体流程</h3>
+  <div class="flow">
+    <span class="flow-node s-pending">待认领</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-booked">已预约</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-waiting">排队中</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-called">已叫号</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-exec">执行中</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-settle">待结算</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-pay">待支付</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-done">已完成</span>
+  </div>
+
+  <h3>3.2 认领任务</h3>
+  <p>管理员会提前在系统中创建任务（包含车牌号和备注信息）。您需要在「认领任务」页面输入与任务一致的车牌号来认领。</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-title">进入装卸货页面</div>
+      <div class="step-desc">在业务选择页点击「装卸货」进入认领任务页。车牌号和手机号会自动预填注册时的信息，可修改。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">输入车牌号</div>
+      <div class="step-desc">车牌号需与管理员创建任务时填写的<strong>完全一致</strong>（如粤B12345），否则无法认领。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">输入手机号</div>
+      <div class="step-desc">用于现场联系，请确保手机号正确。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">上传单证照片（可选）</div>
+      <div class="step-desc">可拍照或从相册上传单据照片，方便管理员核对。非必填。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">点击「认领任务」</div>
+      <div class="step-desc">认领成功后自动跳转到「我的排队」页面。</div>
+    </div>
+  </div>
+
+  <div class="tip tip-warning">
+    <strong>注意：</strong>一个车牌号同一时间只能有一个进行中的任务。如果提示认领失败，请确认车牌号是否正确或是否已有进行中的任务。
+  </div>
+
+  <h3>3.3 GPS签到排队</h3>
+  <p>认领任务后状态为「已预约」，需要到达停车场堆场后完成GPS签到才能进入排队队列。</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-title">到达停车场</div>
+      <div class="step-desc">驾车到达指定停车场装卸堆场。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">点击「GPS签到」</div>
+      <div class="step-desc">在「我的排队」页面点击按钮，系统自动获取您的位置信息完成签到。签到后状态变为「排队中」，系统分配排队号。</div>
+    </div>
+  </div>
+
+  <div class="tip tip-danger">
+    <strong>定位失败怎么办？</strong>如果提示「定位失败」，请检查：① 手机GPS定位是否开启；② 小程序是否已授权获取位置信息（可在微信设置中检查）；③ 是否已到达停车场附近。
+  </div>
+
+  <h3>3.4 等待叫号</h3>
+  <p>签到后进入排队队列，页面显示您的<strong>排队号</strong>和<strong>前方人数</strong>。管理员叫到您时，状态变为「已叫号」。</p>
+  <ul>
+    <li><strong>订阅通知：</strong>在排队中可点击「订阅叫号通知」，叫号时收到微信消息提醒（需授权订阅消息）。</li>
+    <li><strong>确认收到：</strong>被叫号后，页面显示「已叫号，请确认收到通知」，点击「确认收到」按钮确认，叉车司机收到通知后前往装卸。</li>
+  </ul>
+
+  <h3>3.5 装卸执行与结算</h3>
+  <table class="status-table">
+    <thead>
+      <tr>
+        <th>状态</th>
+        <th>含义</th>
+        <th>您需要做什么</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge" style="background:#FFEDD5;color:#9A3412;">执行中</span></td>
+        <td>叉车司机正在装卸作业</td>
+        <td>留意现场安排，配合装卸</td>
+      </tr>
+      <tr>
+        <td><span class="badge" style="background:#E0F2FE;color:#075985;">待结算</span></td>
+        <td>装卸完成，管理员核对费用</td>
+        <td>等待管理员结算，可在页面查看费用明细</td>
+      </tr>
+      <tr>
+        <td><span class="badge" style="background:#FEE2E2;color:#991B1B;">待支付</span></td>
+        <td>费用已锁定，等待支付</td>
+        <td>按页面提示完成支付后离场</td>
+      </tr>
+      <tr>
+        <td><span class="badge" style="background:#DCFCE7;color:#166534;">已完成</span></td>
+        <td>全部流程结束</td>
+        <td>可离场，历史记录保留可查</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="tip">
+    <strong>费用说明：</strong>费用项目包括办单费、过磅费、拆箱费、吊机费、存柜费等固定项及自定义项，由管理员录入。支付前管理员可随时修改费用。金额单位为元，页面直接显示。
+  </div>
+
+  <h3>3.6 支付</h3>
+  <p>状态变为「待支付」后，页面显示费用合计金额和「去支付」按钮。支付方式分为两种：</p>
+  <ul>
+    <li><strong>现场支付：</strong>在线支付未开通时，请到现场向管理员缴费，管理员确认收款后订单完成。</li>
+    <li><strong>在线支付（开通后）：</strong>点击「去支付」拉起微信支付，完成支付后自动完成订单。</li>
+    <li><strong>客户记账：</strong>管理员在建单时可预填为记账模式，结算后直接完成，无需现场支付。</li>
+  </ul>
+
+  <div class="tip tip-warning">
+    <strong>支付状态说明：</strong>未支付=待付款；已支付=已在线支付完成；免支付=管理员设为免支付；记账=客户月结。
+  </div>
+</div>
+
+<!-- 4. 存柜操作流程 -->
+<div class="section" id="sec4">
+  <h2><span class="icon">4</span> 存柜操作流程</h2>
+
+  <h3>4.1 整体流程</h3>
+  <div class="flow">
+    <span class="flow-node s-pending">待叫号·存柜</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-called">已叫号·存柜</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-exec">存柜执行中</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-done">已存柜</span>
+  </div>
+
+  <h3>4.2 存柜登记</h3>
+  <p>在业务选择页点击「存柜」进入存柜登记页面。存柜登记<strong>免费</strong>，登记后系统自动生成存柜码和排队号。</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-title">填写车牌号和手机号</div>
+      <div class="step-desc">自动预填注册信息，可修改。手机号用于现场联系。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">选择柜型</div>
+      <div class="step-desc">从下拉列表选择柜型，不同柜型对应不同的日单价（页面显示价格）。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">输入柜号</div>
+      <div class="step-desc">填写柜号，如 A-101。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">选择所属公司</div>
+      <div class="step-desc">
+        <strong>挚力：</strong>正常计费，取柜时按天收费，支持月付识别。<br>
+        <strong>其他：</strong>不计费不付款，取柜时直接排队，不留历史记录。如需月付识别请选「挚力」。
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-title">上传柜门照片（必传）</div>
+      <div class="step-desc">拍照或从相册上传柜门照片，此为必填项。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">点击「登记存柜」</div>
+      <div class="step-desc">提交后弹出存柜码（6位数字）和排队号。可点击「复制存柜码」保存到剪贴板。页面自动跳转到「我的存取柜」。</div>
+    </div>
+  </div>
+
+  <div class="tip tip-danger">
+    <strong>请妥善保存存柜码！</strong>存柜码是取柜时的重要凭证，取柜时需要输入此码查询费用并登记。建议截图保存或复制到备忘录。
+  </div>
+
+  <h3>4.3 存柜状态说明</h3>
+  <table class="status-table">
+    <thead>
+      <tr>
+        <th>状态</th>
+        <th>含义</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge" style="background:#E0E7FF;color:#3730A3;">待叫号</span></td>
+        <td>已登记，等待管理员叫号后吊柜司机开始存柜</td>
+      </tr>
+      <tr>
+        <td><span class="badge" style="background:#FCE7F3;color:#9D174D;">已叫号</span></td>
+        <td>管理员已叫号，等待吊柜司机接单</td>
+      </tr>
+      <tr>
+        <td><span class="badge" style="background:#FFEDD5;color:#9A3412;">存柜执行中</span></td>
+        <td>吊柜司机正在存柜作业，请留意现场安排</td>
+      </tr>
+      <tr>
+        <td><span class="badge" style="background:#DCFCE7;color:#166534;">已存柜</span></td>
+        <td>存柜完成，取柜时凭存柜码登记并按天缴费</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 5. 取柜操作流程 -->
+<div class="section" id="sec5">
+  <h2><span class="icon">5</span> 取柜操作流程</h2>
+
+  <h3>5.1 整体流程</h3>
+  <div class="flow">
+    <span class="flow-node s-pay">取柜待缴费</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-waiting">取柜待叫号</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-called">已叫号·取柜</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-exec">取柜执行中</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-node s-done">已取柜</span>
+  </div>
+
+  <h3>5.2 取柜登记与缴费</h3>
+  <p>在业务选择页点击「取柜」进入取柜登记页面。取柜<strong>按天计费</strong>，不足1天按1天计算。</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-title">输入存柜码</div>
+      <div class="step-desc">输入存柜时获得的6位数字存柜码。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">输入手机号</div>
+      <div class="step-desc">用于现场联系。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">填写取柜车牌</div>
+      <div class="step-desc">默认预填注册车牌号，可修改。如果是<strong>月付司机</strong>，填写月付车牌后系统自动识别，免现场缴费（费用记公司月结）。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">点击「查询费用」</div>
+      <div class="step-desc">系统显示柜型、柜号、车牌、存柜时间、计费天数和合计费用。</div>
+    </div>
+    <div class="step">
+      <div class="step-title">提交取柜登记</div>
+      <div class="step-desc">根据费用情况不同，提交后流程不同（见下方说明）。</div>
+    </div>
+  </div>
+
+  <h3>5.3 三种取柜情况</h3>
+  <table class="status-table">
+    <thead>
+      <tr>
+        <th>情况</th>
+        <th>页面提示</th>
+        <th>后续流程</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>正常计费</td>
+        <td>显示天数×日单价=合计费用，按钮显示「支付费用」</td>
+        <td>在线支付开通时：提交后自动拉起微信支付，支付完成进入取柜排队；未开通时：提交后请现场缴费，管理员确认收款后进入排队</td>
+      </tr>
+      <tr>
+        <td>月付车牌识别</td>
+        <td>显示「已识别到月付车牌，本单免现场缴费」</td>
+        <td>提交后直接进入取柜排队，无需现场缴费（费用记公司月结）</td>
+      </tr>
+      <tr>
+        <td>其他公司单</td>
+        <td>显示「其他公司单，不计费」</td>
+        <td>提交后直接进入取柜排队，无需付款</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="tip">
+    <strong>计费规则：</strong>计费起点为存柜完成时间（吊柜拍照确认时），按天计费，不足1天按1天。费用 = 天数 × 柜型日单价。费用在取柜登记时由服务端锁定。
+  </div>
+
+  <h3>5.4 取柜状态说明</h3>
+  <table class="status-table">
+    <thead>
+      <tr>
+        <th>状态</th>
+        <th>含义</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge" style="background:#FEE2E2;color:#991B1B;">取柜待缴费</span></td>
+        <td>费用已锁定，请完成支付（或现场缴费后等待管理员确认收款）</td>
+      </tr>
+      <tr>
+        <td><span class="badge" style="background:#FEF3C7;color:#92400E;">取柜待叫号</span></td>
+        <td>已缴费（或免付/月付），等待管理员叫号</td>
+      </tr>
+      <tr>
+        <td><span class="badge" style="background:#FCE7F3;color:#9D174D;">已叫号·取柜</span></td>
+        <td>管理员已叫号，等待吊柜司机接单</td>
+      </tr>
+      <tr>
+        <td><span class="badge" style="background:#FFEDD5;color:#9A3412;">取柜执行中</span></td>
+        <td>吊柜司机正在取柜作业，请留意现场安排</td>
+      </tr>
+      <tr>
+        <td><span class="badge" style="background:#DCFCE7;color:#166534;">已取柜</span></td>
+        <td>取柜完成，全部流程结束</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 6. 我的存取柜 -->
+<div class="section" id="sec6">
+  <h2><span class="icon">6</span> 我的存取柜（进度查看与支付）</h2>
+
+  <p>在存柜页面底部点击「查看我的存柜」或在取柜页面点击「查看我的取柜」，可进入「我的存取柜」页面，查看所有进行中的存取柜记录。</p>
+
+  <h3>6.1 页面功能</h3>
+  <ul>
+    <li><strong>存柜码展示：</strong>每条记录显示存柜码，可点击复制。</li>
+    <li><strong>状态与排队进度：</strong>显示当前状态、排队号、前方人数。</li>
+    <li><strong>费用明细：</strong>取柜阶段（状态≥4）显示计费天数、日单价、合计费用和支付状态。</li>
+    <li><strong>状态提示：</strong>根据当前状态显示操作提示（如「请完成支付」「等待管理员叫号」等）。</li>
+    <li><strong>去支付按钮：</strong>在线支付开通且状态为「取柜待缴费」时，显示「去支付 ¥xx」按钮。</li>
+  </ul>
+
+  <h3>6.2 底部快捷入口</h3>
+  <ul>
+    <li><strong>我要存柜：</strong>快速跳转到存柜登记页。</li>
+    <li><strong>我要取柜：</strong>快速跳转到取柜登记页。</li>
+    <li><strong>刷新：</strong>手动刷新页面数据，获取最新状态。</li>
+  </ul>
+
+  <div class="tip">
+    <strong>记录展示规则：</strong>进行中的存取柜记录会一直显示在页面上，取出完成后记录消失。如果没有进行中的记录，会显示最近一条历史记录供参考。
+  </div>
+</div>
+
+<!-- 7. 个人信息管理 -->
+<div class="section" id="sec7">
+  <h2><span class="icon">7</span> 个人信息管理</h2>
+
+  <p>在业务选择页底部点击「个人信息修改」，可查看和修改您的注册信息。</p>
+  <ul>
+    <li>可修改手机号、姓名、身份证号、车牌号</li>
+    <li>可重新上传驾驶证、行驶证、身份证照片</li>
+    <li>修改后点击「保存修改」即可生效</li>
+  </ul>
+
+  <div class="tip tip-warning">
+    <strong>注意：</strong>车牌号是认领任务和存取柜登记的重要信息，修改后请确保与实际车辆一致。
+  </div>
+</div>
+
+<!-- 8. 常见问题 -->
+<div class="section" id="sec8">
+  <h2><span class="icon">8</span> 常见问题</h2>
+
+  <div class="faq-item">
+    <div class="faq-q">认领任务时提示失败怎么办？</div>
+    <div class="faq-a">请确认：① 车牌号与管理员创建任务时的车牌号完全一致（包括大小写）；② 当前没有其他进行中的任务（同一车牌同时只能有一个进行中的任务）；③ 管理员已创建任务。如仍无法解决，请联系管理员核实。</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">GPS签到定位失败怎么办？</div>
+    <div class="faq-a">请检查：① 手机GPS定位功能是否开启；② 微信是否已授权小程序获取位置信息（微信→我→设置→个人信息与权限→授权管理）；③ 是否已到达停车场附近。如问题持续，可尝试退出小程序重新进入或重启手机定位。</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">存柜码忘记了怎么办？</div>
+    <div class="faq-a">在「我的存取柜」页面可以查看所有进行中的存柜记录，每条记录都会显示存柜码，可点击复制。建议登记成功后立即截图保存。</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">取柜费用是怎么算的？</div>
+    <div class="faq-a">费用 = 存柜天数 × 柜型日单价。计费起点为存柜完成时间（吊柜司机拍照确认时），按天计费，不足1天按1天计算。费用在取柜登记时由系统自动锁定。</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">月付司机怎么免现场缴费？</div>
+    <div class="faq-a">月付客户会在系统中录入月付司机车牌。取柜登记时在「取柜车牌」栏填写与月付池匹配的车牌号，系统自动识别后显示「已识别到月付车牌，本单免现场缴费」，提交后直接进入取柜排队，费用记公司月结。</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">支付功能什么时候开通？</div>
+    <div class="faq-a">在线支付功能开通前，请到现场向管理员缴费，管理员确认收款后订单自动完成。在线支付开通后，点击「去支付」可直接拉起微信支付完成付款。</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">怎么收到叫号通知？</div>
+    <div class="faq-a">在排队页面点击「订阅叫号通知」按钮，授权后当管理员叫到您的号时会收到微信消息提醒。每次订阅仅对当前任务有效，新任务需重新订阅。</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">退出登录后数据还在吗？</div>
+    <div class="faq-a">退出登录不影响已提交的任务和存取柜记录。重新使用微信一键登录后，可以继续查看进行中的任务和历史记录。</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">「其他公司」是什么意思？</div>
+    <div class="faq-a">存柜登记时选择「其他公司」的存柜单不计费不付款，取柜时直接排队，且不留历史记录。如果您需要正常计费或月付识别，请选择「挚力」。</div>
+  </div>
+</div>
+
+<!-- 页脚 -->
+<div class="footer">
+  <hr>
+  <p>广州挚力供应链有限公司 · 停车场装卸排队管理系统</p>
+  <p>如有疑问请联系现场管理员</p>
+</div>
+
+</div>
+
+</body>
+</html>

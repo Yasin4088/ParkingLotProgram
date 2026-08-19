@@ -5,6 +5,7 @@
 const BaseService = require('./base_service.js');
 const QueueModel = require('../model/queue_model.js');
 const UserModel = require('../model/user_model.js');
+const WxPayLib = require('../lib/wxpay_lib.js');
 const config = require('../../config/config.js');
 const timeUtil = require('../../framework/utils/time_util.js');
 const miniLib = require('../../framework/lib/mini_lib.js');
@@ -496,6 +497,147 @@ class QueueService extends BaseService {
 		return await this.detail(queueId);
 	}
 
+	/** 装卸货在线支付下单：返回 payParams 供 wx.requestPayment；查单兜底发现已支付时返回 {paid:true} */
+	async pay(userId, id) {
+		if (!config.WXPAY_ENABLE) this.AppError('在线支付暂未开通，请联系管理员现场缴费');
+
+		let item = await QueueModel.getOne({
+			_id: id,
+			QUEUE_USER_ID: userId,
+			QUEUE_STATUS: QueueModel.STATUS.TO_PAY
+		});
+		if (!item) this.AppError('未找到待支付的排队记录');
+		if (Number(item.QUEUE_FEE_TOTAL) <= 0) this.AppError('该记录无需支付');
+		if (!item.QUEUE_OPENID) this.AppError('缺少支付用户信息，无法在线支付');
+		if (!config.WXPAY_NOTIFY_URL) this.AppError('支付回调地址未配置');
+
+		// 已有未完成订单先查单兜底（回调可能延迟/丢失）
+		if (item.QUEUE_PAY_OUT_TRADE_NO) {
+			let order = await this._queryWxOrder(item.QUEUE_PAY_OUT_TRADE_NO);
+			if (order && order.trade_state === 'SUCCESS') {
+				await this.markPaidByNotify(order);
+				return { paid: true, id: item._id };
+			}
+			// NOTPAY/CLOSED：换新订单号重新下单
+		}
+
+		// 生成并保存商户订单号；条件更新把旧订单号（含空串）纳入 where，
+		// 并发重复下单时仅先到者成功，避免两笔订单同时有效导致支付后不完成
+		let outTradeNo = WxPayLib.genOutTradeNo(item._id, 'QUE');
+		let updated = await QueueModel.edit({
+			_id: item._id,
+			QUEUE_STATUS: QueueModel.STATUS.TO_PAY,
+			QUEUE_PAY_STATUS: QueueModel.PAY_STATUS.UNPAID,
+			QUEUE_PAY_OUT_TRADE_NO: item.QUEUE_PAY_OUT_TRADE_NO || ''
+		}, {
+			QUEUE_PAY_OUT_TRADE_NO: outTradeNo,
+			QUEUE_PAY_MODE: QueueModel.PAY_MODE.ONLINE,
+		});
+		if (!updated) {
+			// 并发下单被抢先：以库内最新订单号查单兜底，已支付直接完成
+			let fresh = await QueueModel.getOne({ _id: item._id }, 'QUEUE_PAY_OUT_TRADE_NO,QUEUE_STATUS');
+			if (fresh && fresh.QUEUE_PAY_OUT_TRADE_NO && fresh.QUEUE_STATUS === QueueModel.STATUS.TO_PAY) {
+				let existOrder = await this._queryWxOrder(fresh.QUEUE_PAY_OUT_TRADE_NO);
+				if (existOrder && existOrder.trade_state === 'SUCCESS') {
+					await this.markPaidByNotify(existOrder);
+					return { paid: true, id: item._id };
+				}
+			}
+			this.AppError('订单处理中，请稍后重试');
+		}
+
+		try {
+			let prepay = await WxPayLib.jsapiPrepay({
+				outTradeNo,
+				description: '装卸货费用-' + (item.QUEUE_PLATE || ''),
+				amountTotal: Number(item.QUEUE_FEE_TOTAL),
+				payerOpenid: item.QUEUE_OPENID,
+				notifyUrl: config.WXPAY_NOTIFY_URL,
+			});
+			return {
+				payParams: WxPayLib.buildPayParams(prepay.prepay_id),
+				id: item._id
+			};
+		} catch (e) {
+			// 订单号被占用（重试/并发）：查单兜底，已支付直接完成
+			if (e && e.wxCode === 'OUT_TRADE_NO_USED') {
+				let order = await this._queryWxOrder(outTradeNo);
+				if (order && order.trade_state === 'SUCCESS') {
+					await this.markPaidByNotify(order);
+					return { paid: true, id: item._id };
+				}
+				this.AppError('订单处理中，请稍后重试');
+			}
+			throw e;
+		}
+	}
+
+	/** 查单兜底（订单不存在返回 null，网络/签名错误向上抛） */
+	async _queryWxOrder(outTradeNo) {
+		try {
+			return await WxPayLib.queryOrder(outTradeNo);
+		} catch (e) {
+			if (e && (e.wxCode === 'ORDER_NOT_EXIST' || e.statusCode === 404)) return null;
+			throw e;
+		}
+	}
+
+	/** 支付成功落库（payNotify 回调/定时查单/下单兜底共用）：金额校验 + 条件更新 6→9，幂等
+	 *  返回：'paid' 本次落库成功 / 'already' 已处理过 / 'amount_mismatch' 金额不符
+	 *  注意：payNotify/index.js 内有同算法副本（markPaidQueue），改动需同步 */
+	async markPaidByNotify(order) {
+		let recordRes = await QueueModel.getAll({
+			QUEUE_PAY_OUT_TRADE_NO: order.out_trade_no
+		}, '_id,QUEUE_STATUS,QUEUE_FEE_TOTAL,QUEUE_PAY_OUT_TRADE_NO', {}, 1);
+		let record = (recordRes || [])[0];
+		if (!record) return 'already';
+
+		if (Number(order.amount && order.amount.total) !== Number(record.QUEUE_FEE_TOTAL)) {
+			console.error('[queue] 支付金额与费用不符：', order.out_trade_no, order.amount && order.amount.total, record.QUEUE_FEE_TOTAL);
+			return 'amount_mismatch';
+		}
+
+		let now = timeUtil.time();
+		let updated = await QueueModel.edit({
+			_id: record._id,
+			QUEUE_STATUS: QueueModel.STATUS.TO_PAY,
+			QUEUE_PAY_OUT_TRADE_NO: order.out_trade_no
+		}, {
+			QUEUE_STATUS: QueueModel.STATUS.DONE,
+			QUEUE_PAY_STATUS: QueueModel.PAY_STATUS.PAID,
+			QUEUE_PAY_MODE: QueueModel.PAY_MODE.ONLINE,
+			QUEUE_PAY_TIME: order.success_time ? new Date(order.success_time).getTime() : now,
+			QUEUE_PAY_AMOUNT: Number(order.amount && order.amount.total) || 0,
+			QUEUE_PAY_TRANSACTION_ID: order.transaction_id || '',
+			QUEUE_DONE_TIME: now,
+		});
+		if (!updated) return 'already'; // 幂等：状态已流转或订单号已更换
+		return 'paid';
+	}
+
+	/** 管理员现场确认收款（待支付 → 已完成，PAY_STATUS=4；仅超级管理员，现场缴费兜底） */
+	async confirmPay(queueId, operator = '管理员') {
+		let item = await QueueModel.getOne({
+			_id: queueId,
+			QUEUE_STATUS: QueueModel.STATUS.TO_PAY
+		}, 'QUEUE_ID,QUEUE_FEE_TOTAL');
+		if (!item) this.AppError('仅可确认收款待支付的记录');
+
+		let updated = await QueueModel.edit({
+			_id: item._id,
+			QUEUE_STATUS: QueueModel.STATUS.TO_PAY
+		}, {
+			QUEUE_STATUS: QueueModel.STATUS.DONE,
+			QUEUE_PAY_STATUS: QueueModel.PAY_STATUS.CONFIRMED,
+			QUEUE_PAY_CONFIRM_TIME: timeUtil.time(),
+			QUEUE_PAY_CONFIRM_OPERATOR: operator,
+			QUEUE_DONE_TIME: timeUtil.time(),
+		});
+		if (!updated) this.AppError('该记录状态已变化，请刷新后重试');
+
+		return await this.detail(queueId);
+	}
+
 	/** 管理员兜底完成（叉车无法操作时） */
 	async finish(queueId) {
 		let item = await QueueModel.getOne({
@@ -826,7 +968,7 @@ class QueueService extends BaseService {
 		item.payStatusDesc = QueueModel.getDesc('PAY_STATUS', item.QUEUE_PAY_STATUS);
 
 		// 支付方式
-		item.payMode = Number(item.QUEUE_PAY_MODE) === 1 ? 1 : 0;
+		item.payMode = Number(item.QUEUE_PAY_MODE);
 		item.payModeDesc = QueueModel.getDesc('PAY_MODE', item.payMode);
 
 		return item;

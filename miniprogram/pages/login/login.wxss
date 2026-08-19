@@ -133,6 +133,18 @@
     text-align: center;
 }
 
+/* 用户协议入口 */
+.agreement {
+    margin-top: 30rpx;
+    text-align: center;
+    font-size: 24rpx;
+    color: #999;
+}
+
+.agreement-link {
+    color: #3B82E6;
+}
+
 /* 初始化提示 */
 .setup-tip {
     width: 100%;

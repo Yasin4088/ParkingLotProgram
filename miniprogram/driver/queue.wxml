@@ -68,7 +68,7 @@
 		</view>
 
 		<!-- 待支付提示 -->
-		<view wx:if="{{item.QUEUE_STATUS === 6}}" class="pay-tip">费用已锁定，请在现场完成支付后离场</view>
+		<view wx:if="{{item.QUEUE_STATUS === 6}}" class="pay-tip">费用已锁定，可在线支付或现场缴费后离场</view>
 
 		<!-- 状态文字 -->
 		<view wx:if="{{item.QUEUE_STATUS === 1}}" class="tips">已认领任务，抵达现场后点击 GPS 签到进入队列。</view>

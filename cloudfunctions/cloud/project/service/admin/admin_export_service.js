@@ -129,7 +129,7 @@ class AdminExportService extends BaseAdminService {
 				item.QUEUE_CANCEL_REASON || ''
 			]);
 			feeTotal += Number(item.feeTotal) || 0;
-			if (Number(item.QUEUE_PAY_STATUS) === 1) paidTotal += Number(item.feeTotal) || 0;
+			if (Number(item.QUEUE_PAY_STATUS) === 1 || Number(item.QUEUE_PAY_STATUS) === 4) paidTotal += Number(item.feeTotal) || 0;
 			if (Number(item.QUEUE_PAY_STATUS) === 3) accountTotal += Number(item.feeTotal) || 0;
 		}
 

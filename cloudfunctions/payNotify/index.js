@@ -234,12 +234,51 @@ async function markPaid(record, order) {
 	});
 }
 
-/** 定时兜底：扫描待缴费在线单，查单发现已支付则落库入队 */
+/** 装卸货队列支付成功落库（回调/定时查单共用）：金额校验 + 条件更新 6→9，幂等
+ *  与 cloud 函数 queue_service.markPaidByNotify 同算法副本，改动需同步
+ *  返回：'paid' 本次落库成功 / 'already' 已处理过 / 'amount_mismatch' 金额不符 */
+async function markPaidQueue(record, order) {
+	if (Number(order.amount && order.amount.total) !== Number(record.QUEUE_FEE_TOTAL)) {
+		console.error('[payNotify] 支付金额与费用不符：', order.out_trade_no, order.amount && order.amount.total, record.QUEUE_FEE_TOTAL);
+		return 'amount_mismatch';
+	}
+
+	return await db.runTransaction(async t => {
+		let doc = null;
+		try {
+			doc = await t.collection('ax_queue').doc(record._id).get();
+		} catch (e) {
+			doc = null;
+		}
+		if (!doc || !doc.data) return 'already';
+		let d = doc.data;
+		// 幂等：状态已流转或订单号已更换则不再处理
+		if (d.QUEUE_STATUS !== 6 || d.QUEUE_PAY_OUT_TRADE_NO !== order.out_trade_no) return 'already';
+
+		let now = Date.now();
+		await t.collection('ax_queue').doc(record._id).update({
+			data: {
+				QUEUE_STATUS: 9,
+				QUEUE_PAY_STATUS: 1,
+				QUEUE_PAY_MODE: 2,
+				QUEUE_PAY_TIME: order.success_time ? new Date(order.success_time).getTime() : now,
+				QUEUE_PAY_AMOUNT: Number(order.amount && order.amount.total) || 0,
+				QUEUE_PAY_TRANSACTION_ID: order.transaction_id || '',
+				QUEUE_DONE_TIME: now,
+			}
+		});
+		return 'paid';
+	});
+}
+
+/** 定时兜底：扫描待缴费在线单（存取柜取柜 + 装卸货队列），查单发现已支付则落库 */
 async function scanUnpaid() {
 	if (!MCH_PRIVATE_KEY || !MCH_SERIAL_NO) {
 		console.log('[payNotify] 未配置 WXPAY_MCH_PRIVATE_KEY/WXPAY_SERIAL_NO，跳过定时查单');
 		return;
 	}
+
+	// 存取柜取柜待缴费在线单
 	let list = await db.collection('ax_storage').where({
 		STORAGE_STATUS: 4,
 		STORAGE_PAY_STATUS: 0,
@@ -256,6 +295,26 @@ async function scanUnpaid() {
 		} catch (e) {
 			if (e && (e.wxCode === 'ORDER_NOT_EXIST' || e.statusCode === 404)) continue;
 			console.error('[payNotify] 定时查单失败：', record.STORAGE_PAY_OUT_TRADE_NO, e.message || e);
+		}
+	}
+
+	// 装卸货待支付在线单（QUEUE_PAY_MODE=2 表示司机已发起在线支付）
+	let queueList = await db.collection('ax_queue').where({
+		QUEUE_STATUS: 6,
+		QUEUE_PAY_STATUS: 0,
+		QUEUE_PAY_MODE: 2,
+		QUEUE_PAY_OUT_TRADE_NO: _.neq('')
+	}).orderBy('QUEUE_ADD_TIME', 'asc').limit(20).get();
+
+	for (let record of (queueList.data || [])) {
+		try {
+			let order = await queryOrder(record.QUEUE_PAY_OUT_TRADE_NO);
+			if (order && order.trade_state === 'SUCCESS') {
+				await markPaidQueue(record, order);
+			}
+		} catch (e) {
+			if (e && (e.wxCode === 'ORDER_NOT_EXIST' || e.statusCode === 404)) continue;
+			console.error('[payNotify] 定时查单失败：', record.QUEUE_PAY_OUT_TRADE_NO, e.message || e);
 		}
 	}
 }
@@ -308,19 +367,30 @@ exports.main = async (event, context) => {
 		}
 
 		let outTradeNo = order.out_trade_no || '';
+
+		// 按商户订单号定位业务记录：先查存取柜取柜单，再查装卸货队列单（订单号前缀 STOR/QUE 区分）
+		let result = 'already';
 		let recordRes = await db.collection('ax_storage').where({
 			STORAGE_PAY_OUT_TRADE_NO: outTradeNo
 		}).limit(1).get();
-		if (!recordRes.data || !recordRes.data.length) {
-			// 孤儿订单（正常流程回调到达前订单号必已落库）：应答成功，避免无意义重试
-			console.error('[payNotify] 未找到订单号对应记录：', outTradeNo);
-			return success();
+		if (recordRes.data && recordRes.data.length) {
+			result = await markPaid(recordRes.data[0], order);
+		} else {
+			let queueRes = await db.collection('ax_queue').where({
+				QUEUE_PAY_OUT_TRADE_NO: outTradeNo
+			}).limit(1).get();
+			if (queueRes.data && queueRes.data.length) {
+				result = await markPaidQueue(queueRes.data[0], order);
+			}
 		}
 
-		let result = await markPaid(recordRes.data[0], order);
 		if (result === 'amount_mismatch') {
 			// 金额不符 → 5XX 让微信重试，等待人工介入
 			return fail(500, '金额校验失败');
+		}
+		if (result === 'already' && !recordRes.data.length) {
+			// 两表都未命中：孤儿订单（正常流程回调到达前订单号必已落库）：应答成功，避免无意义重试
+			console.error('[payNotify] 未找到订单号对应记录：', outTradeNo);
 		}
 		// 'paid' 与 'already'（重复通知幂等）均应答成功
 		return success();

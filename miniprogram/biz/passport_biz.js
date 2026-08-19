@@ -60,7 +60,7 @@ class PassportBiz extends BaseBiz {
 					cacheHelper.set(constants.CACHE_TOKEN, res.data, setting.ADMIN_TOKEN_EXPIRE);
 					wx.showToast({ title: '登录成功', icon: 'success' });
 					setTimeout(() => {
-						wx.switchTab({ url: '/projects/A00/default/index/default_index' });
+						wx.redirectTo({ url: '/driver/biz_select' });
 					}, 800);
 				}
 			});

@@ -1,0 +1,55 @@
+<view class="page">
+	<view class="nav">
+		<view class="nav-back" bindtap="bindBackTap">‹ 返回</view>
+		<view class="nav-title">用户协议与隐私政策</view>
+	</view>
+
+	<view class="content">
+		<view class="section">
+			<view class="title">一、用户协议</view>
+			<view class="para">欢迎使用「挚力供应链」微信小程序（以下简称"本小程序"）。本小程序由广州挚力供应链有限公司（以下简称"我们"）运营，为司机、叉车/吊柜司机、管理员与客户提供停车场装卸排队、存取柜及费用结算等服务。</view>
+			<view class="para">使用本小程序即表示您同意本协议全部条款。若您不同意，请停止使用。您应保证所提供信息的真实、准确、合法，因信息不实导致的责任由您自行承担。</view>
+			<view class="para">司机通过微信一键登录并完成实名注册后方可使用装卸/存取柜服务；叉车/吊柜司机、管理员、客户账号由管理员统一创建，请妥善保管账号密码，勿转借他人。</view>
+		</view>
+
+		<view class="section">
+			<view class="title">二、我们收集的信息</view>
+			<view class="para">为提供服务，我们会在您使用过程中收集以下信息：</view>
+			<view class="para">1. 微信登录信息（OpenID）及您主动填写的手机号，用于账号识别与现场联系；</view>
+			<view class="para">2. 位置信息（GPS 定位），用于司机到场后的签到排队；</view>
+			<view class="para">3. 车牌号、司机身份信息（姓名、身份证号、驾驶证/行驶证/身份证照片），用于车辆识别与作业凭证；</view>
+			<view class="para">4. 您上传的柜门照片、作业完成照片等图片，用于业务留档；</view>
+			<view class="para">5. 业务过程中产生的排队记录、费用与支付信息。</view>
+		</view>
+
+		<view class="section">
+			<view class="title">三、信息的使用</view>
+			<view class="para">我们仅在以下目的使用上述信息：提供装卸排队、存取柜登记、费用结算与月报统计等核心功能；完成订单支付；与您取得联系；保障账号与交易安全。</view>
+			<view class="para">未经您的同意，我们不会将您的个人信息用于与上述目的无关的用途。</view>
+		</view>
+
+		<view class="section">
+			<view class="title">四、信息的共享与存储</view>
+			<view class="para">1. 支付信息：为完成微信支付，您的订单金额、商户订单号等将提供给微信支付（财付通）处理；</view>
+			<view class="para">2. 技术服务：小程序运行于微信云开发（腾讯云）平台，数据存储于腾讯云服务器，仅用于为本小程序提供技术支撑；</view>
+			<view class="para">3. 除上述情形及法律法规要求外，我们不会向第三方出售或提供您的个人信息。</view>
+			<view class="para">您的个人信息将按照业务需要保存，业务关系终止或超出必要保存期限后，我们将按平台规则删除或匿名化处理。</view>
+		</view>
+
+		<view class="section">
+			<view class="title">五、您的权利</view>
+			<view class="para">您有权查询、更正您的个人信息；在符合平台规则的前提下，可联系管理员申请删除相关记录。您也可以在微信中关闭相应授权（位置、相册、摄像头等），关闭后相关功能可能无法使用。</view>
+		</view>
+
+		<view class="section">
+			<view class="title">六、未成年人保护</view>
+			<view class="para">本小程序面向运输、仓储业务场景，不面向未成年人。如您为未成年人，请在监护人指导下使用。</view>
+		</view>
+
+		<view class="section">
+			<view class="title">七、协议的更新与联系</view>
+			<view class="para">我们可能根据业务或法规变化更新本协议，更新后将在本页面公布。如您对本协议或个人信息保护有任何疑问，可通过小程序内管理员账号或现场工作人员与我们联系。</view>
+			<view class="para">生效日期：2026 年 8 月。</view>
+		</view>
+	</view>
+</view>

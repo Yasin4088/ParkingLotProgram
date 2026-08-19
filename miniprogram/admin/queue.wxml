@@ -72,6 +72,7 @@
 			<view wx:if="{{item.QUEUE_STATUS === 6}}" class="wait-confirm red">待支付 ¥{{item.feeTotalText}}</view>
 			<view wx:if="{{item.QUEUE_STATUS === 6 && isSuper}}" class="card-actions">
 				<view class="card-btn ghost" data-id="{{item._id}}" catchtap="bindCardFeeTap">修改费用</view>
+				<view class="card-btn orange" data-id="{{item._id}}" catchtap="bindConfirmPayTap">确认收款</view>
 			</view>
 		</view>
 	</view>
@@ -358,6 +359,7 @@
 					</block>
 					<block wx:if="{{selectedItem.QUEUE_STATUS === 6 && isSuper}}">
 						<view class="detail-btn primary" bindtap="bindOpenFeeTap">修改费用</view>
+						<view class="detail-btn warn" data-id="{{selectedItem._id}}" bindtap="bindConfirmPayTap">确认收款</view>
 					</block>
 				</view>
 			</view>

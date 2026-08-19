@@ -24,7 +24,7 @@
 		"pages/admin/customer/list",
 		"pages/admin/customer/edit",
 		"pages/customer/home",
-		"projects/A00/search/search"
+		"pages/privacy/privacy"
 	],
 	"window": {
 		"backgroundColor": "#f1f1f1",

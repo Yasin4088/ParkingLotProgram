@@ -147,9 +147,42 @@ Page({
 		});
 	},
 
-	bindPayTap: function () {
+	/** 在线支付装卸货费用：queue/pay 下单 + wx.requestPayment（查单兜底发现已支付时不再拉起支付） */
+	bindPayTap: async function () {
 		if (this.data.paying) return;
-		wx.showToast({ title: '支付功能即将开通，请联系管理员', icon: 'none' });
+		if (!this.data.item || this.data.item.QUEUE_STATUS !== 6) return;
+		let id = this.data.item._id;
+
+		this.setData({ paying: true });
+		try {
+			let payRes = await cloudHelper.callCloudSumbit('queue/pay', { id }, { title: '下单中' });
+			if (payRes.data.paid) {
+				// 查单兜底：此前已支付成功，直接刷新状态
+				wx.showToast({ title: '已支付，任务完成', icon: 'success' });
+			} else {
+				await new Promise((resolve, reject) => {
+					wx.requestPayment({
+						...payRes.data.payParams,
+						success: resolve,
+						fail: err => {
+							if (err && err.errMsg && err.errMsg.indexOf('cancel') > -1) {
+								wx.showToast({ title: '已取消支付', icon: 'none' });
+								resolve();
+							} else {
+								reject(err);
+							}
+						}
+					});
+				});
+				wx.showToast({ title: '支付成功，任务完成', icon: 'success' });
+			}
+			this.loadCurrent();
+		} catch (err) {
+			console.log(err);
+			wx.showToast({ title: (err && err.msg) || '支付失败，请重试', icon: 'none' });
+		} finally {
+			this.setData({ paying: false });
+		}
 	},
 
 	bindHomeTap: function () {

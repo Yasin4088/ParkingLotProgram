@@ -720,6 +720,34 @@ Page({
 		}
 	},
 
+	// ========== 现场确认收款 ==========
+
+	/** 现场确认收款（待支付 → 已完成；司机现场缴费兜底） */
+	bindConfirmPayTap: function (e) {
+		let id = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || (this.data.selectedItem && this.data.selectedItem._id);
+		if (!id) return;
+		let that = this;
+
+		wx.showModal({
+			title: '确认收款',
+			content: '确认已现场收到款项，该任务将标记为已完成。确定收款？',
+			success: async res => {
+				if (!res.confirm) return;
+				that.setData({ submitting: true });
+				try {
+					let ret = await cloudHelper.callCloudSumbit('admin/queue_confirm_pay', { id }, { title: '提交中' });
+					wx.showToast({ title: '已收款，任务完成', icon: 'success' });
+					if (ret && ret.data) that._showDetail(ret.data);
+					that.loadList();
+				} catch (err) {
+					console.log(err);
+				} finally {
+					that.setData({ submitting: false });
+				}
+			}
+		});
+	},
+
 	// ========== 详情弹窗 ==========
 
 	bindItemTap: async function (e) {

@@ -85,4 +85,9 @@
         </block>
 
     </view>
+
+    <view class="agreement">
+        <text>登录即代表同意</text>
+        <text class="agreement-link" bindtap="bindPrivacyTap">《用户协议与隐私政策》</text>
+    </view>
 </view>
