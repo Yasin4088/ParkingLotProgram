@@ -931,15 +931,16 @@ class QueueService extends BaseService {
 			template_id: config.QUEUE_CANCEL_TEMPLATE_ID,
 			page: '/driver/home',
 			data: {
-				thing1: { value: miniLib.fmtThing('预约已取消，请重新预约') },
-				thing2: { value: miniLib.fmtThing(reason) },
-				thing3: { value: miniLib.fmtThing(item.QUEUE_PLATE || '') },
-				thing4: { value: miniLib.fmtThing(item.QUEUE_LOT_NAME || '') },
+				thing1: { value: miniLib.fmtThing('预约已取消，请重新签到排队') }, // 温馨提醒
+				thing2: { value: miniLib.fmtThing(reason) }, // 取消原因
+				thing3: { value: miniLib.fmtThing(item.QUEUE_PLATE || '') }, // 车牌号
+				thing4: { value: miniLib.fmtThing(item.QUEUE_LOT_NAME || '') }, // 仓库/场地
 			}
 		}, 'queue_cancel');
 	}
 
-	/** 叫号通知（司机已订阅且配置模板时推送；模板字段键需与所选用模板一致，可调整） */
+	/** 叫号通知（司机已订阅且配置模板时推送；模板字段键需与所选用模板一致，可调整）
+	 *  当前适配公共模板「排队叫号通知」：thing1=业务名称, thing2=车牌号, time3=叫号时间, thing4=排队号码 */
 	async _sendCallNotice(item, now) {
 		if (!config.QUEUE_CALL_TEMPLATE_ID || !item.QUEUE_OPENID) return;
 		if (Number(item.QUEUE_SUBSCRIBE) !== 1) return; // 司机未订阅不推送
@@ -949,10 +950,10 @@ class QueueService extends BaseService {
 			template_id: config.QUEUE_CALL_TEMPLATE_ID,
 			page: '/driver/home',
 			data: {
-				thing1: { value: miniLib.fmtThing(item.QUEUE_PLATE || '') }, // 车牌号
-				thing2: { value: miniLib.fmtThing(item.QUEUE_ACTION_NAME || '') }, // 业务类型
-				time3: { value: timeUtil.timestamp2Time(now) }, // 叫号时间
-				thing4: { value: miniLib.fmtThing((item.QUEUE_LOT_NAME || '') + (item.QUEUE_NO ? ' ' + item.QUEUE_NO + '号' : '')) }, // 场地/排队号
+				thing1: { value: miniLib.fmtThing(item.QUEUE_ACTION_NAME || '') }, // 业务名称（装货/卸货）
+				thing2: { value: miniLib.fmtThing(item.QUEUE_PLATE || '') }, // 车牌号
+				time3: { value: timeUtil.timestamp2Time(now, 'Y-M-D h:m') }, // 叫号时间（订阅消息 time 字段要求到分钟）
+				thing4: { value: miniLib.fmtThing(item.QUEUE_NO || '') }, // 排队号码
 			}
 		}, 'queue_call');
 	}

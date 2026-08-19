@@ -41,7 +41,7 @@
  	ADMIN_TOKEN_EXPIRE: 3600 * 2, //管理员过期时间2小时有效 秒  
 
 	// #### 装卸排队相关
-	QUEUE_CALL_TEMPLATE_ID: '', // 叫号订阅消息模板ID，配置后司机可订阅微信通知
-	QUEUE_CANCEL_TEMPLATE_ID: '', // 预约取消订阅消息模板ID，配置后司机可订阅取消通知
+	QUEUE_CALL_TEMPLATE_ID: 'uW0s8QWPW-cBS3_ePwQByi32PPPv5HmPsFYGI4eezV8', // 叫号订阅消息模板ID（排队叫号通知）
+	QUEUE_CANCEL_TEMPLATE_ID: 'JT21d-zL620_8A88vzwz4jfVub2sOOsyiANQLlolw_Q', // 预约取消订阅消息模板ID（排队取消通知）
 
  }
