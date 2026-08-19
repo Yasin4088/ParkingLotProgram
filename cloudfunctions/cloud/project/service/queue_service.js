@@ -161,6 +161,9 @@ class QueueService extends BaseService {
 		});
 		if (!item) this.AppError('未找到可签到的预约记录');
 
+		// GPS 距离校验：司机上报位置须在装卸区允许半径内（未配置坐标时跳过）
+		this._checkInRange(lat, lng);
+
 		let now = timeUtil.time();
 		let queueNo = await this._makeQueueNo(now);
 		// 条件更新：并发签到/过期清理时只有一方成功（号码已发，失败时当日号码留空号，可接受）
@@ -181,6 +184,36 @@ class QueueService extends BaseService {
 		await this.autoCallCheck();
 
 		return await this.myCurrent(userId);
+	}
+
+	/** GPS 签到距离校验：超出装卸区允许半径时拒绝签到（config.CHECKIN_LOT 未配置时跳过）
+	 *  坐标基于 gcj02（与 wx.getLocation type=gcj02 一致） */
+	_checkInRange(lat, lng) {
+		let cfg = config.CHECKIN_LOT || {};
+		let cLat = Number(cfg.lat);
+		let cLng = Number(cfg.lng);
+		let radius = Number(cfg.radiusM) || 0;
+		if (!cLat || !cLng || radius <= 0) return; // 未配置堆场坐标时不校验
+
+		let latN = Number(lat);
+		let lngN = Number(lng);
+		if (!latN || !lngN) this.AppError('定位失败，请重新签到');
+
+		let dist = this._distanceM(latN, lngN, cLat, cLng);
+		if (dist > radius) {
+			let km = dist >= 1000 ? (dist / 1000).toFixed(1) + '公里' : Math.round(dist) + '米';
+			this.AppError('您还未到达装卸区，无法签到（距园区约' + km + '）');
+		}
+	}
+
+	/** 两点球面距离（haversine，米） */
+	_distanceM(lat1, lng1, lat2, lng2) {
+		let R = 6371000;
+		let dLat = (lat2 - lat1) * Math.PI / 180;
+		let dLng = (lng2 - lng1) * Math.PI / 180;
+		let a = Math.pow(Math.sin(dLat / 2), 2)
+			+ Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.pow(Math.sin(dLng / 2), 2);
+		return 2 * R * Math.asin(Math.sqrt(a));
 	}
 
 	async subscribe(userId, id) {

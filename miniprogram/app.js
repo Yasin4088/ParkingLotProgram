@@ -19,6 +19,18 @@ App({
 
 		this.globalData = {};
 
+		// 隐私授权统一处理（基础库 2.32.3+，配合 app.json "__usePrivacyCheck__": true）：
+		// 任意隐私接口（getLocation 定位、chooseMedia 相册/摄像头等）首次调用且用户未同意时，
+		// 自动弹出系统隐私弹窗，用户同意后原接口继续执行；不同意则接口返回失败。
+		if (wx.onNeedPrivacyAuthorization) {
+			wx.onNeedPrivacyAuthorization(resolve => {
+				wx.requirePrivacyAuthorize({
+					success: () => resolve({ event: 'agree' }),
+					fail: () => resolve({ event: 'disagree' })
+				});
+			});
+		}
+
 		// 用于自定义导航栏
 		wx.getSystemInfo({
 			success: e => {

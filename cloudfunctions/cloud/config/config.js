@@ -33,8 +33,16 @@ module.exports = {
 	// #### 预约相关
 	MEET_LOG_LEVEL: 'debug',
 
-	// ### 后台业务相关
+	// #### 后台业务相关
 	ADMIN_LOGIN_EXPIRE: 86400, //管理员token过期时间 (秒)
+
+	// #### GPS 签到校验（装卸区中心坐标 + 允许半径，gcj02）
+	// lat/lng 留 0 或 radiusM 为 0 时不校验（任何位置均可签到）；填入后司机须在半径内才能签到
+	CHECKIN_LOT: {
+		lat: 22.67, //堆场中心纬度（gcj02）
+		lng: 113.64, //堆场中心经度（gcj02）
+		radiusM: 5000, //允许签到半径（米），当前 5 公里，真机验证后可收紧
+	},
 
 	// #### 微信支付（存取柜取柜交款）
 	WXPAY_ENABLE: true, //是否开通在线支付；已配置商户参数+payNotify 回调，0.01 元真机验证通过后保持 true

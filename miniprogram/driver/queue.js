@@ -80,6 +80,27 @@ Page({
 	bindCheckinTap: function () {
 		if (!this.data.item) return;
 		this.setData({ loading: true });
+
+		// 隐私授权前置（基础库 2.32.3+）：未同意隐私政策时先弹系统隐私窗，同意后再定位
+		if (wx.requirePrivacyAuthorize) {
+			wx.requirePrivacyAuthorize({
+				success: () => this._doCheckin(),
+				fail: () => {
+					this.setData({ loading: false });
+					wx.showToast({ title: '需同意隐私政策才能定位签到', icon: 'none' });
+				}
+			});
+		} else {
+			this._doCheckin();
+		}
+	},
+
+	/** 定位并签到（隐私授权通过后执行） */
+	_doCheckin: function () {
+		if (!this.data.item) {
+			this.setData({ loading: false });
+			return;
+		}
 		wx.getLocation({
 			type: 'gcj02',
 			success: async res => {
@@ -98,6 +119,7 @@ Page({
 					wx.showToast({ title: '签到成功', icon: 'success' });
 				} catch (e) {
 					console.log(e);
+					wx.showToast({ title: (e && e.msg) || '签到失败，请重试', icon: 'none' });
 				}
 			},
 			fail: err => {

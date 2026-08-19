@@ -10,13 +10,9 @@
     <view class="section-title">手机号 <text style="color:red;">*</text></view>
     <block wx:if="{{!phoneGot}}">
       <button class="phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">
-        微信授权获取手机号
+        一键获取微信绑定手机号
       </button>
-      <view class="divider-text">—— 或手动输入 ——</view>
-      <view class="input-group">
-        <input class="input-field" type="number" placeholder="请输入手机号（仅开发测试用）" value="{{manualPhone}}" bindinput="onInput" data-field="manualPhone" maxlength="11" />
-      </view>
-      <button class="manual-btn" bindtap="onManualPhoneConfirm">使用手动输入的手机号</button>
+      <view class="divider-text">手机号由微信授权直接获取，无需手动输入</view>
     </block>
     <block wx:else>
       <view class="phone-got">

@@ -8,7 +8,6 @@ Page({
 
     phone: '',
     phoneGot: false,
-    manualPhone: '',
 
     name: '',
     idCard: '',
@@ -117,20 +116,6 @@ Page({
         showCancel: false
       });
     }
-  },
-
-  // 手动输入手机号（开发测试降级方案）
-  onManualPhoneConfirm: function () {
-    let phone = (this.data.manualPhone || '').trim();
-    if (!/^1\d{10}$/.test(phone)) {
-      wx.showToast({ title: '请输入正确的11位手机号', icon: 'none' });
-      return;
-    }
-    this.setData({
-      phone: phone,
-      phoneGot: true
-    });
-    wx.showToast({ title: '已设置手机号', icon: 'success' });
   },
 
   // 输入框通用处理
