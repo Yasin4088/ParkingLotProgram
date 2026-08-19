@@ -239,7 +239,7 @@ class QueueService extends BaseService {
 		let item = await QueueModel.getOne({
 			_id: queueId,
 			QUEUE_STATUS: QueueModel.STATUS.WAITING
-		}, 'QUEUE_COMPANY');
+		}, '*');
 		if (!item) this.AppError('仅可叫号排队中的车辆');
 		if (!isSuper && Number(item.QUEUE_COMPANY) !== 1) this.AppError('仅可叫号其他公司的排队记录');
 
@@ -256,6 +256,8 @@ class QueueService extends BaseService {
 				QUEUE_PAY_STATUS: QueueModel.PAY_STATUS.FREE,
 			});
 			if (!updated) this.AppError('仅可叫号排队中的车辆');
+			// 通知司机叫号（已订阅时）
+			await this._sendCallNotice(item, now);
 			return await this.detail(queueId);
 		}
 
@@ -268,6 +270,9 @@ class QueueService extends BaseService {
 			QUEUE_DRIVER_CONFIRMED: 0,
 		});
 		if (!updated) this.AppError('仅可叫号排队中的车辆');
+
+		// 通知司机叫号（已订阅时）
+		await this._sendCallNotice(item, now);
 
 		return await this.detail(queueId);
 	}
@@ -306,10 +311,17 @@ class QueueService extends BaseService {
 			}
 
 			// 条件更新：并发/多触发点同时执行时仅一方成功
-			await QueueModel.edit({
+			let updated = await QueueModel.edit({
 				_id: target._id,
 				QUEUE_STATUS: QueueModel.STATUS.WAITING
 			}, editData);
+			if (updated) {
+				// 通知司机叫号（已订阅时）
+				let full = await QueueModel.getOne({
+					_id: target._id
+				}, 'QUEUE_OPENID,QUEUE_SUBSCRIBE,QUEUE_PLATE,QUEUE_ACTION_NAME,QUEUE_LOT_NAME,QUEUE_NO');
+				if (full) await this._sendCallNotice(full, now);
+			}
 		} catch (e) {
 			// 自动叫号为后台增强，失败不影响主流程（签到/抢单/看板刷新）
 			console.error('自动叫号执行失败', e);
@@ -925,6 +937,24 @@ class QueueService extends BaseService {
 				thing4: { value: miniLib.fmtThing(item.QUEUE_LOT_NAME || '') },
 			}
 		}, 'queue_cancel');
+	}
+
+	/** 叫号通知（司机已订阅且配置模板时推送；模板字段键需与所选用模板一致，可调整） */
+	async _sendCallNotice(item, now) {
+		if (!config.QUEUE_CALL_TEMPLATE_ID || !item.QUEUE_OPENID) return;
+		if (Number(item.QUEUE_SUBSCRIBE) !== 1) return; // 司机未订阅不推送
+
+		await miniLib.sendMiniOnceTempMsg({
+			touser: item.QUEUE_OPENID,
+			template_id: config.QUEUE_CALL_TEMPLATE_ID,
+			page: '/driver/home',
+			data: {
+				thing1: { value: miniLib.fmtThing(item.QUEUE_PLATE || '') }, // 车牌号
+				thing2: { value: miniLib.fmtThing(item.QUEUE_ACTION_NAME || '') }, // 业务类型
+				time3: { value: timeUtil.timestamp2Time(now) }, // 叫号时间
+				thing4: { value: miniLib.fmtThing((item.QUEUE_LOT_NAME || '') + (item.QUEUE_NO ? ' ' + item.QUEUE_NO + '号' : '')) }, // 场地/排队号
+			}
+		}, 'queue_call');
 	}
 
 	async _makeQueueNo(now) {
