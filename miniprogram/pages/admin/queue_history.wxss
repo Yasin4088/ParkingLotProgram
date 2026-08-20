@@ -223,11 +223,20 @@
 	right: 0;
 	bottom: 0;
 	max-height: 86vh;
-	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
 	background: #fff;
 	border-radius: 30rpx 30rpx 0 0;
-	padding: 34rpx 30rpx calc(44rpx + env(safe-area-inset-bottom));
+	padding: 34rpx 30rpx 0;
 	box-sizing: border-box;
+}
+
+/* 可滚动内容区（flex 撑开，超高时内部滚动，不影响底部固定按钮） */
+.detail-body {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
 .detail-head {
@@ -235,6 +244,7 @@
 	justify-content: space-between;
 	align-items: flex-start;
 	margin-bottom: 26rpx;
+	flex-shrink: 0;
 }
 
 .detail-title {
@@ -292,6 +302,8 @@
 .detail-actions {
 	display: flex;
 	margin-top: 26rpx;
+	flex-shrink: 0;
+	padding-bottom: calc(30rpx + env(safe-area-inset-bottom)); /* 底部固定按钮+安全区，真机不被遮挡 */
 }
 
 .detail-btn {

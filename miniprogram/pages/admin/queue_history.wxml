@@ -83,7 +83,8 @@
 				<view class="detail-close" bindtap="bindCloseDetailTap">关闭</view>
 			</view>
 
-			<view class="detail-grid">
+			<view class="detail-body">
+				<view class="detail-grid">
 				<view class="detail-row">
 					<view class="detail-label">车牌号</view>
 					<view class="detail-value">{{selectedItem.QUEUE_PLATE || '--'}}</view>
@@ -169,6 +170,7 @@
 				<view wx:else class="fee-empty">暂无费用</view>
 				<view class="fee-total">合计：¥{{selectedItem.feeTotalText}}（{{selectedItem.payStatusDesc}}）</view>
 			</view>
+			</view>
 
 			<view class="detail-actions">
 				<view class="detail-btn danger" data-id="{{selectedItem._id}}" bindtap="bindClearTap">清理此记录</view>
@@ -187,7 +189,8 @@
 				<view class="detail-close" bindtap="bindCloseDetailTap">关闭</view>
 			</view>
 
-			<view class="detail-grid">
+			<view class="detail-body">
+				<view class="detail-grid">
 				<view class="detail-row">
 					<view class="detail-label">车牌号</view>
 					<view class="detail-value">{{selectedItem.STORAGE_PLATE || '--'}}</view>
@@ -257,6 +260,7 @@
 					<view class="fee-line-amount">¥{{selectedItem.feeTotalText}}</view>
 				</view>
 				<view class="fee-total">合计：¥{{selectedItem.feeTotalText}}（{{selectedItem.payStatusDesc}}）</view>
+			</view>
 			</view>
 
 			<view class="detail-actions">
