@@ -14,6 +14,7 @@ Page({
 		pwd: '',
 		loading: false,
 		needSetup: false,   // 系统是否需要初始化
+		agreeChecked: false, // 用户协议与隐私政策是否勾选（默认不勾选，勾选后才能登录）
 	},
 
 	onLoad: function (options) {
@@ -62,9 +63,29 @@ Page({
 		this.setData({ confirmPwd: e.detail.value });
 	},
 
+	/** 用户协议勾选（默认不勾选，须用户手动同意） */
+	bindAgreeChange: function (e) {
+		this.setData({ agreeChecked: !!(e.detail && e.detail.value) });
+	},
+
+	/** 登录前置校验：未勾选协议禁止登录 */
+	_guardAgree: function () {
+		if (!this.data.agreeChecked) {
+			wx.showToast({ title: '请先阅读并勾选同意用户协议与隐私政策', icon: 'none' });
+			return false;
+		}
+		return true;
+	},
+
+	/** 查看用户协议与隐私政策 */
+	bindPrivacyTap: function () {
+		wx.navigateTo({ url: '/pages/privacy/privacy' });
+	},
+
 	// 系统初始化（首次部署，创建超级管理员）
 	bindSetupTap: async function () {
 		if (this.data.loading) return;
+		if (!this._guardAgree()) return;
 
 		let name = this.data.name.trim();
 		let pwd = this.data.pwd.trim();
@@ -95,6 +116,7 @@ Page({
 	// 管理员登录
 	bindLoginTap: async function () {
 		if (this.data.loading) return;
+		if (!this._guardAgree()) return;
 
 		let name = this.data.name.trim();
 		let pwd = this.data.pwd.trim();
@@ -123,6 +145,7 @@ Page({
 	// 叉车司机登录
 	bindForkliftLoginTap: async function () {
 		if (this.data.loading) return;
+		if (!this._guardAgree()) return;
 
 		let name = this.data.name.trim();
 		let pwd = this.data.pwd.trim();
@@ -153,6 +176,7 @@ Page({
 	// 司机微信登录
 	bindWxLoginTap: async function () {
 		if (this.data.loading) return;
+		if (!this._guardAgree()) return;
 		this.setData({ loading: true });
 
 		try {
@@ -176,6 +200,7 @@ Page({
 	// 客户登录（月付/月结车牌录入）
 	bindCustomerLoginTap: async function () {
 		if (this.data.loading) return;
+		if (!this._guardAgree()) return;
 
 		let name = this.data.name.trim();
 		let pwd = this.data.pwd.trim();
@@ -199,11 +224,6 @@ Page({
 		} finally {
 			this.setData({ loading: false });
 		}
-	},
-
-	/** 查看用户协议与隐私政策 */
-	bindPrivacyTap: function () {
-		wx.navigateTo({ url: '/pages/privacy/privacy' });
 	},
 
 });

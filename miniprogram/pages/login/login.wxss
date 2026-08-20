@@ -136,9 +136,21 @@
 /* 用户协议入口 */
 .agreement {
     margin-top: 30rpx;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 24rpx;
     color: #999;
+}
+
+.agree-check {
+    transform: scale(0.8);
+    margin-right: 6rpx;
+}
+
+.agree-text {
+    display: flex;
+    align-items: center;
 }
 
 .agreement-link {

@@ -13,10 +13,10 @@
             <view class="tab {{tab === 'admin' ? 'active' : ''}}" bindtap="bindTabTap" data-tab="admin">管理员</view>
         </view>
 
-        <!-- 司机端：微信一键登录 -->
+        <!-- 司机端：手机号快捷登录 -->
         <block wx:if="{{tab === 'driver'}}">
             <button class="login-btn wechat-btn" loading="{{loading}}" bindtap="bindWxLoginTap">
-                微信一键登录
+                手机号快捷登录
             </button>
             <view class="hint">首次登录后需完善个人信息</view>
         </block>
@@ -87,7 +87,10 @@
     </view>
 
     <view class="agreement">
-        <text>登录即代表同意</text>
-        <text class="agreement-link" bindtap="bindPrivacyTap">《用户协议与隐私政策》</text>
+        <checkbox class="agree-check" checked="{{agreeChecked}}" bindchange="bindAgreeChange" color="#3B82E6" />
+        <view class="agree-text">
+            <text>我已阅读并同意</text>
+            <text class="agreement-link" bindtap="bindPrivacyTap">《用户协议与隐私政策》</text>
+        </view>
     </view>
 </view>
