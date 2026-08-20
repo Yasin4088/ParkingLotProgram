@@ -19,17 +19,11 @@ App({
 
 		this.globalData = {};
 
-		// 隐私授权统一处理（基础库 2.32.3+，配合 app.json "__usePrivacyCheck__": true）：
-		// 任意隐私接口（getLocation 定位、chooseMedia 相册/摄像头等）首次调用且用户未同意时，
-		// 自动弹出系统隐私弹窗，用户同意后原接口继续执行；不同意则接口返回失败。
-		if (wx.onNeedPrivacyAuthorization) {
-			wx.onNeedPrivacyAuthorization(resolve => {
-				wx.requirePrivacyAuthorize({
-					success: () => resolve({ event: 'agree' }),
-					fail: () => resolve({ event: 'disagree' })
-				});
-			});
-		}
+		// 隐私合规（配合 app.json "__usePrivacyCheck__": true）：
+		// 不注册 wx.onNeedPrivacyAuthorization 自定义处理器——微信会自动弹出系统默认隐私授权窗，
+		// 首次调用隐私接口（getLocation/chooseMedia/getPhoneNumber 等）时征得用户同意。
+		// 注意：在 onNeedPrivacyAuthorization 回调内再调 wx.requirePrivacyAuthorize 在部分基础库
+		// 会触发递归重入导致 "Maximum call stack size exceeded"，切勿自定义该回调。
 
 		// 用于自定义导航栏
 		wx.getSystemInfo({
