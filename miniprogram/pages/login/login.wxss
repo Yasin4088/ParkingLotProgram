@@ -143,14 +143,15 @@
     color: #999;
 }
 
+.agree-label {
+    display: flex;
+    align-items: center;
+    margin-right: 4rpx;
+}
+
 .agree-check {
     transform: scale(0.8);
     margin-right: 6rpx;
-}
-
-.agree-text {
-    display: flex;
-    align-items: center;
 }
 
 .agreement-link {

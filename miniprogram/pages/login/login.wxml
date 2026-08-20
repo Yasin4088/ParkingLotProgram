@@ -86,11 +86,11 @@
 
     </view>
 
-    <view class="agreement">
-        <checkbox class="agree-check" checked="{{agreeChecked}}" bindchange="bindAgreeChange" color="#3B82E6" />
-        <view class="agree-text">
+    <checkbox-group class="agreement" bindchange="bindAgreeChange">
+        <label class="agree-label">
+            <checkbox class="agree-check" checked="{{agreeChecked}}" color="#3B82E6" />
             <text>我已阅读并同意</text>
-            <text class="agreement-link" bindtap="bindPrivacyTap">《用户协议与隐私政策》</text>
-        </view>
-    </view>
+        </label>
+        <text class="agreement-link" bindtap="bindPrivacyTap">《用户协议与隐私政策》</text>
+    </checkbox-group>
 </view>

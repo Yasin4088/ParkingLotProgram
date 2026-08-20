@@ -63,9 +63,10 @@ Page({
 		this.setData({ confirmPwd: e.detail.value });
 	},
 
-	/** 用户协议勾选（默认不勾选，须用户手动同意） */
+	/** 用户协议勾选（默认不勾选，须用户手动同意；checkbox-group 返回勾选项数组） */
 	bindAgreeChange: function (e) {
-		this.setData({ agreeChecked: !!(e.detail && e.detail.value) });
+		let val = e.detail && e.detail.value;
+		this.setData({ agreeChecked: Array.isArray(val) ? val.length > 0 : !!val });
 	},
 
 	/** 登录前置校验：未勾选协议禁止登录 */
