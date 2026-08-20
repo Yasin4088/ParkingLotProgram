@@ -2,6 +2,7 @@
 	min-height: 100vh;
 	background: #f5f7f8;
 	padding: 28rpx;
+	padding-bottom: calc(28rpx + env(safe-area-inset-bottom)); /* 真机全面屏底部安全区，防止最后一条记录的按钮被遮挡 */
 	box-sizing: border-box;
 }
 
