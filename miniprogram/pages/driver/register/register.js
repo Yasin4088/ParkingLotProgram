@@ -75,7 +75,7 @@ Page({
   },
 
   // 微信手机号授权
-  onGetPhoneNumber: async function (e) {
+  onGetPhoneNumber: function (e) {
     console.log('getPhoneNumber 回调:', JSON.stringify(e.detail));
 
     if (e.detail.errMsg !== 'getPhoneNumber:ok') {
@@ -97,25 +97,30 @@ Page({
       return;
     }
 
-    try {
-      let res = await cloudHelper.callCloudSumbit('driver/getPhoneNumber', { cloudID: cloudID }, { title: '获取中' });
-      if (res.data && res.data.success) {
-        this.setData({
-          phone: res.data.phoneNumber,
-          phoneGot: true
+    // 延迟到事件回调栈外再调云函数：部分基础库/工具版本在 getPhoneNumber 回调内
+    // 同步调用 wx.cloud.callFunction 会触发框架层 "Maximum call stack size exceeded"
+    const that = this;
+    setTimeout(async () => {
+      try {
+        let res = await cloudHelper.callCloudSumbit('driver/getPhoneNumber', { cloudID: cloudID }, { title: '获取中' });
+        if (res.data && res.data.success) {
+          that.setData({
+            phone: res.data.phoneNumber,
+            phoneGot: true
+          });
+          wx.showToast({ title: '已获取手机号', icon: 'success' });
+        } else {
+          wx.showToast({ title: '获取失败，请重试', icon: 'none' });
+        }
+      } catch (err) {
+        console.error('getPhoneNumber失败', err);
+        wx.showModal({
+          title: '提示',
+          content: '手机号获取失败：' + (err && (err.msg || err.message)) || '未知错误',
+          showCancel: false
         });
-        wx.showToast({ title: '已获取手机号', icon: 'success' });
-      } else {
-        wx.showToast({ title: '获取失败，请重试', icon: 'none' });
       }
-    } catch (err) {
-      console.error('getPhoneNumber失败', err);
-      wx.showModal({
-        title: '提示',
-        content: '手机号获取失败：' + (err.msg || err.message || '未知错误'),
-        showCancel: false
-      });
-    }
+    }, 0);
   },
 
   // 输入框通用处理
