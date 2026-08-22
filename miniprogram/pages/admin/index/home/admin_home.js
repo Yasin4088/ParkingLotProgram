@@ -57,14 +57,9 @@ Page({
 		}
 	},
 
-	/** 统计磁贴 → 回到叫号看板 */
+	/** 统计磁贴 → 回到装卸货叫号看板（直接用 redirectTo，避免页面栈导致返回登录页） */
 	bindStatsTap: function (e) {
-		let pages = getCurrentPages();
-		if (pages.length > 1) {
-			wx.navigateBack();
-		} else {
-			wx.navigateTo({ url: '/admin/queue' });
-		}
+		wx.redirectTo({ url: '/admin/queue' });
 	},
 
 	url: function (e) {
