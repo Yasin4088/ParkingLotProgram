@@ -37,7 +37,8 @@ cloudfunctions/payNotify/ # 微信支付回调云函数（HTTP触发+定时查�
 - 费用：固定项 办单费/过磅费/拆箱费/吊机费/存柜费 + 可自定义；≤3 状态经编辑表单保存（预估），4/5/6 经费用弹窗整体保存（现场，支付前可改）；金额单位分，前端展示换算元；预估费用金额为 0/留空不计入，现场费用仍要求 >0
 - 支付：PAY_STATUS 0=未支付,1=已支付,2=免支付,3=记账；PAY_MODE 0=现场支付,1=客户记账（建单/编辑可预填，结算时 actionSheet 最终确认，记账单结算后直接 DONE）；月报合计区含 合计/已支付/记账 三行
 - 存取柜支付：STORAGE_PAY_MODE 0=现场,1=在线；STORAGE_PAY_STATUS 0=未付,1=已付(在线),2=免付(存柜),3=已确认收款(现场),4=月付(月结,免现场缴费,费用记公司月结)；4→5 缴费确认后进取柜排队（月付单取柜登记时直接 3→5 跳过缴费环节）；在线支付 WXPAY_ENABLE=false 时司机走现场支付+管理员确认收款（过渡形态，商户号通过后仅改配置+部署 payNotify）；微信支付实现细节见 wxpay_lib.js / payNotify/index.js 头部注释（参考官方 Java 翻译生成，非官方维护），时间列仅保留创建日期（签到/叫号/完成/结算等时间不导出）
-- GPS 签到校验：司机签到须在装卸区半径内（config.js `CHECKIN_LOT`：lat/lng=堆场中心 gcj02 坐标，radiusM=允许半径米；当前 22.67/113.64/5000，坐标为 0 或半径 0 时不校验）；queue_service.checkin 用 haversine 算距离超半径拒绝签到；司机端 queue.js 签到失败会弹具体原因
+- GPS 签到校验：司机签到须在装卸区半径内（config.js `CHECKIN_LOT`：lat/lng=堆场中心 gcj02 坐标，radiusM=允许半径米；当前 22.65/113.66/5000，坐标为 0 或半径 0 时不校验）；queue_service.checkin 用 haversine 算距离超半径拒绝签到；司机端 queue.js 签到失败会弹具体原因
+- 订阅消息（一次性）：司机每单须重新点「订阅叫号通知」（requestSubscribeMessage 一次授权 叫号+取消 两个模板各 1 次额度，发送成功即消耗，失败如 47003 不扣；43101=无额度/未订阅）；发送在 cloud 函数 callDriver/autoCallCheck 触发 `_sendCallNotice`，模板字段键**必须与实际所选模板一致**（当前：叫号 thing3/car_number10/time15/character_string14，取消 thing4/thing3/car_number5/thing6——换模板必须重核对详细内容里的 {{键.DATA}}）；诊断：发送结果/跳过原因写 ax_log（LOG_TYPE=SUBSCRIBE_SEND），控制台日志正文可能不可见，查数据库最可靠；测试用体验版（真机调试/开发版收不到），线上以正式版为准；发送免费不按条计费
 - 任务备注 QUEUE_REMARK：管理员录入/编辑，管理员+叉车司机可见，月报导出含备注列
 - 管理员看板详情附司机注册信息（driverInfo：姓名/身份证/三证），凭证预览与保存相册统一走 `helper/cloud_helper.js` 的 `getTempUrl`/`previewCloudImage`（fileID 不能直接喂 wx.previewImage）
 - 云调用防闪烁约定：静默请求必须传 `{title:'', hint:false}`（hint 默认 true 会弹全屏遮罩）；页面 `onShow` 首次跳过由 `onLoad` 处理
