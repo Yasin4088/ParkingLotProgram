@@ -29,15 +29,17 @@ function fmtPhrase(str) { //5个以内汉字
  * @param {*} key 
  */
 async function sendMiniOnceTempMsg(body, key = '') {
-//	console.log('##sendOnceTempMsg[' + key + ']', body);
 	let cloud = cloudBase.getCloud();
 	try {
 		// 默认参数
 		body.lang = 'zh_CN';
 		body.miniprogramState = 'formal';
 
-		await cloud.openapi.subscribeMessage.send(body);
+		let res = await cloud.openapi.subscribeMessage.send(body);
+		// 诊断日志（普通日志可见）：发送成功也打点，便于排查订阅消息未触达
+		console.log('##sendOnceTempMsg[' + key + '] 发送成功', 'touser=' + body.touser, 'res=' + JSON.stringify(res));
 	} catch (err) {
+		console.log('##sendOnceTempMsg[' + key + '] 发送失败', err.errCode, err.errMsg, JSON.stringify(err));
 		cloudUtil.log('##sendOnceTempMsg[' + key + ']', err);
 	}
 }

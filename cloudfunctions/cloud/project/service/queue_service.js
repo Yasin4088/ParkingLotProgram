@@ -942,8 +942,15 @@ class QueueService extends BaseService {
 	/** 叫号通知（司机已订阅且配置模板时推送；模板字段键需与所选用模板一致，可调整）
 	 *  当前适配公共模板「排队叫号通知」：thing1=业务名称, thing2=车牌号, time3=叫号时间, thing4=排队号码 */
 	async _sendCallNotice(item, now) {
-		if (!config.QUEUE_CALL_TEMPLATE_ID || !item.QUEUE_OPENID) return;
-		if (Number(item.QUEUE_SUBSCRIBE) !== 1) return; // 司机未订阅不推送
+		if (!config.QUEUE_CALL_TEMPLATE_ID || !item.QUEUE_OPENID) {
+			console.log('[queue_call] 跳过发送：模板ID=' + config.QUEUE_CALL_TEMPLATE_ID + ' openid=' + item.QUEUE_OPENID);
+			return;
+		}
+		if (Number(item.QUEUE_SUBSCRIBE) !== 1) {
+			console.log('[queue_call] 跳过发送：司机未订阅 SUBSCRIBE=' + item.QUEUE_SUBSCRIBE + ' id=' + item._id);
+			return; // 司机未订阅不推送
+		}
+		console.log('[queue_call] 开始发送叫号通知 id=' + item._id + ' plate=' + item.QUEUE_PLATE);
 
 		await miniLib.sendMiniOnceTempMsg({
 			touser: item.QUEUE_OPENID,
