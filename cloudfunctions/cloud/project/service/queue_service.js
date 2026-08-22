@@ -944,10 +944,12 @@ class QueueService extends BaseService {
 	async _sendCallNotice(item, now) {
 		if (!config.QUEUE_CALL_TEMPLATE_ID || !item.QUEUE_OPENID) {
 			console.log('[queue_call] 跳过发送：模板ID=' + config.QUEUE_CALL_TEMPLATE_ID + ' openid=' + item.QUEUE_OPENID);
+			await miniLib.logSendDiag('queue_call_skip', { touser: item.QUEUE_OPENID, template_id: config.QUEUE_CALL_TEMPLATE_ID }, -1, '模板ID或openid缺失');
 			return;
 		}
 		if (Number(item.QUEUE_SUBSCRIBE) !== 1) {
 			console.log('[queue_call] 跳过发送：司机未订阅 SUBSCRIBE=' + item.QUEUE_SUBSCRIBE + ' id=' + item._id);
+			await miniLib.logSendDiag('queue_call_skip', { touser: item.QUEUE_OPENID, template_id: config.QUEUE_CALL_TEMPLATE_ID }, -2, '司机未订阅 SUBSCRIBE=' + item.QUEUE_SUBSCRIBE);
 			return; // 司机未订阅不推送
 		}
 		console.log('[queue_call] 开始发送叫号通知 id=' + item._id + ' plate=' + item.QUEUE_PLATE);
