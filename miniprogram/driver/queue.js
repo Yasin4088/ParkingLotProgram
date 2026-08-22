@@ -10,6 +10,7 @@ Page({
 		lastDone: null,
 		loading: false,
 		paying: false,
+		subscribing: false,
 		statusBar: 0,
 		customBar: 0,
 		navBarHeight: 0,
@@ -133,7 +134,8 @@ Page({
 	},
 
 	bindSubscribeTap: async function () {
-		if (!this.data.item) return;
+		if (this.data.subscribing || !this.data.item) return; // 防重复点击（requestSubscribeMessage 上一次未结束会报 last call has not ended）
+		this.setData({ subscribing: true });
 		try {
 			let tmplIds = [setting.QUEUE_CALL_TEMPLATE_ID, setting.QUEUE_CANCEL_TEMPLATE_ID].filter(id => !!id);
 			if (tmplIds.length) {
@@ -146,6 +148,8 @@ Page({
 			this.loadCurrent();
 		} catch (e) {
 			console.log(e);
+		} finally {
+			this.setData({ subscribing: false });
 		}
 	},
 
