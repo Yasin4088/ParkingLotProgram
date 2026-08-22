@@ -36,4 +36,13 @@
 	<view class="footer-actions">
 		<view bindtap="bindQueueTap">查看我的排队</view>
 	</view>
+
+	<!-- 停车场须知弹窗 -->
+	<view wx:if="{{showNotice}}" class="notice-mask" bindtap="bindNoticeClose">
+		<view class="notice-panel" catchtap="bindNoop">
+			<view class="notice-title">停车场须知</view>
+			<view class="notice-content">此停车场免费停车4小时，报到之后，按小程序通知进场装卸货</view>
+			<view class="notice-btn" bindtap="bindNoticeClose">我知道了</view>
+		</view>
+	</view>
 </view>

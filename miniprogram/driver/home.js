@@ -10,6 +10,7 @@ Page({
 		proof: '',
 		proofLocal: '',
 		submitting: false,
+		showNotice: false, // 停车场须知弹窗
 		statusBar: 0,
 		customBar: 0,
 		navBarHeight: 0,
@@ -20,8 +21,25 @@ Page({
 		this._checkLogin();
 		if (!await this._checkRegistration()) return;
 		this._prefill();
+		this._showParkingNotice();
 		this._loaded = true;
 	},
+
+	/** 停车场须知弹窗（每用户首次进入装卸货页时展示一次） */
+	_showParkingNotice: function () {
+		let user = cacheHelper.get(constants.CACHE_TOKEN);
+		let key = 'parking_notice_shown_' + ((user && user.id) || '');
+		if (cacheHelper.get(key)) return; // 已看过不再弹
+		this.setData({ showNotice: true });
+	},
+
+	bindNoticeClose: function () {
+		let user = cacheHelper.get(constants.CACHE_TOKEN);
+		cacheHelper.set('parking_notice_shown_' + ((user && user.id) || ''), 1, 365 * 24 * 3600);
+		this.setData({ showNotice: false });
+	},
+
+	bindNoop: function () {},
 
 	onShow: async function () {
 		if (!this._loaded) return; // 首次加载由 onLoad 处理，避免重复请求导致闪烁

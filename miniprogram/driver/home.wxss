@@ -5,6 +5,55 @@
 	box-sizing: border-box;
 }
 
+/* 停车场须知弹窗 */
+.notice-mask {
+	position: fixed;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, .5);
+	z-index: 99;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.notice-panel {
+	width: 600rpx;
+	background: #fff;
+	border-radius: 24rpx;
+	padding: 48rpx 40rpx 40rpx;
+	box-sizing: border-box;
+}
+
+.notice-title {
+	font-size: 34rpx;
+	font-weight: bold;
+	color: #243b53;
+	text-align: center;
+	margin-bottom: 28rpx;
+}
+
+.notice-content {
+	font-size: 29rpx;
+	color: #4a5a6a;
+	line-height: 1.8;
+	text-align: center;
+	margin-bottom: 40rpx;
+}
+
+.notice-btn {
+	height: 80rpx;
+	line-height: 80rpx;
+	background: #3B82E6;
+	color: #fff;
+	font-size: 30rpx;
+	font-weight: bold;
+	border-radius: 40rpx;
+	text-align: center;
+}
+
 .custom-nav {
 	margin: 0 -28rpx 28rpx;
 	background: #3B82E6;
