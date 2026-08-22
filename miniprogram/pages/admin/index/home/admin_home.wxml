@@ -15,21 +15,21 @@
 		</view>
 	</view>
 
-	<!-- 实时队列统计（点击回看板） -->
+	<!-- 实时统计（装卸货+存取柜总和，只读展示） -->
 	<view class="comm-list grid col-4">
-		<view class="item" bindtap="bindStatsTap">
+		<view class="item">
 			<view class="stat-num">{{stats.total}}</view>
 			<text class="stat-label">在单</text>
 		</view>
-		<view class="item" bindtap="bindStatsTap">
+		<view class="item">
 			<view class="stat-num">{{stats.waiting}}</view>
 			<text class="stat-label">排队中</text>
 		</view>
-		<view class="item" bindtap="bindStatsTap">
+		<view class="item">
 			<view class="stat-num">{{stats.executing}}</view>
 			<text class="stat-label">执行中</text>
 		</view>
-		<view class="item" bindtap="bindStatsTap">
+		<view class="item">
 			<view class="stat-num">{{stats.topay}}</view>
 			<text class="stat-label">待支付</text>
 		</view>

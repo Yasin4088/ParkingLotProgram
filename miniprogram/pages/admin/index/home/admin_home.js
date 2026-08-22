@@ -39,27 +39,35 @@ Page({
 		wx.stopPullDownRefresh();
 	},
 
-	/** 实时队列统计（由看板列表前端计数） */
+	/** 实时统计：装卸货 + 存取柜 总和（只读展示，不跳转） */
 	_loadStats: async function () {
 		try {
-			let data = await cloudHelper.callCloudData('admin/queue_list', {}, { title: '', hint: false });
-			if (!data) return;
+			let [qData, sData] = await Promise.all([
+				cloudHelper.callCloudData('admin/queue_list', {}, { title: '', hint: false }),
+				cloudHelper.callCloudData('admin/storage_list', {}, { title: '', hint: false })
+			]);
 			let stats = { total: 0, waiting: 0, executing: 0, topay: 0 };
-			(data.list || []).forEach(item => {
+
+			// 装卸货：2=排队中, 4=执行中, 6=待支付
+			((qData && qData.list) || []).forEach(item => {
 				stats.total++;
 				if (item.QUEUE_STATUS === 2) stats.waiting++;
 				if (item.QUEUE_STATUS === 4) stats.executing++;
 				if (item.QUEUE_STATUS === 6) stats.topay++;
 			});
+
+			// 存取柜：0=待叫号·存柜, 5=取柜待叫号 → 排队中；2/7=执行中；4=取柜待缴费 → 待支付
+			((sData && sData.list) || []).forEach(item => {
+				stats.total++;
+				if (item.STORAGE_STATUS === 0 || item.STORAGE_STATUS === 5) stats.waiting++;
+				if (item.STORAGE_STATUS === 2 || item.STORAGE_STATUS === 7) stats.executing++;
+				if (item.STORAGE_STATUS === 4) stats.topay++;
+			});
+
 			this.setData({ stats });
 		} catch (err) {
 			console.log(err);
 		}
-	},
-
-	/** 统计磁贴 → 回到装卸货叫号看板（直接用 redirectTo，避免页面栈导致返回登录页） */
-	bindStatsTap: function (e) {
-		wx.redirectTo({ url: '/admin/queue' });
 	},
 
 	url: function (e) {
